@@ -1,3 +1,5 @@
+# IMPORTANT : This is just an example, not used in the game
+
 extends Node2D
 
 @export var grid_dimention:Vector2 = Vector2(1000, 175)
@@ -23,7 +25,7 @@ func _draw() -> void:
 			if grid[x][y]:
 				draw_rect(Rect2(Vector2(x,y) * cell_size, cell_size), Color.LIGHT_GOLDENROD, true)
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	#
 	$Control/Label.text = str(Engine.get_frames_per_second())
 
