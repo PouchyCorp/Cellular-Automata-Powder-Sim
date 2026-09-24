@@ -51,16 +51,40 @@ public class TakeNutrientRequest
     }
 }
 
+// Not a thread safe implementation of the singleton
 public class NutrientManager
 {
-    private List<TakeNutrientRequest> takeNutrientRequests = new List<TakeNutrientRequest>();
-    private List<GiveNutrientRequest> giveNutrientRequests = new List<GiveNutrientRequest>();
+    private List<(int, int)> uniqueNutrientTargets = [];
+    private Dictionary<(int, int), List<TakeNutrientRequest>> takeNutrientRequests = new Dictionary<(int, int), List<TakeNutrientRequest>>();
+    private Dictionary<(int, int), List<GiveNutrientRequest>> giveNutrientRequests = new Dictionary<(int, int), List<GiveNutrientRequest>>();
+
+    private static NutrientManager instance = null;
+
+    private NutrientManager()
+    {
+    }
+
+    public static NutrientManager Instance
+    {
+        get
+        {
+            if (instance == null)
+            {
+                instance = new NutrientManager();
+            }
+            return instance;
+        }
+    }
 
     public void AddTakeNutrientRequest(TakeNutrientRequest request, int maxX, int maxY)
     {
         if (request.IsValid(maxX, maxY))
         {
-            takeNutrientRequests.Add(request);
+            if (!takeNutrientRequests.ContainsKey((request.targetX, request.targetY)))
+            {
+                takeNutrientRequests.Add((request.targetX, request.targetY), new List<TakeNutrientRequest>());
+            }
+            takeNutrientRequests[(request.targetX, request.targetY)].Add(request);
         }
     }
 
@@ -68,7 +92,11 @@ public class NutrientManager
     {
         if (request.IsValid(maxX, maxY))
         {
-            giveNutrientRequests.Add(request);
+            if (!giveNutrientRequests.ContainsKey((request.targetX, request.targetY)))
+            {
+                giveNutrientRequests.Add((request.targetX, request.targetY), new List<GiveNutrientRequest>());
+            }
+            giveNutrientRequests[(request.targetX, request.targetY)].Add(request);
         }
     }
 
