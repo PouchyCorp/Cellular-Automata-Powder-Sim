@@ -54,8 +54,8 @@ public class Root : Seed
 					float availableWetness = Math.Min(soil.wetness, 1f - wetness - absorbedWetness); // max wetness is 1
 					availableWetness = Math.Max(availableWetness, 0);
 
-					soil.nutrient -= availableNutrients / 4;
-					soil.wetness -= availableWetness / 4;
+					soil.ChangeNutrient(-availableNutrients / 4, currentElementArray, newX, newY, maxX, maxY);
+					soil.ChangeWetness(-availableWetness / 4, currentElementArray, newX, newY, maxX, maxY);
 
 					absorbedNutrients += availableNutrients / 4;
 					absorbedWetness += availableWetness / 4;

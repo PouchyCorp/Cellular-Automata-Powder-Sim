@@ -117,10 +117,10 @@ public class Snail : Life
 		Element below = (y + 1 < maxY) ? currentElementArray[x, y + 1] : null;
 		if (below is Soil soil)
 		{
-			soil.nutrient += storedNutrient;
+			soil.ChangeNutrient(storedNutrient, currentElementArray, x, y + 1, maxX, maxY);
 			float transferableWetness = Math.Min(storedWetness, 1f - soil.wetness); // ensure soil wetness does not exceed 1
 																					// for now, allow snail to transfer more wetness than it has stored (to be balanced later if needed)
-			soil.wetness += transferableWetness;
+			soil.ChangeWetness(transferableWetness, currentElementArray, x, y + 1, maxX, maxY);
 			storedNutrient = 0;
 			storedWetness = -transferableWetness;
 			return;

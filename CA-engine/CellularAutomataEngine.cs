@@ -195,7 +195,7 @@ public partial class CellularAutomataEngine : Node2D
 						case "Nutrient":
 							if (elementArray[x, y] is Soil soil)
 							{
-								soil.nutrient += 1.0F;
+								soil.ChangeNutrient(1.0F, elementArray, x, y, gridWidth, gridHeight);
 							}
 							break;
 
