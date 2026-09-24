@@ -72,6 +72,7 @@ public partial class CellularAutomataEngine : Node2D
 				{
 					// If you want to override to have a draw method inside the Element Class, you can,
 					// But I am concerned with slight optimisation issues tho
+					// Making a shader could be a better solution
 					cellRect.Position = cellSize * new Vector2(x, y);
 					DrawRect(cellRect, elementArray[x, y].color);
 				}
