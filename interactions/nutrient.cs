@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using Godot;
 
 public class GiveNutrientRequest
@@ -54,11 +56,13 @@ public class TakeNutrientRequest
 // Not a thread safe implementation of the singleton
 public class NutrientManager
 {
-    private List<(int, int)> uniqueNutrientTargets = [];
     private Dictionary<(int, int), List<TakeNutrientRequest>> takeNutrientRequests = new Dictionary<(int, int), List<TakeNutrientRequest>>();
+    private HashSet<(int, int)> uniqueNutrientTargets = new HashSet<(int, int)>();
     private Dictionary<(int, int), List<GiveNutrientRequest>> giveNutrientRequests = new Dictionary<(int, int), List<GiveNutrientRequest>>();
 
     private static NutrientManager instance = null;
+
+
 
     private NutrientManager()
     {
@@ -83,6 +87,7 @@ public class NutrientManager
             if (!takeNutrientRequests.ContainsKey((request.targetX, request.targetY)))
             {
                 takeNutrientRequests.Add((request.targetX, request.targetY), new List<TakeNutrientRequest>());
+                uniqueNutrientTargets.Add((request.targetX, request.targetY));
             }
             takeNutrientRequests[(request.targetX, request.targetY)].Add(request);
         }
@@ -95,6 +100,7 @@ public class NutrientManager
             if (!giveNutrientRequests.ContainsKey((request.targetX, request.targetY)))
             {
                 giveNutrientRequests.Add((request.targetX, request.targetY), new List<GiveNutrientRequest>());
+                uniqueNutrientTargets.Add((request.targetX, request.targetY));
             }
             giveNutrientRequests[(request.targetX, request.targetY)].Add(request);
         }
@@ -104,21 +110,51 @@ public class NutrientManager
     {
 
         // give nutrient requests are puposely processed before take nutrient requests to save of conflicts
-        foreach (var request in giveNutrientRequests)
+        foreach (var position in uniqueNutrientTargets)
         {
-            if (request.x >= 0 && request.x < maxX && request.y >= 0 && request.y < maxY &&
-                request.targetX >= 0 && request.targetX < maxX && request.targetY >= 0 && request.targetY < maxY)
+            // sum all the in and out nutrient requests for this position
+            float totalNutrientToGive = 0;
+            float totalNutrientToTake = 0;
+
+            Element targetElement = currentElementArray[position.Item1, position.Item2];
+
+            totalNutrientToGive = giveNutrientRequests.ContainsKey(position) ? giveNutrientRequests[position].Sum(r => r.nutrientAmount) : 0;
+            totalNutrientToTake = takeNutrientRequests.ContainsKey(position) ? takeNutrientRequests[position].Sum(r => r.nutrientAmount) : 0;
+
+            var diff = targetElement.nutrient + totalNutrientToGive - totalNutrientToTake;
+
+            if (diff > 0)
             {
-                // TODO Implement nutrient addition/removal logic here, as well as request conflicts (resolve using 50/50 or a priority system)
+                // more nutrient is being given than taken, so we can give all the nutrient
+                foreach (var request in giveNutrientRequests[position])
+                {
+                    currentElementArray[request.x, request.y].nutrient -= request.nutrientAmount;
+                }
+
+                foreach (var request in takeNutrientRequests[position])
+                {
+                    currentElementArray[request.x, request.y].nutrient += request.nutrientAmount;
+                }
+            }
+            else if (diff < 0)
+            {
+                // more nutrient is being taken than given, so we can only take as much as is available
+                float totalNutrientAvailable = currentElementArray[position.Item1, position.Item2].nutrient;
+                float totalNutrientToTakeAdjusted = Mathf.Min(totalNutrientAvailable, totalNutrientToTake);
+
+                foreach (var request in takeNutrientRequests[position])
+                {
+                    float nutrientToTake = Mathf.Min(request.nutrientAmount, totalNutrientToTakeAdjusted);
+                    currentElementArray[request.x, request.y].nutrient -= nutrientToTake;
+                    totalNutrientToTakeAdjusted -= nutrientToTake;
+                    if (totalNutrientToTakeAdjusted <= 0)
+                    {
+                        break;
+                    }
+                }
             }
         }
-        foreach (var request in takeNutrientRequests)
-        {
-            if (request.x >= 0 && request.x < maxX && request.y >= 0 && request.y < maxY)
-            {
-                // TODO Implement nutrient addition/removal logic here, as well as request conflics (resolve using 50/50 or a priority system)
-            }
-        }
+        
         takeNutrientRequests.Clear();
         giveNutrientRequests.Clear();
     }
