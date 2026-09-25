@@ -1,10 +1,12 @@
 using Godot;
 using System;
-using System.Reflection.Metadata.Ecma335;
-using System.Runtime.InteropServices;
-public class Smoke : Gas
+
+public class Smoke : Element, IGas
 {
-	public Smoke() : base()
+	int IGas.cloudLineY { get; set; } = 10;
+	public bool sleeping = false;
+
+	public Smoke()
 	{
 		density = 0.1f;
 		color = Colors.DarkGray;
@@ -12,16 +14,32 @@ public class Smoke : Gas
 		wetness = 0.0f;
 	}
 
-	public override void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
-	{
+	// override public bool move(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int movementX, int movementY)
+	// {
+	// 	int newX = x + movementX, newY = y + movementY;
+	// 	if (newY < 0 || newY >= maxY || newX < 0 || newX >= maxX) return false;
 
-		if (rng.Randf() < 0.005f && currentElementArray[x, y] == this) // very small chance to dissipate
+	// 	if (currentElementArray[newX, newY] is Web)
+	// 	{
+	// 		currentElementArray[x, y] = null;
+	// 		currentElementArray[newX, newY] = this;
+	// 		return true;
+	// 	}
+	// 	return base.move(oldElementArray, currentElementArray, x, y, maxX, maxY, movementX, movementY);
+	// }
+
+	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	{
+		if (sleeping)
 		{
-			currentElementArray[x, y] = null; // dissipate
+			sleeping = false;
 			return;
 		}
+		sleeping = true;
 
-		base.update(oldElementArray, currentElementArray, x, y, maxX, maxY, T); // keep at the end because of returns contained in base method
-		
+		GasBehavior.update(this, oldElementArray, x, y, maxX, maxY, T);
+
+		burn(oldElementArray, x, y, maxX, maxY, T);
+		updateColor(T);
 	}
 }

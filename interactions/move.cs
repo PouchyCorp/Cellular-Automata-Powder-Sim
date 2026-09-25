@@ -23,7 +23,7 @@ public class MoveRequest
     {
         return (movementX != 0 || movementY != 0) && !(x+movementX < 0 || x+movementX >= maxX || y+movementY < 0 || y+movementY >= maxY);
     }
-    public bool CanMove(Element[,] oldElementArray)
+    public static bool CanMove(Element[,] oldElementArray, int x, int y, int movementX, int movementY)
     {
         int newX = x + movementX;
         int newY = y + movementY;
@@ -73,6 +73,16 @@ public sealed class MoveManager
     private Dictionary<(int, int), List<MoveRequest>> moveRequests = [];
     private List<(int, int)> uniqueMoveTargets = [];
 
+    public bool AttemptMove(Element[,] oldElementArray, int x, int y, int movementX, int movementY, int maxX, int maxY)
+    {
+        if (MoveRequest.CanMove(oldElementArray, x, y, movementX, movementY))
+        {
+            AddMoveRequest(new MoveRequest(x, y, movementX, movementY), maxX, maxY);
+            return true;
+        }
+        return false;
+    }
+
     public void AddMoveRequest(MoveRequest request, int maxX, int maxY)
     {
         if (request.IsValid(maxX, maxY))
@@ -97,7 +107,7 @@ public sealed class MoveManager
             // Sort out every cell that cannot make the move for whatever reason
             foreach (var request in requests)
             {
-                if (request.CanMove(oldElementArray))
+                if (MoveRequest.CanMove(oldElementArray, request.x, request.y, request.movementX, request.movementY))
                 {
                     validRequests.Add(request);
                 }

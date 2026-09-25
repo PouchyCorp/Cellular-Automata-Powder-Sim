@@ -1,6 +1,6 @@
 using Godot;
 using System.Collections.Generic;
-public class Fly : Life
+public class Fly : Element, ILife, ISolid
 {
 	int lastActivity = 0;
 
@@ -132,7 +132,7 @@ public class Fly : Life
 			return true; // can't move into web
 		}
 
-		if (currentElementArray[x + dirX, y + dirY] == null || currentElementArray[x + dirX, y + dirY] is Gas)
+		if (currentElementArray[x + dirX, y + dirY] == null || currentElementArray[x + dirX, y + dirY] is IGas)
 		{
 			currentElementArray[x, y] = currentElementArray[x + dirX, y + dirY];
 			currentElementArray[x + dirX, y + dirY] = this;

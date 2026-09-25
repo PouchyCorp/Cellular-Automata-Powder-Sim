@@ -3,7 +3,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 
-public class Spider : Life
+public class Spider : Element, ILife, ISolid
 {
 	public int sleepTime = 5; // ticks to sleep between actions, to slow down the spider
 	private (int, int) buildingDirection;
@@ -37,9 +37,7 @@ public class Spider : Life
 		if (x == 0 || x == maxX - 1 || y == 0 || y == maxY - 1) return true; // bounds are valid
 		if (oldElementArray[x, y] != null
 		&& (oldElementArray[x, y] is Web
-		|| oldElementArray[x, y] is Powder
-		|| oldElementArray[x, y] is Leaf
-		|| oldElementArray[x, y] is Fruit)) return true; // valid solid cell or web
+		|| oldElementArray[x, y] is ISolid)) return true; // valid solid cell or web
 		return false;
 	}
 	private (int, int) getBuildDirection(int x, int y, Element[,] oldElementArray, int maxX, int maxY)

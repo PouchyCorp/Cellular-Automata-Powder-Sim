@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-public class Snail : Life
+public class Snail : Element, ILife, ISolid
 {
 	private int moveInterval = 30; // ticks
 	private int lastMoveTick = 0;
@@ -130,7 +130,7 @@ public class Snail : Life
 	private void handleFallingState(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		// Check if we can continue falling down
-		bool canFall = y + 1 < maxY && (currentElementArray[x, y + 1] == null || currentElementArray[x, y + 1] is Water);
+		bool canFall = y + 1 < maxY && (currentElementArray[x, y + 1] == null || currentElementArray[x, y + 1] is ILiquid);
 
 		if (canFall)
 		{
@@ -156,7 +156,7 @@ public class Snail : Life
 						if (nx == x && ny == y) continue;
 
 						Element target = currentElementArray[nx, ny];
-						if ((target == null || target is Water) && hasAdjacentSolidSurface(nx, ny, oldElementArray, maxX, maxY))
+						if ((target == null || target is ILiquid) && hasAdjacentSolidSurface(nx, ny, oldElementArray, maxX, maxY))
 						{
 							// Found a valid position to move to
 							currentElementArray[nx, ny] = this;
@@ -219,7 +219,7 @@ public class Snail : Life
 				Element target = oldElementArray[nx, ny];
 
 				// Can only move to empty spaces or through webs
-				if (target == null || target is Web || target is Liquid)
+				if (target == null || target is Web || target is ILiquid)
 				{
 					// CRITICAL: Must have at least one solid neighbor to climb on
 					if (hasAdjacentSolidSurface(nx, ny, oldElementArray, maxX, maxY) && !lastPositions.Contains((nx, ny)))
@@ -281,7 +281,7 @@ public class Snail : Life
 			if (nx == x && ny == y) continue;
 
 			Element neighbor = elementArray[nx, ny];
-			if (neighbor != null && !(neighbor is Liquid) && !(neighbor is Web) && !(neighbor is Gas)
+			if (neighbor != null && !(neighbor is ILiquid) && !(neighbor is Web) && !(neighbor is IGas)
 				&& !(neighbor is Snail) && !(neighbor is Fly))
 			{
 				return true; // Found a solid surface that can support climbing

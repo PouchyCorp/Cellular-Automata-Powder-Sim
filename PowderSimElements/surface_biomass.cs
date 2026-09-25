@@ -1,8 +1,16 @@
 using Godot;
 
-public class SurfBiomass : Powder
+public class SurfBiomass : Element, IPowder, ISolid, INutrient
 {
-	public float nutrient { get; set; }
+	public override bool canMoveDownOnElement(Element elementWhereMovement)
+	{
+		return PowderBehavior.CanMoveDownOnElement(elementWhereMovement);
+	}
+
+	public override bool canMoveSideOnElement(Element elementWhereMovement)
+	{
+		return PowderBehavior.CanMoveSideOnElement(elementWhereMovement);
+	}
 
 	new public float wetness; // this is new to allow wetness > 1
 	public SurfBiomass(float wetness, float nutrient)
@@ -12,6 +20,11 @@ public class SurfBiomass : Powder
 		this.wetness = wetness;
 		this.nutrient = nutrient;
 		modulateColor();
+	}
+
+	public override void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	{
+		PowderBehavior.Update(this, oldElementArray, currentElementArray, x, y, maxX, maxY, T);
 	}
 
 	override public string getState()

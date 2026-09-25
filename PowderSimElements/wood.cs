@@ -1,5 +1,5 @@
 using Godot;
-public class Wood : Life
+public class Wood : Element, ILife, ISolid
 {
 	public Wood()
 	{

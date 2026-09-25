@@ -1,7 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using Godot;
-public class Worm : Life
+public class Worm : Element, ILife, ISolid
 {
 	int lastActivity = 0;
 	int activityInterval = 10;
@@ -49,7 +49,7 @@ public class Worm : Life
 		{
 			case WormState.Falling:
 				// check if can fall down
-				if (y + 1 < maxY && (currentElementArray[x, y + 1] == null || currentElementArray[x, y + 1] is Water || currentElementArray[x, y + 1] is Soil))
+				if (y + 1 < maxY && (currentElementArray[x, y + 1] == null || currentElementArray[x, y + 1] is ILiquid || currentElementArray[x, y + 1] is Soil))
 				{
 					// fall down
 					specialMove(currentElementArray, x, y, maxX, maxY, 0, 1);

@@ -1,7 +1,7 @@
 using System;
 using Godot;
 
-public class Seed : Life
+public class Seed : Element, ILife, ISolid
 {
 	public float lifetime = 600 * 60; // ticks
 	public float maxNutrient = 5f;

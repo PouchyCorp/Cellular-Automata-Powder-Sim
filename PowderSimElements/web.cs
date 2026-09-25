@@ -1,6 +1,6 @@
 using Godot;
 
-public class Web : Life
+public class Web : Element, ILife, ISolid
 {
 	private int lifetime = 100 * 60; // ticks
 	public Web()

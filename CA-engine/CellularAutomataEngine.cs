@@ -201,7 +201,7 @@ public partial class CellularAutomataEngine : Node2D
 							break;
 
 						case "Fire":
-							elementArray[x, y]?.ignite(elementArray, x, y);
+							elementArray[x, y]?.ignite(x, y);
 							break;
 
 						default:
@@ -279,7 +279,7 @@ public partial class CellularAutomataEngine : Node2D
 		{
 			if (oldElementArray[x, y] != null)
 			{
-				oldElementArray[x, y].update(oldElementArray, elementArray, x, y, gridWidth, gridHeight, tick);
+				oldElementArray[x, y].update(oldElementArray, x, y, gridWidth, gridHeight, tick);
 			}
 		}
 		
@@ -419,28 +419,9 @@ public partial class CellularAutomataEngine : Node2D
 		{
 			for (int y = 0; y < gridHeight; y++)
 			{
-				if (elementArray[x, y] != null)
+				if (elementArray[x, y] is INutrient nutrient)
 				{
-					if (elementArray[x, y] is Biomass biomass)
-					{
-						totalNutrient += biomass.nutrient;
-					}
-					else if (elementArray[x, y] is Soil soil)
-					{
-						totalNutrient += soil.nutrient;
-					}
-					else if (elementArray[x, y] is Leaf leaf)
-					{
-						totalNutrient += leaf.nutrient;
-					}
-					else if (elementArray[x, y] is Fruit fruit)
-					{
-						totalNutrient += fruit.nutrient;
-					}
-					else if (elementArray[x, y] is SurfBiomass surfBiomass)
-					{
-						totalNutrient += surfBiomass.nutrient;
-					}
+					totalNutrient += nutrient.nutrient;
 				}
 			}
 		}

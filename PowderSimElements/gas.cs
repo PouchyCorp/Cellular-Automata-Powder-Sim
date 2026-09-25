@@ -1,80 +1,45 @@
 using System;
-using System.ComponentModel;
-using Godot;
+using System.Collections.Generic;
 
-public class Gas : Element
+public interface IGas
 {
-	public int cloudLineY = 10;
+    public int cloudLineY { get; set; }
+}
 
-	public bool sleeping = false;
-
-	public override bool canMoveUpOnElement(Element elementWhereMovement)
+public static class GasBehavior
+{
+    public static bool canMoveUpOnElement(this Element self, Element elementWhereMovement)
 	{
-		return elementWhereMovement == null || elementWhereMovement.density < density || elementWhereMovement is Gas;
+		return elementWhereMovement == null || elementWhereMovement.density < self.density || elementWhereMovement is IGas;
 	}
+    public static void update(this IGas self, Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T){
+        float decision = Random.Shared.NextSingle();
+		int distFromCloudLine = Math.Abs(self.cloudLineY - y) + 1;
 
-	override public bool move(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int movementX, int movementY)
-	{
-		int newX = x + movementX, newY = y + movementY;
-		if (newY < 0 || newY >= maxY || newX < 0 || newX >= maxX) return false; // Prevent moving out of bounds
-
-		if (currentElementArray[newX, newY] is Web)
+		if (decision < 0.25f)
 		{
-			currentElementArray[x, y] = null;
-			currentElementArray[newX, newY] = this;
-			return true;
-		}  // Webs get destroyed by gases
-		return base.move(oldElementArray, currentElementArray, x, y, maxX, maxY, movementX, movementY);
-	}
-
-	override public void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
-	{
-		if (sleeping)
-		{
-			sleeping = false;
-			return;
+			MoveManager.Instance.AttemptMove(oldElementArray, x, y, -1, 0, maxX, maxY);
 		}
-		else
+		else if (decision < 0.5f)
 		{
-			sleeping = true;
+			MoveManager.Instance.AttemptMove(oldElementArray, x, y, 1, 0, maxX, maxY);
 		}
-
-		if (currentElementArray[x, y] != this) return; // Return if a movement has already been done
-
-		// Use a simple but perfectly balanced approach
-		float decision = rng.Randf(); // 0.0 to 1.0
-		int distFromCloudLine = Math.Abs(cloudLineY - y) + 1;
-
-		if (decision < 0.25f) // 25% chance - drift left (changed order to eliminate any potential bias)
+		else // if (decision >= 0.5f)
 		{
-			move(oldElementArray, currentElementArray, x, y, maxX, maxY, -1, 0);
-		}
-		else if (decision < 0.5f) // 25% chance - drift right
-		{
-			move(oldElementArray, currentElementArray, x, y, maxX, maxY, 1, 0);
-		}
-		else // 50% chance - vertical movement 
-		{
-			float distr = rng.Randf();
-
-			int dir = 1; // default move down
-			if (cloudLineY - y >= 0)
+			int dir = 1;
+			if (self.cloudLineY - y >= 0) // always move up if below cloud line, otherwise move down
 			{
-				dir = -1; // move up if below cloud line
+				dir = -1;
 			}
 
-			if (distr < (1f / distFromCloudLine)) // more likely to move towards cloud line when farther away
+			if (decision < (1f / distFromCloudLine))
 			{
-				move(oldElementArray, currentElementArray, x, y, maxX, maxY, 0, dir);
+				MoveManager.Instance.AttemptMove(oldElementArray, x, y, 0, dir, maxX, maxY);
 			}
-			else if (rng.Randf() > 0.7f) // 30% chance to move away from cloud line
+			else if (decision > 0.9f) // small chance to move in the opposite direction of the cloud line
 			{
-				move(oldElementArray, currentElementArray, x, y, maxX, maxY, 0, -dir);
+				MoveManager.Instance.AttemptMove(oldElementArray, x, y, 0, -dir, maxX, maxY);
 			}
-			// else: 70% chance to stay put for vertical movement
 		}
-
-		burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
-		updateColor(T);
-	}
+    }
 }

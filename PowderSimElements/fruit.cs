@@ -1,6 +1,6 @@
 using Godot;
 
-public class Fruit : Life
+public class Fruit : Element, ILife, ISolid
 {
 	public bool pollinated = false;
 	private int lifetimeOnSoil = 300 * 60; // ticks
@@ -37,7 +37,7 @@ public class Fruit : Life
 			return;
 		}
 
-		if (currentElementArray[x, y + 1] == null || currentElementArray[x, y + 1] is Gas || currentElementArray[x, y + 1] is Liquid)
+		if (currentElementArray[x, y + 1] == null || currentElementArray[x, y + 1] is IGas || currentElementArray[x, y + 1] is ILiquid)
 		{
 
 			// chance to strafe left or right while falling
@@ -45,13 +45,13 @@ public class Fruit : Life
 			{
 				if (rng.RandiRange(0, 1) == 0)
 				{
-					if (x - 1 >= 0 && (currentElementArray[x - 1, y + 1] == null || currentElementArray[x - 1, y + 1] is Gas || currentElementArray[x - 1, y + 1] is Liquid))
+					if (x - 1 >= 0 && (currentElementArray[x - 1, y + 1] == null || currentElementArray[x - 1, y + 1] is IGas || currentElementArray[x - 1, y + 1] is ILiquid))
 						move(oldElementArray, currentElementArray, x, y, maxX, maxY, -1, 0);
 					return;
 				}
 				else
 				{
-					if (x + 1 < maxX && (currentElementArray[x + 1, y + 1] == null || currentElementArray[x + 1, y + 1] is Gas || currentElementArray[x + 1, y + 1] is Liquid))
+					if (x + 1 < maxX && (currentElementArray[x + 1, y + 1] == null || currentElementArray[x + 1, y + 1] is IGas || currentElementArray[x + 1, y + 1] is ILiquid))
 						move(oldElementArray, currentElementArray, x, y, maxX, maxY, 1, 0);
 					return;
 				}

@@ -2,7 +2,7 @@ using Godot;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-public class Leaf : Seed
+public class Leaf : Element, ILife, ISolid
 {
 	private int lastGrowthTick = 0;
 	private int growthInterval = 3 * 60; // ticks
@@ -212,7 +212,7 @@ public class Leaf : Seed
 	override public void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		Seed seed = getParentSeed(currentElementArray);
-		if (seed == null || seed?.plantState == PlantState.Dying) // if parent seed is gone or dying, start dying
+		if (seed == null || seed?.plantState == Seed.PlantState.Dying) // if parent seed is gone or dying, start dying
 		{
 			leafState = LeafState.Dying;
 		}

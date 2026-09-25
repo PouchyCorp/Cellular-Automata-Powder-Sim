@@ -3,7 +3,7 @@ using System;
 using System.Data;
 
 
-public class Soil : Powder
+public class Soil : Element, IPowder, ISolid, INutrient
 {
 	int lastActivity = 0;
 	bool needsUpdate = true;
@@ -12,12 +12,6 @@ public class Soil : Powder
 	new private Color baseColor = Color.FromHtml("#8d7267ff");
 	private Color wetColor = Color.FromHtml("#3a1008ff");
 	private Color richColor = Color.FromHtml("#394e35ff");
-	private float __nutrient;
-	public float nutrient
-	{
-		get { return __nutrient; }   // get method
-		set { __nutrient = Math.Max(value, 0); }  // set method
-	}
 
 	public Soil()
 	{
@@ -29,12 +23,21 @@ public class Soil : Powder
 		modulateColor();
 	}
 
+	public override bool canMoveDownOnElement(Element elementWhereMovement)
+	{
+		return PowderBehavior.CanMoveDownOnElement(elementWhereMovement);
+	}
+
+	public override bool canMoveSideOnElement(Element elementWhereMovement)
+	{
+		return PowderBehavior.CanMoveSideOnElement(elementWhereMovement);
+	}
+
 	public override void modulateColor(float intensity = 0.05F)
 	{
 		float z = rng.RandfRange(0.0f, intensity);
 		baseColor = baseColor.Darkened(z);
 	}
-
 
 	override public void updateColor(int T)
 	{
@@ -56,7 +59,7 @@ public class Soil : Powder
 			int neighborY = y + ny;
 
 			if (neighborX >= 0 && neighborX < maxX && neighborY >= 0 && neighborY < maxY)
-			{	
+			{   
 				// using currentElementArray as read and write here is not a problem because needsUpdate is not a state that can have consequences to the simulation order.
 				if (currentElementArray[neighborX, neighborY] is Soil neighborSoil){
 					neighborSoil.needsUpdate = true; // Mark neighbor soil for update
@@ -75,7 +78,7 @@ public class Soil : Powder
 			int neighborY = y + ny;
 
 			if (neighborX >= 0 && neighborX < maxX && neighborY >= 0 && neighborY < maxY)
-			{	
+			{   
 				// using currentElementArray as read and write here is not a problem because needsUpdate is not a state that can have consequences to the simulation order.
 				if (currentElementArray[neighborX, neighborY] is Soil neighborSoil){
 					neighborSoil.needsUpdate = true; // Mark neighbor soil for update
@@ -105,7 +108,7 @@ public class Soil : Powder
 	{
 		if (T - lastActivity < activityInterval && !needsUpdate) // Skip update if not enough time has passed and no external change has occurred
 		{
-			base.update(oldElementArray, currentElementArray, x, y, maxX, maxY, T); // still needs to update for other base behaviors, but we skip the soil-specific updates
+			PowderBehavior.Update(this, oldElementArray, currentElementArray, x, y, maxX, maxY, T); // still needs to update for other base behaviors, but we skip the soil-specific updates
 			return;
 		}
 
@@ -163,7 +166,7 @@ public class Soil : Powder
 			int neighborY = y + ny;
 			if (neighborX >= 0 && neighborX < maxX && neighborY >= 0 && neighborY < maxY)
 			{
-				if (oldElementArray[neighborX, neighborY] is Water water)
+				if (oldElementArray[neighborX, neighborY] is Element water && water is ILiquid)
 				{
 					float wetnessCap = Math.Min(water.wetness, 1 - wetness); // only absorb what we can take
 					water.wetness -= wetnessCap;
@@ -173,7 +176,7 @@ public class Soil : Powder
 		}
 
 		updateColor(T);
-		base.update(oldElementArray, currentElementArray, x, y, maxX, maxY, T); // keep at the end because of returns contained in base method
+		PowderBehavior.Update(this, oldElementArray, currentElementArray, x, y, maxX, maxY, T); // keep at the end because of returns contained in base method
 	}
 
 	override public string getState()

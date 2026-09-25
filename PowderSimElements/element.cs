@@ -1,15 +1,13 @@
 using System;
 using Godot;
-
 public abstract class Element
 {
 	public Color color { get; set; }
-
 	public bool needUpdate { get; set; } = true;
 	public Color baseColor { get; protected set; }
 	public double density { get; protected set; }
 	public double flammability { get; protected set; }
-	public bool burning { get; protected set; } = false; // 0 = not burning, 1 = fully burning
+	public bool burning { get; protected set; } = false;
 	public int burningLifetime { get; protected set; } // how long the element has been burning, in ticks
 	private float _ashCreationPercentage = 0.5f;
 	public float ashCreationPercentage // The chance that it turns into ash after burning
@@ -17,7 +15,6 @@ public abstract class Element
 		get { return _ashCreationPercentage; }   // get method
 		protected set { _ashCreationPercentage = Math.Clamp(value, 0, 1); }  // set method
 	}
-	public RandomNumberGenerator rng = new RandomNumberGenerator();
 	private float _wetness;
 	public float wetness
 	{
@@ -68,7 +65,9 @@ public abstract class Element
 
 		return false;
 	}
-	abstract public void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T);
+	public virtual void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	{
+	}
 
 	/// <summary>
 	/// To call at the beginning of the possible override function
@@ -91,7 +90,7 @@ public abstract class Element
 		}
 	}
 
-	public virtual void burn(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	public virtual void burn(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		if (!burning) return;
 
@@ -109,31 +108,31 @@ public abstract class Element
 					if (neighbor.flammability > 0 && !neighbor.burning)
 					{
 						// Chance to ignite based on flammability
-						if (rng.Randf() < neighbor.flammability * 0.01f) // Adjust ignition chance factor as needed
+						if (Random.Shared.NextSingle() < neighbor.flammability * 0.01f) // Adjust ignition chance factor as needed
 						{
-							neighbor.ignite(currentElementArray, nx, ny);
+							neighbor.ignite(nx, ny);
 						}
 					}
 				}
 				else
 				{
-					if (rng.Randf() < 0.01f) // small chance to spread fire to empty space
+					if (Random.Shared.NextSingle() < 0.01f) // small chance to spread fire to empty space
 					{
-						currentElementArray[nx, ny] = new Smoke();
+						SpawnManager.Instance.SpawnElement(new Smoke(), nx, ny);
 					}
 				}
 			}
 		}
 
 		burningLifetime--;
-		if (burningLifetime <= 0 && currentElementArray[x, y] == this)
+		if (burningLifetime <= 0)
 		{
-			if (rng.Randf() < ashCreationPercentage) currentElementArray[x, y] = new Ash(); // element is consumed by fire and turned to ash
-			else currentElementArray[x, y] = null; // element is fully destroyed
+			if (Random.Shared.NextSingle() < ashCreationPercentage) SpawnManager.Instance.SpawnElement(new Ash(), x, y); // element is consumed by fire and turned to ash
+			else DeleteManager.Instance.AttemptDelete(oldElementArray, x, y); // element is fully destroyed
 		}
 	}
 
-	public virtual void ignite(Element[,] currentElementArray, int x, int y)
+	public virtual void ignite(int x, int y)
 	{
 		if (burning) return;
 
@@ -157,7 +156,7 @@ public abstract class Element
 	}
 
 	virtual public void modulateColor(float intensity = 0.05f){
-		float z = rng.RandfRange(0.0f, intensity);
+		float z = Random.Shared.NextSingle() * intensity;
 		color = color.Darkened(z);
 	}
 

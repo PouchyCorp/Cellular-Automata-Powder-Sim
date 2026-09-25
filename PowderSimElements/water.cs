@@ -1,48 +1,76 @@
 using Godot;
+using System;
 
-public class Water : Liquid
+public class Water : Element, ILiquid
 {
-    private float evaporationChance = 0.0004f; // chance of evaporating each tick if the conditions are right
+    int ILiquid.directionX { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }  = 2 * 0 1 - 1;
+	private int maxLifetime = 60 * 3;
+	private int lifetime;
+	public float modulationIntensity = 0.075f;
+	private float random_offset;
+	private float evaporationChance = 0.0004f;
 
-    public Water() : base()
-    {
-        density = 5;
-        color = Colors.Blue;
-        flammability = 0;
-        wetness = 1.0f;
-        modulateColor(0.05f);
-    }
+	public Water()
+	{
+		lifetime = maxLifetime;
+		directionX = 
+		random_offset = Random.Shared.Next(0.0f, 3.0f);
+		density = 5;
+		color = Colors.Blue;
+		flammability = 0;
+		wetness = 1.0f;
+		modulateColor(0.05f);
+	}
 
-    public override void onEvaporate(Element[,] currentElementArray, int x, int y)
-    {
-        currentElementArray[x, y] = new Steam(); // evaporate into steam
-    }
+	public override void updateColor(int T)
+	{
+		base.updateColor(T);
+		float modulationSpeed = random_offset * 0.005f;
+		float modulation = (Mathf.Sin(T * modulationSpeed + random_offset) + 1) / 2;
+		float w = modulation * modulationIntensity;
+		float z = (1 - modulation) * modulationIntensity;
+		color = color.Lightened(w);
+		color = color.Darkened(z);
+	}
 
-    public override void ignite(Element[,] currentElementArray, int x, int y)
-    {
-        if (currentElementArray[x, y] == this)
-        {
-            currentElementArray[x, y] = new Steam(); // water turns to steam when ignited
-        }
-        base.ignite(currentElementArray, x, y);
-    }
+	public virtual void onEvaporate(Element[,] currentElementArray, int x, int y)
+	{
+		if (currentElementArray[x, y] != this) return;
+		currentElementArray[x, y] = null;
+	}
 
 
-    public override void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
-    {
-        if (wetness <= 0 && currentElementArray[x, y] == this) // disappear if completely dry (dry water is not water) 
-        {
-            currentElementArray[x, y] = null;
-            return;
-        }
+    // This definitely needs to be refactored, but for now it works
+	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	{
+		if (wetness <= 0)
+		{
+			DeleteManager.Instance.AttemptDelete(oldElementArray, x, y);
+			return;
+		}
 
-        if (rng.Randf() < evaporationChance && y - 1 > 0 && oldElementArray[x, y - 1] == null) // can add water to the system if wetness < 1
-        {
-            onEvaporate(currentElementArray, x, y);
-            return;
-        }
+		if (rng.Randf() < evaporationChance && y - 1 > 0 && oldElementArray[x, y - 1] == null)
+		{
+			onEvaporate(currentElementArray, x, y);
+			return;
+		}
 
-        base.update(oldElementArray, currentElementArray, x, y, maxX, maxY, T); // keep at the end because of returns contained in base method
-    }
+		if (currentElementArray[x, y] != this) return;
 
+		if (lifetime <= 0
+		&& !burning
+		&& (y - 1 == maxY
+		|| (y + 2 < maxY
+		&& currentElementArray[x, y + 1] is not ILiquid
+		&& currentElementArray[x, y + 2] is not ILiquid)))
+		{
+			onEvaporate(currentElementArray, x, y);
+			return;
+		}
+
+		LiquidBehavior.update(this, oldElementArray, x, y, maxX, maxY, T);
+
+		burn(oldElementArray, x, y, maxX, maxY, T);
+		updateColor(T);
+	}
 }

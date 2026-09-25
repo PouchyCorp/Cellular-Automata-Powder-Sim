@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-public class Root : Seed
+public class Root : Element, ILife, ISolid
 {
 	private (int, int) parentSeed;
 	private int lastActivity = 0;
@@ -154,7 +154,7 @@ public class Root : Seed
 	{
 		// if parent seed no longer exists, turn into soil with same nutrient and wetness to not lose resources
 		Seed parent = getParentSeed(currentElementArray, maxX, maxY);
-		if (parent == null || parent.plantState == PlantState.Dying)
+		if (parent == null || parent.plantState == Seed.PlantState.Dying)
 		{
 			if (rng.Randf() > 0.01f) return; // 99% chance to delay transformation to biomass
 			Biomass biomass = new Biomass(wetness + 0.4f, nutrient + 1f);
