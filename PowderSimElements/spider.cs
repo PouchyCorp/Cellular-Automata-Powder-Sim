@@ -184,7 +184,7 @@ public class Spider : Element, ILife, ISolid
 
 	private void handleWanderingOnWebState(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
 	{
-		if (T - lastMeaningfulStateChangeTick > 10 * 60 && rng.Randf() < 0.01f) // After 10 seconds, small chance to start wandering to build site
+		if (T - lastMeaningfulStateChangeTick > 10 * 60 && Random.Shared.NextSingle() < 0.01f) // After 10 seconds, small chance to start wandering to build site
 		{
 			transitionToWanderingToBuildSite(T);
 			return;
@@ -226,7 +226,7 @@ public class Spider : Element, ILife, ISolid
 			return;
 		}
 
-		if (rng.Randf() < 0.4f) // 40% chance to move each tick
+		if (Random.Shared.NextSingle() < 0.4f) // 40% chance to move each tick
 		{
 			// Avoid recent positions if we have other options
 			var validCells = filterRecentPositions(availableWebCells, cell => cell);

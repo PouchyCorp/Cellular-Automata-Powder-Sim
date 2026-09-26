@@ -98,7 +98,7 @@ public class Fly : Element, ILife, ISolid
 	private void changeDirection()
 	{
 		// Simple direction change with downwards bias
-		float rand = rng.Randf();
+		float rand = Random.Shared.NextSingle();
 
 		// 16% chance to go down, 12% each for other directions (ugly but works)
 		if (rand < 0.16f)

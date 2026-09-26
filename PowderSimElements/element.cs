@@ -6,20 +6,6 @@ public abstract class Element
 	public bool needUpdate { get; set; } = true;
 	public Color baseColor { get; protected set; }
 	public double density { get; protected set; }
-	private float _ashCreationPercentage = 0.5f;
-	public float ashCreationPercentage // The chance that it turns into ash after burning
-	{
-		get { return _ashCreationPercentage; }   // get method
-		protected set { _ashCreationPercentage = Math.Clamp(value, 0, 1); }  // set method
-	}
-	private float _wetness;
-	public float wetness
-	{
-		get { return _wetness; }   // get method
-		set {
-			ArgumentOutOfRangeException.ThrowIfGreaterThan(value, 1);
-			_wetness = Math.Clamp(value, 0, 1); }  // set method
-	}
 
 	public virtual bool canMoveDownOnElement(Element elementWhereMovement)
 	{

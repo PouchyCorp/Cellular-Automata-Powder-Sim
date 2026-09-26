@@ -35,7 +35,7 @@ public class Steam : Element, IGas
 
 	public override void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
 	{
-		if (rng.Randf() < 0.01f)
+		if (Random.Shared.NextSingle() < 0.01f)
 		{
 			int neighbourCount = 0;
 			for (int nx = Math.Max(0, x - 1); nx < Math.Min(x + 1, maxX); nx++)
@@ -52,7 +52,7 @@ public class Steam : Element, IGas
 			if (neighbourCount >= 3)
 			{
 				currentElementArray[x, y] = new Water();
-				if (y - 1 >= 0 && currentElementArray[x, y - 1] == null && rng.Randf() < 0.1f)
+				if (y - 1 >= 0 && currentElementArray[x, y - 1] == null && Random.Shared.NextSingle() < 0.1f)
 				{
 					currentElementArray[x, y - 1] = new Water();
 				}
@@ -69,7 +69,7 @@ public class Steam : Element, IGas
 
 		if (currentElementArray[x, y] != this) return;
 
-		float decision = rng.Randf();
+		float decision = Random.Shared.NextSingle();
 		int distFromCloudLine = Math.Abs(cloudLineY - y) + 1;
 
 		if (decision < 0.25f)
@@ -82,7 +82,7 @@ public class Steam : Element, IGas
 		}
 		else
 		{
-			float distr = rng.Randf();
+			float distr = Random.Shared.NextSingle();
 			int dir = 1;
 			if (cloudLineY - y >= 0)
 			{
@@ -93,7 +93,7 @@ public class Steam : Element, IGas
 			{
 				move(oldElementArray, currentElementArray, x, y, maxX, maxY, 0, dir);
 			}
-			else if (rng.Randf() > 0.7f)
+			else if (Random.Shared.NextSingle() > 0.7f)
 			{
 				move(oldElementArray, currentElementArray, x, y, maxX, maxY, 0, -dir);
 			}

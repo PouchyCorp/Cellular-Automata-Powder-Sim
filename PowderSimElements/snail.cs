@@ -198,7 +198,7 @@ public class Snail : Element, ILife, ISolid
 	{
 
 		// small chance to stay idle instead of moving
-		if (rng.Randf() < 0.02f)
+		if (Random.Shared.NextSingle() < 0.02f)
 		{
 			snailState = SnailState.Idle;
 			lastPositions.Clear(); // reset history when choosing to stay

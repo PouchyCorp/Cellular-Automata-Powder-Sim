@@ -2,7 +2,7 @@ using Godot;
 
 using System;
 
-public class Biomass : Element, IPowder, ISolid, INutrient
+public class Biomass : Element, IPowder, ISolid, ILife
 {
 	new public float wetness; // this is new to allow wetness > 1
 	public Biomass(float wetness, float nutrient)

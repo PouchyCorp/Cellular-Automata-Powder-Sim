@@ -129,7 +129,7 @@ public class Worm : Element, ILife, ISolid
 	private void changeDirection()
 	{
 		// Simple direction change with upward bias
-		float rand = rng.Randf();
+		float rand = Random.Shared.NextSingle();
 
 		// 40% chance to go up, 20% each for other directions
 		if (rand < 0.4f)

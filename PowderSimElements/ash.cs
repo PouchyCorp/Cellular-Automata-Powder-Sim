@@ -1,6 +1,6 @@
 using Godot;
 
-public class Ash : Element, IPowder, INutrient
+public class Ash : Element, IPowder, ILife
 {
 	public float nutrient { get; set; }
 	public float maxNutrient { get; set; } = 100.0f;

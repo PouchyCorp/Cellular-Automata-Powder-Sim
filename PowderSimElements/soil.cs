@@ -3,7 +3,7 @@ using System;
 using System.Data;
 
 
-public class Soil : Element, IPowder, ISolid, INutrient
+public class Soil : Element, IPowder, ISolid, ILife
 {
 	int lastActivity = 0;
 	bool needsUpdate = true;

@@ -41,7 +41,7 @@ public class Fruit : Element, ILife, ISolid
 		{
 
 			// chance to strafe left or right while falling
-			if (rng.Randf() < 0.4f)
+			if (Random.Shared.NextSingle() < 0.4f)
 			{
 				if (rng.RandiRange(0, 1) == 0)
 				{

@@ -47,7 +47,7 @@ public class Water : Element, ILiquid
 			return;
 		}
 
-		if (rng.Randf() < evaporationChance && y - 1 > 0 && oldElementArray[x, y - 1] == null)
+		if (Random.Shared.NextSingle() < evaporationChance && y - 1 > 0 && oldElementArray[x, y - 1] == null)
 		{
 			onEvaporate(currentElementArray, x, y);
 			return;

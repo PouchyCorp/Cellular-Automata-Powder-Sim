@@ -201,7 +201,7 @@ public class Seed : Element, ILife, ISolid
 		}
 
 		// -- Dying state --
-		if (plantState == PlantState.Dying && rng.Randf() < 0.01f) // 1% chance to die definitively each tick
+		if (plantState == PlantState.Dying && Random.Shared.NextSingle() < 0.01f) // 1% chance to die definitively each tick
 		{
 			SurfBiomass biomass = new SurfBiomass(wetness + 1f, nutrient + 2f); // add the creation nutrient and wetness
 			currentElementArray[x, y] = biomass;

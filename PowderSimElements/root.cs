@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-public class Root : Element, ILife, ISolid, IFlammable, INutrient, IWetness
+public class Root : Element, ILife, ISolid, IFlammable
 {
 	public float nutrient { get; set; } = 0f;
 	public float maxNutrient { get; set; } = 10f;
 	public float maxWetness { get; set; } = 1f;
+
+	public float wetness { get; set; } = 0f;
 
 	private (int, int) parentSeed;
 	private int lastActivity = 0;
@@ -153,15 +155,15 @@ public class Root : Element, ILife, ISolid, IFlammable, INutrient, IWetness
 		}
 	}
 
-	override public void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	override public void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		// if parent seed no longer exists, turn into soil with same nutrient and wetness to not lose resources
-		Seed parent = getParentSeed(currentElementArray, maxX, maxY);
+		Seed parent = getParentSeed(oldElementArray, maxX, maxY);
 		if (parent == null || parent.plantState == Seed.PlantState.Dying)
 		{
-			if (rng.Randf() > 0.01f) return; // 99% chance to delay transformation to biomass
-			Biomass biomass = new Biomass(wetness + 0.4f, nutrient + 1f);
-			currentElementArray[x, y] = biomass;
+			if (Random.Shared.NextSingle() > 0.01f) return; // 99% chance to delay transformation to biomass
+			Biomass biomass = new Biomass(wetness, nutrient);
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, biomass);
 			return;
 		}
 
@@ -169,9 +171,9 @@ public class Root : Element, ILife, ISolid, IFlammable, INutrient, IWetness
 		if (T - lastActivity >= activityInterval)
 		{
 			lastActivity = T;
-			absorbNutrientsAndWetness(currentElementArray, x, y, maxX, maxY);
-			transferNutrientsUpwards(currentElementArray, x, y, maxX, maxY);
-			growRoot(oldElementArray, currentElementArray, x, y, maxX, maxY);
+			absorbNutrientsAndWetness(oldElementArray, x, y, maxX, maxY);
+			transferNutrientsUpwards(oldElementArray, x, y, maxX, maxY);
+			growRoot(oldElementArray, oldElementArray, x, y, maxX, maxY);
 		}
 
 		burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);

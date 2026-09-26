@@ -419,7 +419,7 @@ public partial class CellularAutomataEngine : Node2D
 		{
 			for (int y = 0; y < gridHeight; y++)
 			{
-				if (elementArray[x, y] is INutrient nutrient)
+				if (elementArray[x, y] is ILife nutrient)
 				{
 					totalNutrient += nutrient.nutrient;
 				}

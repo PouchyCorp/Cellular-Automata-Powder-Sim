@@ -45,7 +45,7 @@ public static class FlammableBehavior
 		self.burningLifetime--;
 		if (self.burningLifetime <= 0)
 		{
-            if (self is INutrient nutrientElement)
+            if (self is ILife nutrientElement)
             {
                 GridManager.Instance.RequestDeletion(x, y, maxX, maxY ,new Ash(nutrientElement.nutrient)); // element is consumed by fire and turned to ash
             }

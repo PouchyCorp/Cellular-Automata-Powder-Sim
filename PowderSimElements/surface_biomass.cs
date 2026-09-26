@@ -1,6 +1,6 @@
 using Godot;
 
-public class SurfBiomass : Element, IPowder, ISolid, INutrient
+public class SurfBiomass : Element, IPowder, ISolid, ILife
 {
 	public override bool canMoveDownOnElement(Element elementWhereMovement)
 	{

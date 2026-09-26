@@ -102,7 +102,7 @@ public class Leaf : Element, ILife, ISolid
 		score += Math.Abs(pos.Item2 - seedY) * 5;
 
 		// add or subtract 30% of the score randomly, but that variation can not dip a passing score below the badScore (to prevent softlock)
-		int variation = (int)(score * (rng.Randf() * 0.6f - 0.3f));
+		int variation = (int)(score * (Random.Shared.NextSingle() * 0.6f - 0.3f));
 		if (score > badScore)
 		{
 			score = Math.Max(score + variation, badScore);
@@ -224,7 +224,7 @@ public class Leaf : Element, ILife, ISolid
 		&& seed.fruitCount < seed.maxFruitCount
 		)
 		{
-			if (rng.Randf() < 0.01f && y - 1 >= 0 && currentElementArray[x, y - 1] == null && y + 1 < maxY && currentElementArray[x, y + 1] is Leaf) // 1% chance each tick to grow fruit
+			if (Random.Shared.NextSingle() < 0.01f && y - 1 >= 0 && currentElementArray[x, y - 1] == null && y + 1 < maxY && currentElementArray[x, y + 1] is Leaf) // 1% chance each tick to grow fruit
 			{
 				// grow fruit
 				currentElementArray[x, y - 1] = new Fruit();
@@ -234,7 +234,7 @@ public class Leaf : Element, ILife, ISolid
 			}
 		}
 
-		if (leafState == LeafState.Dying && rng.Randf() < 0.01f) // 1% chance to die definitively each tick
+		if (leafState == LeafState.Dying && Random.Shared.NextSingle() < 0.01f) // 1% chance to die definitively each tick
 		{
 			SurfBiomass biomass = new SurfBiomass(wetness + 0.6f, nutrient + 1.2f); // add the creation nutrient and wetness
 			currentElementArray[x, y] = biomass;
@@ -248,7 +248,7 @@ public class Leaf : Element, ILife, ISolid
 
 		}
 
-		if (leafState == LeafState.Sleeping && rng.Randf() < 0.001f) // 0.1% chance to wake up each tick
+		if (leafState == LeafState.Sleeping && Random.Shared.NextSingle() < 0.001f) // 0.1% chance to wake up each tick
 		{
 			leafState = LeafState.Growing;
 		}
