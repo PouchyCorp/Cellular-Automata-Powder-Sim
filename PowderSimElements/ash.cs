@@ -1,12 +1,14 @@
 using Godot;
 
-public class Ash : Element, IPowder, ISolid, INutrient
+public class Ash : Element, IPowder, INutrient
 {
-	public Ash()
+	public float nutrient { get; set; }
+	public float maxNutrient { get; set; } = 100.0f;
+	public Ash(float nutrientAmount = 0.0f)
 	{
 		density = 19;
 		color = Colors.Gray;
-		nutrient = 5.0f; // ash is very nutritious (yum :3)
+		nutrient = nutrientAmount; // ash is very nutritious (yum :3)
 	}
 
 	public override bool canMoveDownOnElement(Element elementWhereMovement)
@@ -19,8 +21,8 @@ public class Ash : Element, IPowder, ISolid, INutrient
 		return PowderBehavior.CanMoveSideOnElement(elementWhereMovement);
 	}
 
-	public override void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
-		PowderBehavior.Update(this, oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+		PowderBehavior.Update(this, oldElementArray, x, y, maxX, maxY, T);
 	}
 }

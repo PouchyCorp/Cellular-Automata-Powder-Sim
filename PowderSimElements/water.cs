@@ -3,9 +3,9 @@ using System;
 
 public class Water : Element, ILiquid
 {
-    int ILiquid.directionX { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }  = 2 * 0 1 - 1;
-	private int maxLifetime = 60 * 3;
-	private int lifetime;
+    public int directionX { get; set; } = 1;
+	public int maxLifetime { get; set; } = 60 * 3;
+	public int lifetime { get; set; }
 	public float modulationIntensity = 0.075f;
 	private float random_offset;
 	private float evaporationChance = 0.0004f;
@@ -13,11 +13,9 @@ public class Water : Element, ILiquid
 	public Water()
 	{
 		lifetime = maxLifetime;
-		directionX = 
-		random_offset = Random.Shared.Next(0.0f, 3.0f);
+		random_offset = Random.Shared.NextSingle() * 3.0f;
 		density = 5;
 		color = Colors.Blue;
-		flammability = 0;
 		wetness = 1.0f;
 		modulateColor(0.05f);
 	}

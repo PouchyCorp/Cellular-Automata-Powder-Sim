@@ -1,22 +1,25 @@
 using Godot;
 using System;
 
-public class Oil : Element, ILiquid
+public class Oil : Element, ILiquid, IFlammable
 {
-	private int directionX = 1;
-	private int maxLifetime = 60 * 3;
-	private int lifetime;
+	public int directionX { get; set; } = 1;
+	public int maxLifetime { get; set; } = 60 * 3;
+	public int lifetime { get; set; }
+
+	public bool burning { get; set; } = false;
+	public double flammability { get; set; } = 0.2; // the chance that the element will catch fire when in contact with fire
+	public int burningLifetime { get; set; } // how long the element has been burning, in ticks
 	public float modulationIntensity = 0.02f;
 	private float random_offset;
 
 	public Oil()
 	{
 		lifetime = maxLifetime;
-		directionX = 2 * rng.RandiRange(0, 1) - 1;
-		random_offset = rng.RandfRange(0.0f, 3.0f);
+		directionX = 2 * Random.Shared.Next(0, 1) - 1;
+		random_offset = Random.Shared.NextSingle() * 3.0f;
 		density = 4;
 		color = Colors.LightYellow;
-		flammability = 5;
 		ashCreationPercentage = 0;
 		wetness = 0.0f;
 		modulateColor(0.001f);
@@ -54,16 +57,16 @@ public class Oil : Element, ILiquid
 		&& !burning
 		&& (y - 1 == maxY
 		|| (y + 2 < maxY
-		&& currentElementArray[x, y + 1] is not ILiquid
-		&& currentElementArray[x, y + 2] is not ILiquid)))
+		&& oldElementArray[x, y + 1] is not ILiquid
+		&& oldElementArray[x, y + 2] is not ILiquid))) // I don't remember the reason for the last condition
 		{
-			DeletionManager.Instance.AttemptDelete(oldElementArray, x, y);
+			GridManager.Instance.RequestDeletion(x, y);
 			return;
 		}
 
 		LiquidBehavior.update(this, oldElementArray, x, y, maxX, maxY, T);
 
-		burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+		burn(oldElementArray, x, y, maxX, maxY, T);
 		updateColor(T);
 	}
 }

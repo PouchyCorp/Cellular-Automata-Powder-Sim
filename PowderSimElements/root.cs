@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-public class Root : Element, ILife, ISolid
+public class Root : Element, ILife, ISolid, IFlammable, INutrient, IWetness
 {
+	public float nutrient { get; set; } = 0f;
+	public float maxNutrient { get; set; } = 10f;
+	public float maxWetness { get; set; } = 1f;
+
 	private (int, int) parentSeed;
 	private int lastActivity = 0;
 	private int activityInterval = 30;
@@ -13,12 +17,11 @@ public class Root : Element, ILife, ISolid
 	public Root((int, int) parentSeed)
 	{
 		this.parentSeed = parentSeed;
-		maxNutrient = 10f;
+		
 		density = 21;
 		color = Colors.SandyBrown;
 		flammability = 10;
 		ashCreationPercentage = 0.8f;
-		nutrient = 0f;
 		wetness = 0f;
 		modulateColor();
 	}
@@ -49,7 +52,7 @@ public class Root : Element, ILife, ISolid
 			{
 				if (currentElementArray[newX, newY] is Soil soil)
 				{
-					float availableNutrients = Math.Min(soil.nutrient, maxNutrient - nutrient - absorbedNutrients);
+					float availableNutrients = Math.Min(this.nutrient, maxNutrient - nutrient - absorbedNutrients);
 					availableNutrients = Math.Max(availableNutrients, 0);
 					float availableWetness = Math.Min(soil.wetness, 1f - wetness - absorbedWetness); // max wetness is 1
 					availableWetness = Math.Max(availableWetness, 0);

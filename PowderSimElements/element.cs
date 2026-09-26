@@ -6,9 +6,6 @@ public abstract class Element
 	public bool needUpdate { get; set; } = true;
 	public Color baseColor { get; protected set; }
 	public double density { get; protected set; }
-	public double flammability { get; protected set; }
-	public bool burning { get; protected set; } = false;
-	public int burningLifetime { get; protected set; } // how long the element has been burning, in ticks
 	private float _ashCreationPercentage = 0.5f;
 	public float ashCreationPercentage // The chance that it turns into ash after burning
 	{
@@ -89,60 +86,6 @@ public abstract class Element
 			color = baseColor.Lerp(fireHue, 0.4f); // blend both effects
 		}
 	}
-
-	public virtual void burn(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
-	{
-		if (!burning) return;
-
-		// Ignite neighbors in cardinal directions or emit smoke
-		foreach ((int dx, int dy) in new (int, int)[] { (0, 1), (1, 0), (0, -1), (-1, 0) }) // big ugly loop but I don't care
-		{
-			int nx = x + dx;
-			int ny = y + dy;
-
-			if (nx >= 0 && nx < maxX && ny >= 0 && ny < maxY)
-			{
-				if (oldElementArray[nx, ny] != null)
-				{
-					Element neighbor = oldElementArray[nx, ny];
-					if (neighbor.flammability > 0 && !neighbor.burning)
-					{
-						// Chance to ignite based on flammability
-						if (Random.Shared.NextSingle() < neighbor.flammability * 0.01f) // Adjust ignition chance factor as needed
-						{
-							neighbor.ignite(nx, ny);
-						}
-					}
-				}
-				else
-				{
-					if (Random.Shared.NextSingle() < 0.01f) // small chance to spread fire to empty space
-					{
-						SpawnManager.Instance.SpawnElement(new Smoke(), nx, ny);
-					}
-				}
-			}
-		}
-
-		burningLifetime--;
-		if (burningLifetime <= 0)
-		{
-			if (Random.Shared.NextSingle() < ashCreationPercentage) SpawnManager.Instance.SpawnElement(new Ash(), x, y); // element is consumed by fire and turned to ash
-			else DeleteManager.Instance.AttemptDelete(oldElementArray, x, y); // element is fully destroyed
-		}
-	}
-
-	public virtual void ignite(int x, int y)
-	{
-		if (burning) return;
-
-		if (flammability > 0)
-		{
-			burning = true;
-			burningLifetime = (int)(5000 / flammability); // start counting burning lifetime
-		}
-	}
-
 
 	virtual public string getState()
 	{

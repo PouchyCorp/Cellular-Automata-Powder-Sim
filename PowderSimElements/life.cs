@@ -1,5 +1,5 @@
 using System;
 
-public interface ILife : INutrient
+public interface ILife
 {
 }

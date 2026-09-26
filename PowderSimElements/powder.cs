@@ -25,9 +25,8 @@ public static class PowderBehavior
 		return elementWhereMovement == null || elementWhereMovement is IGas || elementWhereMovement is ILiquid;
 	}
 
-	public static void Update(Element self, Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	public static void Update(IPowder self, Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
-		if (currentElementArray[x, y] != self) return; // Return if a movement has already been done
 
 		if (MoveRequest.CanMove(oldElementArray, x, y, 0, 1))
 		{
@@ -61,8 +60,5 @@ public static class PowderBehavior
 				return;
 			}
 		}
-
-		self.burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
-		self.updateColor(T);
 	}
 }

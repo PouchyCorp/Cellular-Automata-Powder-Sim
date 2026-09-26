@@ -3,6 +3,12 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using Godot;
 
+public interface INutrient
+{
+	public float nutrient { get; set; }
+	public float maxNutrient { get; set; }
+}
+
 public class GiveNutrientRequest
 {
     public int x { get; set; }
@@ -39,7 +45,6 @@ public class TakeNutrientRequest
     public TakeNutrientRequest(int x, int y, int targetX, int targetY, float nutrientAmount)
    
     {
-
         this.x = x;
         this.y = y;
         this.targetX = targetX;
@@ -61,13 +66,9 @@ public class NutrientManager
     private Dictionary<(int, int), List<GiveNutrientRequest>> giveNutrientRequests = new Dictionary<(int, int), List<GiveNutrientRequest>>();
 
     private static NutrientManager instance = null;
-
-
-
     private NutrientManager()
     {
     }
-
     public static NutrientManager Instance
     {
         get
