@@ -8,7 +8,7 @@ public class Oil : Element, ILiquid, IFlammable
 	public int lifetime { get; set; }
 
 	public bool burning { get; set; } = false;
-	public double flammability { get; set; } = 0.2; // the chance that the element will catch fire when in contact with fire
+	public int flammability { get; set; } = 20; // the chance that the element will catch fire when in contact with fire
 	public int burningLifetime { get; set; } // how long the element has been burning, in ticks
 	public float modulationIntensity = 0.02f;
 	private float random_offset;
@@ -20,14 +20,12 @@ public class Oil : Element, ILiquid, IFlammable
 		random_offset = Random.Shared.NextSingle() * 3.0f;
 		density = 4;
 		color = Colors.LightYellow;
-		ashCreationPercentage = 0;
-		wetness = 0.0f;
 		modulateColor(0.001f);
 	}
 
-	public override void updateColor(int T)
+	public override void updateColor(int T, int x, int y)
 	{
-		base.updateColor(T);
+		base.updateColor(T, x, y);
 		float modulationSpeed = random_offset * 0.005f;
 		float modulation = (Mathf.Sin(T * modulationSpeed + random_offset) + 1) / 2;
 		float w = modulation * modulationIntensity;
@@ -60,13 +58,13 @@ public class Oil : Element, ILiquid, IFlammable
 		&& oldElementArray[x, y + 1] is not ILiquid
 		&& oldElementArray[x, y + 2] is not ILiquid))) // I don't remember the reason for the last condition
 		{
-			GridManager.Instance.RequestDeletion(x, y);
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, null);
 			return;
 		}
 
 		LiquidBehavior.update(this, oldElementArray, x, y, maxX, maxY, T);
 
-		burn(oldElementArray, x, y, maxX, maxY, T);
-		updateColor(T);
+		FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
+		updateColor(T, x, y);
 	}
 }

@@ -4,13 +4,17 @@ using System;
 
 public class Biomass : Element, IPowder, ISolid, ILife
 {
-	new public float wetness; // this is new to allow wetness > 1
-	public Biomass(float wetness, float nutrient)
+	// biomass can be created from anything, so it can have high wetness and nutrient to not have any loss
+	public float wetness;
+	public float maxWetness => 10000.0f; 
+	public float nutrient;
+	public float maxNutrient => 10000.0f;
+	public Biomass(float startingWetness, float startingNutrient)
 	{
 		density = 20;
 		color = Colors.Khaki;
-		this.wetness = wetness;
-		this.nutrient = nutrient;
+		wetness = startingWetness;
+		nutrient = startingNutrient;
 		modulateColor();
 	}
 
@@ -24,9 +28,14 @@ public class Biomass : Element, IPowder, ISolid, ILife
 		return PowderBehavior.CanMoveSideOnElement(elementWhereMovement);
 	}
 
-	public override void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
-		PowderBehavior.Update(this, oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+		if (nutrient <= 0.0f && wetness <= 0.0f)
+		{
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY);
+			return;
+		}
+		PowderBehavior.Update(this, oldElementArray, x, y, maxX, maxY, T);
 	}
 
 	override public string getState()

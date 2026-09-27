@@ -29,7 +29,7 @@ public static class FlammableBehavior
 					if (neighbor is IFlammable flammableNeighbor && flammableNeighbor.flammability > 0 && !flammableNeighbor.burning)
 					{
 						// Chance to ignite based on flammability
-						if (Random.Shared.NextSingle() < flammableNeighbor.flammability * 0.01f) // Adjust ignition chance factor as needed
+						if (Random.Shared.NextSingle() < 100 / Math.Max(1, flammableNeighbor.flammability)) // Adjust ignition chance factor as needed
 						{
 							ignite(nx, ny, maxX, maxY);
 						}

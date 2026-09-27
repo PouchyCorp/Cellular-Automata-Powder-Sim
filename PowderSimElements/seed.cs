@@ -3,8 +3,12 @@ using Godot;
 
 public class Seed : Element, ILife, ISolid
 {
+	public float wetness;
+	public float maxWetness => 1.0f;
+	public float nutrient;
+	public float maxNutrient => 5.0f;
+
 	public float lifetime = 600 * 60; // ticks
-	public float maxNutrient = 5f;
 	private int lastGrowthTick = 0;
 	private int growthInterval = 1 * 60; // ticks
 
@@ -35,18 +39,16 @@ public class Seed : Element, ILife, ISolid
 		Mature,
 		Dying
 	}
-	public Seed()
+	public Seed(float startingWetness, float startingNutrients)
 	{
-		ashCreationPercentage = 0.2f;
+		wetness = startingWetness;
+		nutrient = startingNutrients;
 		maxLeafCount = Random.Shared.Next(30, 50);
 		maxRootCount = Random.Shared.Next(10, 20);
 		maxFruitCount = Random.Shared.Next(1, 2);
 		density = 15;
 		color = Colors.Burlywood;
 		setPlantColor();
-		flammability = 4;
-		nutrient = 2f;
-		wetness = 1f;
 	}
 
 	private bool growStartingRoot(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
@@ -54,7 +56,7 @@ public class Seed : Element, ILife, ISolid
 		// Try to grow root downwards if there's space
 		if (y + 1 < maxY && currentElementArray[x, y + 1] is Soil)
 		{
-			currentElementArray[x, y + 1] = new Root((x, y));
+			GridManager.Instance.RequestDeletion(x, y + 1, maxX, maxY, new Root((x, y)));
 			rootCount++;
 			nutrient -= 1f;
 			return true;
@@ -67,8 +69,9 @@ public class Seed : Element, ILife, ISolid
 		// same to modulateColor
 
 
-		float w = rng.RandfRange(0.0f, 0.7f);
-		float z = rng.RandfRange(0.0f, 0.4f);
+
+		float w = Random.Shared.NextSingle() * 0.7f;
+		float z = Random.Shared.NextSingle() * 0.4f;
 		basePlantColor = basePlantColor.Lerp(Colors.Yellow, w/1.5f);
 		basePlantColor = basePlantColor.Lerp(Colors.Brown, z);
 
@@ -92,15 +95,15 @@ public class Seed : Element, ILife, ISolid
 		}
 	}
 
-	private (int, int) growStartingLeaf(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	private (int, int) growStartingLeaf(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
 	{
 		if (nutrient < 1) return (-1, -1); // not enough nutrient to grow
 		if (y - 1 < 0) return (-1, -1); // no space above
 
 		// Try to grow leaves upwards if there's space
-		if (currentElementArray[x, y - 1] == null)
+		if (oldElementArray[x, y - 1] == null)
 		{
-			currentElementArray[x, y - 1] = new Leaf((x, y));
+			GridManager.Instance.RequestSpawn(x, y - 1, new Leaf((x, y)), maxX, maxY); // there is a redundant check in the RequestSpawn method, but it's fine to have it here as well
 			startingLeaf = (x, y - 1);
 			nutrient -= 1f;
 			leafCount++;
@@ -110,12 +113,10 @@ public class Seed : Element, ILife, ISolid
 		return (-1, -1);
 	}
 
-	private void transferNutrientsUpwards(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	private void transferNutrientsUpwards(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
 	{
 		if (y - 1 < 0) return; // no space above
-		if (startingLeaf == (-1, -1)) return; // no starting leaf to transfer to
-
-		if (currentElementArray[startingLeaf.Item1, startingLeaf.Item2] is Leaf firstLeaf)
+		if (oldElementArray[x, y-1] is Leaf firstLeaf)
 		{
 			if (firstLeaf.nutrient < 5f)
 			{
@@ -140,18 +141,24 @@ public class Seed : Element, ILife, ISolid
 			plantState = PlantState.Dying; // first leaf no longer exists, die
 		}
 	}
-	public override void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
+		if (y == maxY - 1 || y == 0){
+			plantState = PlantState.Dying;
+		}
+
 		lifetime--;
-		if (lifetime <= 0 && currentElementArray[x, y] == this)
+		// if it is uprooted why not being in a seed state, it dies
+		if (plantState != PlantState.Dying && plantState != PlantState.Seed && (lifetime <= 0 || oldElementArray[x, y + 1] is not Root))
 		{
 			// Seed has withered away
 			plantState = PlantState.Dying;
 		}
+
 		// -- Falling state --
 		if (y + 1 < maxY && plantState == PlantState.Falling)
 		{
-			if (!move(oldElementArray, currentElementArray, x, y, maxX, maxY, 0, 1)) // if cannot fall further
+			if (!MoveManager.Instance.AttemptMove(oldElementArray, x, y, 0, 1, maxX, maxY)) // if cannot fall further
 			{
 				plantState = PlantState.Seed; // become a seed
 			}
@@ -162,27 +169,29 @@ public class Seed : Element, ILife, ISolid
 		{
 			lastGrowthTick = T;
 			// Try to grow roots first
-			if (y + 1 < maxY && currentElementArray[x, y + 1] is not Soil && currentElementArray[x, y + 1] is not Root)
+			if (y + 1 < maxY && oldElementArray[x, y + 1] is not Soil && oldElementArray[x, y + 1] is not Root)
 			{
 				plantState = PlantState.Dying; // no soil below, die. Poor thing :(
 				return;
 			}
+
+			if (y - 1 >= 0 && oldElementArray[x, y - 1] is Leaf)
+			{
+				plantState = PlantState.Dying; // no space above to grow leaves, die. Poor thing :(
+				return;
+			}
 			
-			if (!growStartingRoot(currentElementArray, x, y, maxX, maxY))
+			if (!growStartingRoot(oldElementArray, x, y, maxX, maxY))
 			{
 				// try to grow leaves
-				growStartingLeaf(currentElementArray, x, y, maxX, maxY);
-				if (startingLeaf != (-1, -1))
-				{
-					plantState = PlantState.Growing; // finished initial growth
-				}
+				growStartingLeaf(oldElementArray, x, y, maxX, maxY);
 			}
 		}
 
 		// -- Growing state --
 		if (plantState == PlantState.Growing && nutrient > 0) // only transfer nutrients if we are in growing phase
 		{
-			transferNutrientsUpwards(currentElementArray, x, y, maxX, maxY);
+			transferNutrientsUpwards(oldElementArray, x, y, maxX, maxY);
 		}
 		if (plantState == PlantState.Growing && leafCount >= maxLeafCount)
 		{
@@ -203,13 +212,11 @@ public class Seed : Element, ILife, ISolid
 		// -- Dying state --
 		if (plantState == PlantState.Dying && Random.Shared.NextSingle() < 0.01f) // 1% chance to die definitively each tick
 		{
-			SurfBiomass biomass = new SurfBiomass(wetness + 1f, nutrient + 2f); // add the creation nutrient and wetness
-			currentElementArray[x, y] = biomass;
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, new SurfBiomass(wetness, nutrient)); // add the creation nutrient and wetness
 			return;
 		}
 		updatePlantColor();
-		burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
-		updateColor(T);
+		updateColor(T, x, y);
 	}
 
 	public override string getState()

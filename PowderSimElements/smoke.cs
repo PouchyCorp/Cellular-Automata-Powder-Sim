@@ -37,6 +37,6 @@ public class Smoke : Element, IGas
 
 		GasBehavior.update(this, oldElementArray, x, y, maxX, maxY, T);
 
-		updateColor(T);
+		updateColor(T, x, y);
 	}
 }

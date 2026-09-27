@@ -196,12 +196,15 @@ public partial class CellularAutomataEngine : Node2D
 						case "Nutrient":
 							if (elementArray[x, y] is Soil soil)
 							{
-								soil.ChangeNutrient(1.0F, elementArray, x, y, gridWidth, gridHeight);
+								soil.nutrient = Math.Min(soil.nutrient + 1f, soil.maxNutrient);
 							}
 							break;
 
 						case "Fire":
-							elementArray[x, y]?.ignite(x, y);
+							if (elementArray[x, y] is IFlammable)
+							{
+								FireManager.Instance.RequestIgnition(x, y, gridWidth, gridHeight);
+							}
 							break;
 
 						default:
@@ -401,9 +404,9 @@ public partial class CellularAutomataEngine : Node2D
 		{
 			for (int y = 0; y < gridHeight; y++)
 			{
-				if (elementArray[x, y] != null)
+				if (elementArray[x, y] is ILife element)
 				{
-					totalWetness += elementArray[x, y].wetness;
+					totalWetness += element.wetness;
 				}
 			}
 		}

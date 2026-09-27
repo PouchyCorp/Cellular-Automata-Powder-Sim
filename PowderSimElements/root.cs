@@ -1,16 +1,13 @@
 using System;
 using System.Collections.Generic;
 using Godot;
-public class Root : Element, ILife, ISolid, IFlammable
+public class Root : Element, ILife, ISolid
 {
 	public float nutrient { get; set; } = 0f;
-	public float maxNutrient { get; set; } = 10f;
+	public float maxNutrient => 10f;
 	public float wetness { get; set; } = 0f;
-
-	public int flammability { get; set; } = 10;
-	public bool burning { get; set; } = false;
-	public int burningLifetime { get; set; } = 0;
-
+	public float maxWetness => 1f;
+	
 	private (int, int) parentSeed;
 	private int lastActivity = 0;
 	private int activityInterval = 30;
@@ -38,40 +35,25 @@ public class Root : Element, ILife, ISolid, IFlammable
 		}
 		return null;
 	}
-	private bool absorbNutrientsAndWetness(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	private void absorbNutrientsAndWetness(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
 	{
 		// absorb nutrients and wetness from adjacent soil in cardinal directions
-		float absorbedNutrients = 0f;
-		float absorbedWetness = 0f;
 		(int, int)[] directions = [(0, -1), (0, 1), (-1, 0), (1, 0)];
 		
 		foreach (var dir in directions)
 		{
-			int newX = x + dir.Item1;
-			int newY = y + dir.Item2;
-			if (newX >= 0 && newX < maxX && newY >= 0 && newY < maxY)
+			int targetX = x + dir.Item1;
+			int targetY = y + dir.Item2;
+			if (targetX >= 0 && targetX < maxX && targetY >= 0 && targetY < maxY)
 			{
-				if (currentElementArray[newX, newY] is Soil soil)
+				if (currentElementArray[targetX, targetY] is Soil soil)
 				{
-					float availableNutrients = Math.Min(this.nutrient, maxNutrient - nutrient - absorbedNutrients);
-					availableNutrients = Math.Max(availableNutrients, 0);
-					float availableWetness = Math.Min(soil.wetness, 1f - wetness - absorbedWetness); // max wetness is 1
-					availableWetness = Math.Max(availableWetness, 0);
 
-					soil.ChangeNutrient(-availableNutrients / 4, currentElementArray, newX, newY, maxX, maxY);
-					soil.ChangeWetness(-availableWetness / 4, currentElementArray, newX, newY, maxX, maxY);
-
-					absorbedNutrients += availableNutrients / 4;
-					absorbedWetness += availableWetness / 4;
+					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(x, y, targetX, targetY, soil.nutrient / 4), maxX, maxY);
+					NutrientManager.Instance.AddTakeWetnessRequest(new TakeWetnessRequest(x, y, targetX, targetY, soil.wetness / 4), maxX, maxY);
 				}
 			}
 		}
-
-		nutrient += absorbedNutrients;
-		wetness += absorbedWetness;
-		if (absorbedNutrients > 0 || absorbedWetness > 0) return true;
-
-		return false;
 	}
 
 	private void transferNutrientsUpwards(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
@@ -175,8 +157,7 @@ public class Root : Element, ILife, ISolid, IFlammable
 			growRoot(oldElementArray, oldElementArray, x, y, maxX, maxY);
 		}
 
-		burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
-		updateColor(T);
+		updateColor(T, x, y);
 	}
 
 	public override string getState()

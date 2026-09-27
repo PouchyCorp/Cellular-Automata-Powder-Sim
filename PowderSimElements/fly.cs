@@ -5,13 +5,15 @@ using System.Collections.Generic;
 // TODO : Make the fly split into two flies when it's nutrient reach two. and make it die (dropping biomass) when nutrient reach 0. Also make it eat fruit to gain nutrient.
 public class Fly : Element, ILife, ISolid, IFlammable
 {
+
+	const float BASE_NUTRIENT_COST = 1.0f;
 	int lastActivity = 0;
 	public int flammability { get; set; } = 3;
 	public bool burning { get; set; } = false;
 	public int burningLifetime { get; set; }
 
-	public float maxNutrient => 2.0f;
-	public float nutrient = 1.0f;
+	public float maxNutrient => BASE_NUTRIENT_COST * 2.0f;
+	public float nutrient = BASE_NUTRIENT_COST;
 	public float wetness = 0.0f;
 	public float maxWetness => 0.0f;
 
@@ -47,7 +49,7 @@ public class Fly : Element, ILife, ISolid, IFlammable
 		{
 			// Not time to act yet
 			FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
-			updateColor(T);
+			updateColor(T, x, y);
 			return;
 		}
 		else
@@ -63,7 +65,7 @@ public class Fly : Element, ILife, ISolid, IFlammable
 				tryMoveInDirection(oldElementArray, x, y, maxX, maxY, 0, -1, T); // try to move up out of web
 			}
 			FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
-			updateColor(T);
+			updateColor(T, x, y);
 			return; // can't move while stuck
 		}
 
@@ -94,7 +96,8 @@ public class Fly : Element, ILife, ISolid, IFlammable
 					{
 						if (pollinateFruit(fruit))
 						{
-							nutrient += 1.0f; // Gain nutrient from eating fruit
+							TakeNutrientRequest request = new TakeNutrientRequest(x, y, nx, ny, BASE_NUTRIENT_COST);
+							NutrientManager.Instance.AddTakeNutrientRequest(request, maxX, maxY); // Transfer nutrient to the fruit
 						}
 					}
 				}
@@ -111,7 +114,7 @@ public class Fly : Element, ILife, ISolid, IFlammable
 
 		// just move around in the dirt
 		FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
-		updateColor(T);
+		updateColor(T, x, y);
 
 	}
 

@@ -1,3 +1,4 @@
+using System;
 using Godot;
 
 public class Sand : Element, IPowder, ISolid
@@ -21,14 +22,14 @@ public class Sand : Element, IPowder, ISolid
 
 	public override void modulateColor(float intensity = 0.05F)
 	{
-		float w = rng.RandfRange(0.0f, intensity);
+		float w = Random.Shared.NextSingle() * intensity;
 		color = color.Lightened(w);
-		float z = rng.RandfRange(0.0f, intensity);
+		float z = Random.Shared.NextSingle() * intensity;
 		color = color.Darkened(z);
 	}
 
-	public override void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
-		PowderBehavior.Update(this, oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+		PowderBehavior.Update(this, oldElementArray, x, y, maxX, maxY, T);
 	}
 }

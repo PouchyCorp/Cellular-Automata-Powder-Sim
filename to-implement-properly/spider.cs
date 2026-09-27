@@ -26,7 +26,6 @@ public class Spider : Element, ILife, ISolid
 	{
 		density = 10;
 		color = Colors.Violet;
-		flammability = 1f;
 	}
 
 	/// <summary>
@@ -395,7 +394,7 @@ public class Spider : Element, ILife, ISolid
 		}
 
 		burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
-		updateColor(T);
+		updateColor(T, x, y);
 	}
 
 	/// <summary>

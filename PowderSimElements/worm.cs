@@ -1,8 +1,15 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using Godot;
+
+// TODO : Make the worm a snake
 public class Worm : Element, ILife, ISolid
 {
+	public float nutrient { get; set; } = 0f;
+	public float maxNutrient => 10f;
+	public float wetness { get; set; } = 0f;
+	public float maxWetness => 1f;
+
 	int lastActivity = 0;
 	int activityInterval = 10;
 
@@ -25,19 +32,16 @@ public class Worm : Element, ILife, ISolid
 
 	public Worm()
 	{
-		ashCreationPercentage = 0.0f;
 		density = 30;
 		color = Colors.Pink;
-		flammability = 3;
 	}
 
-	public override void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		if (T - lastActivity < activityInterval)
 		{
 			// Not time to act yet
-			burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
-			updateColor(T);
+			updateColor(T, x, y);
 			return;
 		}
 		else
@@ -49,13 +53,19 @@ public class Worm : Element, ILife, ISolid
 		{
 			case WormState.Falling:
 				// check if can fall down
-				if (y + 1 < maxY && (currentElementArray[x, y + 1] == null || currentElementArray[x, y + 1] is ILiquid || currentElementArray[x, y + 1] is Soil))
+				if (y + 1 < maxY && (oldElementArray[x, y + 1] == null || oldElementArray[x, y + 1] is ILiquid))
 				{
 					// fall down
-					specialMove(currentElementArray, x, y, maxX, maxY, 0, 1);
+					MoveManager.Instance.AttemptMove(oldElementArray, x, y, 0, 1, maxX, maxY);
+					break;
 				}
 
-				if (inSoil != null)
+				if (y + 1 >= maxY || oldElementArray[x, y + 1] is Soil)
+				{
+					// landed on solid ground
+					wormState = WormState.Moving;
+					break;
+				}
 				{
 					wormState = WormState.Moving; // landed
 				}
@@ -63,12 +73,6 @@ public class Worm : Element, ILife, ISolid
 				break;
 
 			case WormState.Moving:
-				// Try to eat nearby biomass first
-				if (eatNearbyBiomass(currentElementArray, x, y, maxX, maxY))
-				{
-					// Successfully ate biomass and moved
-					break;
-				}
 
 				// Update timers
 				directionChangeTimer++;
@@ -83,9 +87,22 @@ public class Worm : Element, ILife, ISolid
 				}
 
 				// Try to move in current direction
-				if (tryMoveInDirection(currentElementArray, x, y, maxX, maxY, currentDirection.Item1, currentDirection.Item2))
+				(int, int) nearbyBiomass = findNearbyBiomass(oldElementArray, x, y, maxX, maxY);
+				if (nearbyBiomass != (-1, -1))
 				{
-					// Successfully moved
+					// Move towards biomass
+					int dx = nearbyBiomass.Item1 - x;
+					int dy = nearbyBiomass.Item2 - y;
+					if (moveInSoil(oldElementArray, x, y, maxX, maxY, dx, dy))
+					{
+						// Successfully moved to biomass
+						break;
+					}
+				}
+				
+				if (moveInSoil(oldElementArray, x, y, maxX, maxY, currentDirection.Item1, currentDirection.Item2))
+				{
+					// Successfully moved in current direction
 					break;
 				}
 				else if (obstacleHitCooldown == 0)
@@ -96,36 +113,10 @@ public class Worm : Element, ILife, ISolid
 					directionChangeTimer = 0;
 				}
 
-
 				break;
 		}
-
-		// just move around in the dirt
-		burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
-		updateColor(T);
+		updateColor(T, x, y);
 	}
-
-	private bool eatNearbyBiomass(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
-	{
-		// Check adjacent cells for biomass
-		foreach ((int dx, int dy) in new (int, int)[] { (0, -1), (0, 1), (-1, 0), (1, 0) })
-		{
-			int nx = x + dx;
-			int ny = y + dy;
-
-			if (nx < 0 || nx >= maxX || ny < 0 || ny >= maxY)
-				continue; // Out of bounds
-
-			if (currentElementArray[nx, ny] is Biomass)
-			{
-				consumeBiomass(currentElementArray, nx, ny);
-				specialMove(currentElementArray, x, y, maxX, maxY, dx, dy); // Move into the eaten biomass spot
-				return true; // Eat only one biomass per update
-			}
-		}
-		return false;
-	}
-
 	private void changeDirection()
 	{
 		// Simple direction change with upward bias
@@ -142,23 +133,27 @@ public class Worm : Element, ILife, ISolid
 			currentDirection = (0, 1); // down
 	}
 
-	private bool tryMoveInDirection(Element[,] currentElementArray, int x, int y, int maxX, int maxY, int dirX, int dirY)
+	public (int, int) findNearbyBiomass(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
 	{
-		if (x + dirX < 0 || x + dirX >= maxX || y + dirY < 0 || y + dirY >= maxY)
-			return false; // out of bounds
-
-		// Try to move onto soil
-		if (currentElementArray[x + dirX, y + dirY] is Soil)
+		foreach ((int dx, int dy) in new (int, int)[] { (0, -1), (0, 1), (-1, 0), (1, 0) })
 		{
-			return specialMove(currentElementArray, x, y, maxX, maxY, dirX, dirY);
-		}
+			int nx = x + dx;
+			int ny = y + dy;
 
-		return false;
+			if (nx < 0 || nx >= maxX || ny < 0 || ny >= maxY)
+				continue; // Out of bounds
+
+			if (oldElementArray[nx, ny] is Biomass)
+			{
+				return (nx, ny); // Return the position of the eaten biomass
+			}
+		}
+		return (-1, -1); // No biomass found
 	}
 
-	public void consumeBiomass(Element[,] currentElementArray, int x, int y)
+	public Soil getDirtFromBiomass(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
 	{
-		Biomass biomass = currentElementArray[x, y] as Biomass; // checks are done before calling this function
+		Biomass biomass = oldElementArray[x, y] as Biomass; // checks are done before calling this function
 		float biomassNutrient = biomass.nutrient;
 		float biomassWetness = biomass.wetness;
 
@@ -177,15 +172,11 @@ public class Worm : Element, ILife, ISolid
 		newSoil.wetness = wetnessToTransferToSoil;    // max wetness is 1, there may be a problem here if biomass wetness > 1 (this comment was right ...)
 		wetnessBuffer += biomassWetness - wetnessToTransferToSoil; // store excess wetness in buffer
 
-		currentElementArray[x, y] = newSoil;
+		return newSoil;
 	}
 
-	public bool specialMove(Element[,] currentElementArray, int x, int y, int maxX, int maxY, int movementX, int movementY)
+	public bool moveInSoil(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int movementX, int movementY)
 	{
-		// Safety: Only move if this worm is still at (x, y)
-		if (currentElementArray[x, y] != this)
-			return false;
-
 		int targetX = x + movementX;
 		int targetY = y + movementY;
 
@@ -194,33 +185,26 @@ public class Worm : Element, ILife, ISolid
 			return false;
 
 		// Check if target cell is occupied by something other than a soil
-		Element targetElem = currentElementArray[targetX, targetY];
+		Element targetElem = oldElementArray[targetX, targetY];
 		if (targetElem != null && targetElem is not Soil)
 			return false;
 
-		// Handle leaving a soil behind if moving off a soil
-		if (inSoil != null && (movementX != 0 || movementY != 0))
-		{
-			currentElementArray[x, y] = inSoil;
-			inSoil = null;
-		}
-		else
-		{
-			currentElementArray[x, y] = null;
-		}
+		// Move worm to new position
+		GridManager.Instance.RequestDeletion(x, y, maxX, maxY, inSoil); // leave the stored soil behind by replacing the worm
 
 		// If moving onto a soil, "pick it up"
-		if (currentElementArray[targetX, targetY] is Soil soil)
+		if (oldElementArray[targetX, targetY] is Soil soil)
 		{
-			inSoil = soil;
-		}
-		else
-		{
-			inSoil = null;
+			inSoil = soil; // store the soil the worm is moving onto
 		}
 
-		// Move worm to new position
-		currentElementArray[targetX, targetY] = this;
+		if (oldElementArray[targetX, targetY] is Biomass)
+		{
+			// If moving onto a biomass, convert it to soil, store its nutrient and wetness into the soil, and "pick it up"
+			inSoil = getDirtFromBiomass(oldElementArray, targetX, targetY, maxX, maxY);
+		}
+		
+		GridManager.Instance.RequestDeletion(targetX, targetY, maxX, maxY, this); // move the worm to the new position (the soil is stored in inSoil don't worry)
 
 		return true;
 	}

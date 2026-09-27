@@ -1,8 +1,6 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
 public class Snail : Element, ILife, ISolid
 {
 	private int moveInterval = 30; // ticks
@@ -37,7 +35,7 @@ public class Snail : Element, ILife, ISolid
 		if (eatingCooldown > 0)
 		{
 			eatingCooldown--;
-			updateColor(T);
+			updateColor(T, x, y);
 			return;
 		}
 
@@ -46,7 +44,7 @@ public class Snail : Element, ILife, ISolid
 		{
 			snailState = SnailState.Eating;
 			eatingCooldown = EATING_WAIT_TIME;
-			updateColor(T);
+			updateColor(T, x, y);
 			return;
 		}
 
@@ -76,7 +74,7 @@ public class Snail : Element, ILife, ISolid
 				break;
 		}
 
-		updateColor(T);
+		updateColor(T, x, y);
 	}
 
 	private bool checkAndEatSurfaceBiomass(Element[,] oldElementArray, int x, int y, int maxX, int maxY)

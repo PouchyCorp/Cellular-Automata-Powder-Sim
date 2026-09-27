@@ -1,9 +1,25 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
-public class Leaf : Element, ILife, ISolid
+
+// TODO : Remove the need of getParentSeed() -> make the seed signaling be a real signal that is transmitted leaf to leaf. The growth must also be driven by nutrient and wetness transfer, and triggered when enough nutrient and wetness is stored in the leaf. 
+public class Leaf : Element, ILife, ISolid, IFlammable
 {
+	// it takes 0.2 wetness and 1 nutrient to grow a new leaf, and it can transfer 0.2 nutrient and 0.1 wetness to each child leaf per activity tick
+	const float BASE_LEAF_WETNESS_COST = 0.2f;
+	const float BASE_LEAF_NUTRIENT_COST = 1.0f;
+	const float BASE_FRUIT_NUTRIENT_COST = 4.0f;
+	const float BASE_FRUIT_WETNESS_COST = 1.0f;
+
+	public float wetness = BASE_LEAF_WETNESS_COST;
+	public float maxWetness => 1.0f;
+	public float nutrient = BASE_LEAF_NUTRIENT_COST;
+	public float maxNutrient => 5.0f;
+
+	public int flammability { get; set; } = 10;
+	public bool burning { get; set; } = false;
+	public int burningLifetime { get; set; }
+
 	private int lastGrowthTick = 0;
 	private int growthInterval = 3 * 60; // ticks
 	private LeafState leafState = LeafState.Growing;
@@ -25,26 +41,20 @@ public class Leaf : Element, ILife, ISolid
 		this.parentSeed = parentSeed;
 		density = 15;
 		color = Colors.Green;
-		flammability = 10;
-		nutrient = 0f;
-		maxNutrient = 5f;
-		wetness = 0.1f;
-		ashCreationPercentage = 0.8f;
-
-		modulateColor();
+		modulateColor(); // idk why it there
 	}
-	public Seed getParentSeed(Element[,] currentElementArray)
+	public Seed getParentSeed(Element[,] oldElementArray)
 	{
-		if (currentElementArray[parentSeed.Item1, parentSeed.Item2] is Seed seed)
+		if (oldElementArray[parentSeed.Item1, parentSeed.Item2] is Seed seed)
 		{
 			return seed;
 		}
 		return null;
 	}
 
-	public void alignToPlantColor(Element[,] currentElementArray)
+	public void alignToPlantColor(Element[,] oldElementArray)
 	{
-		Seed seed = getParentSeed(currentElementArray);
+		Seed seed = getParentSeed(oldElementArray);
 		if (seed != null)
 		{
 			color = new Color(seed.plantColor);
@@ -55,10 +65,10 @@ public class Leaf : Element, ILife, ISolid
 		return dir != 0 && ((dir > 0 && pos <= origin) || (dir < 0 && pos >= origin));
 	}
 
-	private bool isValidLeafGrowthPosition(Element[,] currentElementArray, int x, int y, int maxX, int maxY, (int, int) growthDir, (int, int) growthOrigin)
+	private bool isValidLeafGrowthPosition(Element[,] oldElementArray, int x, int y, int maxX, int maxY, (int, int) growthDir, (int, int) growthOrigin)
 	{
 		if (x < 0 || x >= maxX || y < 0 || y >= maxY) return false; // out of bounds
-		if (currentElementArray[x, y] != null) return false; // must be empty
+		if (oldElementArray[x, y] != null) return false; // must be empty
 		int adjacentLeaves = 0;
 
 		for (int nx = x - 1; nx <= x + 1; nx++)
@@ -75,7 +85,7 @@ public class Leaf : Element, ILife, ISolid
 						continue;
 					}
 
-					if (currentElementArray[nx, ny] is Leaf)
+					if (oldElementArray[nx, ny] is Leaf)
 					{
 						adjacentLeaves++;
 					}
@@ -136,15 +146,15 @@ public class Leaf : Element, ILife, ISolid
 		return bestPos;
 	}
 
-	public bool growLeaf(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	public bool growLeaf(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
 	{
-		if (nutrient < 1) return false;
-		if (wetness < 0.2f) return false;
+		if (nutrient < BASE_LEAF_NUTRIENT_COST) return false;
+		if (wetness < BASE_LEAF_WETNESS_COST) return false;
 		if (y - 1 < 0) return false;
 
 		List<(int, int)> possibleGrowthPositions = [];
 
-		Seed seed = getParentSeed(currentElementArray);
+		Seed seed = getParentSeed(oldElementArray);
 		if (seed?.leafCount >= seed?.maxLeafCount) return false;
 
 
@@ -153,7 +163,7 @@ public class Leaf : Element, ILife, ISolid
 		{
 			int nx = x + dx;
 			int ny = y + dy;
-			if (isValidLeafGrowthPosition(currentElementArray, nx, ny, maxX, maxY, (nx - x, ny - y), (x, y))) // ------------------------------------------ 
+			if (isValidLeafGrowthPosition(oldElementArray, nx, ny, maxX, maxY, (nx - x, ny - y), (x, y))) // ------------------------------------------ 
 			{
 				possibleGrowthPositions.Add((nx, ny));
 			}
@@ -164,15 +174,18 @@ public class Leaf : Element, ILife, ISolid
 			var chosenPos = getBestGrowthPosition(possibleGrowthPositions.ToArray(), maxX, maxY, x, y, parentSeed.Item1, parentSeed.Item2);
 			//var chosenPos = possibleGrowthPositions[rand.Next(possibleGrowthPositions.Count)];
 			if (chosenPos == (-1, -1)) return false; // No valid position found
-			currentElementArray[chosenPos.Item1, chosenPos.Item2] = new Leaf(parentSeed);
+			GridManager.Instance.RequestSpawn(chosenPos.Item1, chosenPos.Item2, new Leaf(parentSeed), maxX, maxY);
 			childLeafs.Add(chosenPos);
-			var parent = getParentSeed(currentElementArray);
+			var parent = getParentSeed(oldElementArray);
 			if (parent != null)
 			{
 				parent.leafCount++;
 			}
-			nutrient -= 1f;
-			wetness -= 0.2f;
+
+			// because the Leaf is created with BASE_NUTRIENT_COST and BASE_WETNESS_COST, we need to subtract those from the parent leaf to keep the total nutrient and wetness constant
+			// It is not needed to use the NutrientManager here (encapsulation is still here)
+			nutrient -= BASE_LEAF_NUTRIENT_COST;
+			wetness -= BASE_LEAF_WETNESS_COST;
 			return true;
 		}
 		else
@@ -209,9 +222,9 @@ public class Leaf : Element, ILife, ISolid
 			}
 		}
 	}
-	override public void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	override public void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
-		Seed seed = getParentSeed(currentElementArray);
+		Seed seed = getParentSeed(oldElementArray);
 		if (seed == null || seed?.plantState == Seed.PlantState.Dying) // if parent seed is gone or dying, start dying
 		{
 			leafState = LeafState.Dying;
@@ -219,16 +232,18 @@ public class Leaf : Element, ILife, ISolid
 
 		if (seed != null
 		&& leafState == LeafState.Growing
-		&& seed.plantState == PlantState.Mature
-		&& seed.nutrient >= 1f
+		&& seed.plantState == Seed.PlantState.Mature
+		&& nutrient >= BASE_FRUIT_NUTRIENT_COST
+		&& wetness >= BASE_FRUIT_WETNESS_COST
 		&& seed.fruitCount < seed.maxFruitCount
 		)
 		{
-			if (Random.Shared.NextSingle() < 0.01f && y - 1 >= 0 && currentElementArray[x, y - 1] == null && y + 1 < maxY && currentElementArray[x, y + 1] is Leaf) // 1% chance each tick to grow fruit
+			if (Random.Shared.NextSingle() < 0.01f && y - 1 >= 0 && oldElementArray[x, y - 1] == null && y + 1 < maxY && oldElementArray[x, y + 1] is Leaf) // 1% chance each tick to grow fruit
 			{
 				// grow fruit
-				currentElementArray[x, y - 1] = new Fruit();
-				seed.nutrient -= 1f;
+				GridManager.Instance.RequestSpawn(x, y - 1, new Fruit(BASE_FRUIT_NUTRIENT_COST, BASE_FRUIT_WETNESS_COST), maxX, maxY);
+				nutrient -= BASE_FRUIT_NUTRIENT_COST;
+				wetness -= BASE_FRUIT_WETNESS_COST;
 				seed.fruitCount++;
 				return;
 			}
@@ -236,15 +251,16 @@ public class Leaf : Element, ILife, ISolid
 
 		if (leafState == LeafState.Dying && Random.Shared.NextSingle() < 0.01f) // 1% chance to die definitively each tick
 		{
-			SurfBiomass biomass = new SurfBiomass(wetness + 0.6f, nutrient + 1.2f); // add the creation nutrient and wetness
-			currentElementArray[x, y] = biomass;
+			// Return the nutrients and wetness to the environment
+			SurfBiomass biomass = new SurfBiomass(wetness, nutrient); // add the creation nutrient and wetness
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, biomass);
 			return;
 		}
 		// Try to grow leaves if possible
 		if (leafState == LeafState.Growing && T - lastGrowthTick >= growthInterval)
 		{
 			lastGrowthTick = T;
-			growLeaf(currentElementArray, x, y, maxX, maxY);
+			growLeaf(oldElementArray, x, y, maxX, maxY);
 
 		}
 
@@ -253,14 +269,14 @@ public class Leaf : Element, ILife, ISolid
 			leafState = LeafState.Growing;
 		}
 
-		transferNutrientsToChildLeafs(currentElementArray);
+		transferNutrientsToChildLeafs(oldElementArray);
 
 		if (!alignedToPlantColor){
-			alignToPlantColor(currentElementArray);
+			alignToPlantColor(oldElementArray);
 			alignedToPlantColor = true;
 		}
-		burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
-		updateColor(T);
+		FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
+		updateColor(T, x, y);
 	}
 
 	override public string getState()
@@ -308,6 +324,6 @@ public class Leaf : Element, ILife, ISolid
 
 	override public string inspectInfo()
 	{
-		return $"  Wetness: {wetness:F3}\n  Nutrient: {nutrient:F3}\n  Leaf State: {leafState}\n  Child Leafs: {childLeafs.Count}\n";
+		return $"  Leaf State: {leafState}\n  Child Leafs: {childLeafs.Count}\n";
 	}
 }

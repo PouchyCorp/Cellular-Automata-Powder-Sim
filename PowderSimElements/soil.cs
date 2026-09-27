@@ -8,7 +8,7 @@ public class Soil : Element, IPowder, ISolid, ILife
 	int lastActivity = 0;
 	int activityInterval = 15;
 	public float nutrient { get; set; } = 0f;
-	public float maxNutrient { get; set; } = 10f;
+	public float maxNutrient => 1000f;
 	public float wetness { get; set; } = 0f;
 
 
@@ -40,9 +40,9 @@ public class Soil : Element, IPowder, ISolid, ILife
 		baseColor = baseColor.Darkened(z);
 	}
 
-	override public void updateColor(int T)
+	override public void updateColor(int T, int x, int y)
 	{
-		base.updateColor(T);
+		base.updateColor(T, x, y);
 
 		Color nutriHue = baseColor.Lerp(richColor, Math.Min(nutrient, 2)); // more nutrient = darker color
 		Color wetHue = baseColor.Lerp(wetColor, wetness); // more wet = darker color
@@ -179,7 +179,7 @@ public class Soil : Element, IPowder, ISolid, ILife
 			}
 		}
 
-		updateColor(T);
+		updateColor(T, x, y);
 		PowderBehavior.Update(this, oldElementArray, x, y, maxX, maxY, T); // keep at the end because of returns contained in base method
 	}
 

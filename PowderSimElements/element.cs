@@ -55,7 +55,7 @@ public abstract class Element
 	/// <summary>
 	/// To call at the beginning of the possible override function
 	/// </summary>
-	public virtual void updateColor(int T)
+	public virtual void updateColor(int T, int x, int y)
 	{
 		// check if baseColor is initialized, should only happen once (i hope)
 		if (baseColor == default)
@@ -64,9 +64,9 @@ public abstract class Element
 		}
 		color = baseColor; // reset to base color before applying effects
 
-		if (burning)
+		if (this is IFlammable burningElement)
 		{
-			float lerpIntensity = Math.Max(0, (float)Math.Sin((T + (int)rng.Seed) / 10));
+			float lerpIntensity = Math.Max(0, (float)Math.Sin((T + x * y) / 10));
 			Color fireHue = Colors.Red.Lerp(Colors.Orange, lerpIntensity);
 			//fireHue = fireHue.Lerp(Colors.DarkOrange, Math.Max(1, 200 / (float)burningLifetime)); // longer burning -> darker fire color
 			color = baseColor.Lerp(fireHue, 0.4f); // blend both effects
@@ -80,8 +80,7 @@ public abstract class Element
 		// If it is overidden (and it outputs a String)
 		// setState must also be overwritten.
 		// The strings cannot use either a "space" or a "|"
-		if (flammability > 0) return burning + ";" + burningLifetime;
-		else return null;
+		return null;
 	}
 
 	virtual public void modulateColor(float intensity = 0.05f){
@@ -93,22 +92,23 @@ public abstract class Element
 	{
 		int i = 0;
 		string[] stateArgs = state.Split(";", false);
-		burning = stateArgs[i++] == "True";
-		burningLifetime = stateArgs[i++].ToInt();
 		return i;
 	}
 
 	virtual public string inspectInfo()
 	{
-		string attributes = $"  Flammability: {flammability}\n";
-		attributes += $"  Wetness: {wetness:F3}\n";
-		attributes += $"  Burning: {burning}\n";
-
-		if (burning)
+		string output = $"Density: {density}\n";
+		if (this is IFlammable burningElement)
 		{
-			attributes += $"  Burning Lifetime: {burningLifetime}\n";
+			output += $"  Flammability: {burningElement.flammability}\n  Burning: {burningElement.burning}\n  Burning Lifetime: {burningElement.burningLifetime}\n";
 		}
-		return attributes;
+		
+		if (this is ILife lifeElement)
+		{
+			output += $"  Nutrient: {lifeElement.nutrient}\n  Wetness: {lifeElement.wetness}\n";
+		}
+		
+		return output;
 	}
 
 }

@@ -1,27 +1,36 @@
 using Godot;
+using System;
 
-public class Fruit : Element, ILife, ISolid
+public class Fruit : Element, ILife, ISolid, IFlammable
 {
+	public float wetness;
+	public float maxWetness => 1.0f;
+	public float nutrient;
+	public float maxNutrient => 3.0f;
+
+	public bool burning { get; set; } = false;
+	public int burningLifetime { get; set; }
+	public int flammability { get; set; } = 2;
 	public bool pollinated = false;
 	private int lifetimeOnSoil = 300 * 60; // ticks
-	public Fruit()
+	public Fruit(float nutrient, float wetness)
 	{
-		ashCreationPercentage = 0.0f;
+		this.nutrient = nutrient;
+		this.wetness = wetness;
 		density = 40;
 		color = Colors.Red;
-		flammability = 3;
 	}
 
-    public override void updateColor(int T)
+    public override void updateColor(int T, int x, int y)
     {
 		if (pollinated)
 		{
 			color = Colors.DarkRed;
 		}
-        base.updateColor(T);
+        base.updateColor(T, x, y);
     }
 
-	public override void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		if (y + 1 >= maxY) return; // out of bounds below
 
@@ -29,51 +38,55 @@ public class Fruit : Element, ILife, ISolid
 		{
 			lifetimeOnSoil--;
 		}
-		if (lifetimeOnSoil <= 0 && currentElementArray[x, y] == this)
+		if (lifetimeOnSoil <= 0)
 		{
 			// Fruit has withered away
 			SurfBiomass biomass = new SurfBiomass(wetness, nutrient);
-			currentElementArray[x, y] = biomass;
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, biomass);
 			return;
 		}
 
-		if (currentElementArray[x, y + 1] == null || currentElementArray[x, y + 1] is IGas || currentElementArray[x, y + 1] is ILiquid)
+		if (oldElementArray[x, y + 1] is not ISolid)
 		{
-
+			
+			int strafeChance = Random.Shared.Next(1, 4);
 			// chance to strafe left or right while falling
-			if (Random.Shared.NextSingle() < 0.4f)
+
+				// strafe left (25% chance)
+			if (strafeChance == 2 && x - 1 >= 0)
 			{
-				if (Random.Shared.Next(0, 1) == 0)
-				{
-					if (x - 1 >= 0 && (currentElementArray[x - 1, y + 1] == null || currentElementArray[x - 1, y + 1] is IGas || currentElementArray[x - 1, y + 1] is ILiquid))
-						move(oldElementArray, currentElementArray, x, y, maxX, maxY, -1, 0);
-					return;
-				}
-				else
-				{
-					if (x + 1 < maxX && (currentElementArray[x + 1, y + 1] == null || currentElementArray[x + 1, y + 1] is IGas || currentElementArray[x + 1, y + 1] is ILiquid))
-						move(oldElementArray, currentElementArray, x, y, maxX, maxY, 1, 0);
-					return;
-				}
+				MoveManager.Instance.AttemptMove(oldElementArray, x, y, -1, 1, maxX, maxY);
+				return;
+			}
+					
+				
+			// strafe right (25% chance)
+			if (strafeChance == 1 && x + 1 < maxX)
+			{
+				MoveManager.Instance.AttemptMove(oldElementArray, x, y, 1, 1, maxX, maxY);
+				return;
 			}
 
-			move(oldElementArray, currentElementArray, x, y, maxX, maxY, 0, 1);
+
+			// move down (50% chance)
+			MoveManager.Instance.AttemptMove(oldElementArray, x, y, 0, 1, maxX, maxY);
 			return;
 		}
 
 		// if polliated and on soil, try to grow a seed
 		if (pollinated && oldElementArray[x, y + 1] is Soil)
 		{
-			// 1% chance each tick to grow a seed
-			if (GD.Randf() < 0.01f)
+			// 2% chance each tick to grow a seed
+			if (Random.Shared.NextSingle() < 0.02f)
 			{
-				currentElementArray[x, y] = new Seed();
+				// grow a seed
+				GridManager.Instance.RequestDeletion(x, y, maxX, maxY, new Seed(wetness, nutrient));
 				return;
 			}
 		}
 
-		burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
-		updateColor(T);
+		FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
+		updateColor(T, x, y);
 	}
 
 	public override string inspectInfo()

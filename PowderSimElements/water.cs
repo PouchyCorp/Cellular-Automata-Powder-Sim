@@ -22,9 +22,9 @@ public class Water : Element, ILiquid
 		modulateColor(0.05f);
 	}
 
-	public override void updateColor(int T)
+	public override void updateColor(int T, int x, int y)
 	{
-		base.updateColor(T);
+		base.updateColor(T, x, y);
 		float modulationSpeed = random_offset * 0.005f;
 		float modulation = (Mathf.Sin(T * modulationSpeed + random_offset) + 1) / 2;
 		float w = modulation * modulationIntensity;
@@ -60,6 +60,6 @@ public class Water : Element, ILiquid
 
 		LiquidBehavior.update(this, oldElementArray, x, y, maxX, maxY, T);
 
-		updateColor(T);
+		updateColor(T, x, y);
 	}
 }

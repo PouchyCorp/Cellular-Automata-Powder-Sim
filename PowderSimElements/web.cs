@@ -1,31 +1,32 @@
 using Godot;
 
-public class Web : Element, ILife, ISolid
+public class Web : Element, ILife, IFlammable
 {
 	private int lifetime = 100 * 60; // ticks
+
+	public int flammability { get; set; } = 50;
+	public bool burning { get; set; } = false;
+	public int burningLifetime { get; set; }
 	public Web()
 	{
-		ashCreationPercentage = 0.0f;
-		density = 3;
+		density = 1;
 		color = Colors.White;
-		flammability = 3;
 	}
 
 	public void resetLifetime()
 	{
 		lifetime = 100 * 60;
 	}
-	public override void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
-
 		lifetime--;
-		if (lifetime <= 0 && currentElementArray[x, y] == this)
+		if (lifetime <= 0)
 		{
-			currentElementArray[x, y] = null;
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY);
 			return;
 		}
-		burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
-		updateColor(T);
+		FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
+		updateColor(T, x, y);
 	}
 
 
