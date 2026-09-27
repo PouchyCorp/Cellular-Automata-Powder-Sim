@@ -73,17 +73,22 @@ public sealed class MoveManager
     private Dictionary<(int, int), List<MoveRequest>> moveRequests = [];
     private List<(int, int)> uniqueMoveTargets = [];
 
+    private HashSet<(int, int)> uniqueMoveSources = [];
+
     public bool AttemptMove(Element[,] oldElementArray, int x, int y, int movementX, int movementY, int maxX, int maxY)
     {
-        if (MoveRequest.CanMove(oldElementArray, x, y, movementX, movementY))
+        if (MoveRequest.CanMove(oldElementArray, x, y, movementX, movementY) && !uniqueMoveSources.Contains((x, y)))
         {
-            AddMoveRequest(new MoveRequest(x, y, movementX, movementY), maxX, maxY);
-            return true;
+            if (AddMoveRequest(new MoveRequest(x, y, movementX, movementY), maxX, maxY))
+            {
+                uniqueMoveSources.Add((x, y));
+                return true;
+            }
         }
         return false;
     }
 
-    public void AddMoveRequest(MoveRequest request, int maxX, int maxY)
+    public bool AddMoveRequest(MoveRequest request, int maxX, int maxY)
     {
         if (request.IsValid(maxX, maxY))
         {
@@ -93,7 +98,9 @@ public sealed class MoveManager
                 uniqueMoveTargets.Add((request.x, request.y));
             }
             moveRequests[(request.x, request.y)].Add(request);
+            return true;
         }
+        return false;
     }
 
     public void ProcessMoveRequests(Element[,] oldElementArray, Element[,] currentElementArray, int maxX, int maxY)

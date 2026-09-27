@@ -144,7 +144,7 @@ public class Spider : Element, ILife, ISolid
 		buildingDirection = buildDir;
 	}
 
-	private void handleFallingState(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	private void handleFallingState(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		bool solidNeighbor = false;
 		for (int nx = Math.Max(0, x - 1); nx <= Math.Min(x + 1, maxX - 1); nx++) // including diagonals
@@ -182,7 +182,7 @@ public class Spider : Element, ILife, ISolid
 		}
 	}
 
-	private void handleWanderingOnWebState(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	private void handleWanderingOnWebState(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		if (T - lastMeaningfulStateChangeTick > 10 * 60 && Random.Shared.NextSingle() < 0.01f) // After 10 seconds, small chance to start wandering to build site
 		{
@@ -237,14 +237,14 @@ public class Spider : Element, ILife, ISolid
 
 			if (validCells.Count > 0)
 			{
-				int randomIndex = rng.RandiRange(0, validCells.Count - 1);
+				int randomIndex = Random.Shared.Next(0, validCells.Count - 1);
 				(int, int) targetCell = validCells[randomIndex];
-				specialMove(oldElementArray, currentElementArray, x, y, maxX, maxY, targetCell.Item1 - x, targetCell.Item2 - y);
+				specialMove(oldElementArray, x, y, maxX, maxY, targetCell.Item1 - x, targetCell.Item2 - y);
 			}
 		}
 	}
 
-	private void handleWanderingToBuildSiteState(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	private void handleWanderingToBuildSiteState(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		if (T - lastMeaningfulStateChangeTick > 15)
 		{
@@ -323,13 +323,13 @@ public class Spider : Element, ILife, ISolid
 		}
 		
 		// Choose completely randomly from valid cells
-		int randomIndex = rng.RandiRange(0, validCells.Count - 1);
+		int randomIndex = Random.Shared.Next(0, validCells.Count - 1);
 		(int, int) bestCell = validCells[randomIndex];
 
 		specialMove(oldElementArray, currentElementArray, x, y, maxX, maxY, bestCell.Item1 - x, bestCell.Item2 - y);
 	}
 
-	private void handleBuildingState(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	private void handleBuildingState(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		// Place a web in the building direction if the cell is empty
 		int targetX = x + buildingDirection.Item1;
@@ -366,7 +366,7 @@ public class Spider : Element, ILife, ISolid
 		}
 	}
 
-	public override void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		if (sleepTime > 0)
 		{
@@ -401,7 +401,7 @@ public class Spider : Element, ILife, ISolid
 	/// <summary>
 	/// SOME CHECKS ARE NOT DONE TO SEE IF THE MOVE IS VALID, please do so before calling this function
 	/// </summary>
-	public bool specialMove(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int movementX, int movementY)
+	public bool specialMove(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int movementX, int movementY)
 	{
 		// Safety: Only move if this spider is still at (x, y)
 		if (currentElementArray[x, y] != this)

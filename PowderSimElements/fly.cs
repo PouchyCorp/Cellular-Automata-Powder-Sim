@@ -1,8 +1,20 @@
 using Godot;
+using System;
 using System.Collections.Generic;
-public class Fly : Element, ILife, ISolid
+
+// TODO : Make the fly split into two flies when it's nutrient reach two. and make it die (dropping biomass) when nutrient reach 0. Also make it eat fruit to gain nutrient.
+public class Fly : Element, ILife, ISolid, IFlammable
 {
 	int lastActivity = 0;
+	public int flammability { get; set; } = 3;
+	public bool burning { get; set; } = false;
+	public int burningLifetime { get; set; }
+
+	public float maxNutrient => 2.0f;
+	public float nutrient = 1.0f;
+	public float wetness = 0.0f;
+	public float maxWetness => 0.0f;
+
 
 	int lifetime = 300 * 60; // ticks
 	int activityInterval = 5;
@@ -17,24 +29,24 @@ public class Fly : Element, ILife, ISolid
 	private int stuckInWebTime = 0;
 	public Fly()
 	{
-		ashCreationPercentage = 0.0f;
 		density = 30;
 		color = Colors.Black;
-		flammability = 3;
 	}
-	public override void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+
+
+	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		lifetime--;
-		if (lifetime <= 0 && currentElementArray[x, y] == this)
+		if (lifetime <= 0)
 		{
-			currentElementArray[x, y] = null;
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY);
 			return;
 		}
 
 		if (T - lastActivity < activityInterval)
 		{
 			// Not time to act yet
-			burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+			FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
 			updateColor(T);
 			return;
 		}
@@ -42,14 +54,15 @@ public class Fly : Element, ILife, ISolid
 		{
 			lastActivity = T;
 		}
+
 		if (stuckInWeb)
 		{
 			if (T - stuckInWebTime > stuckInWebDuration)
 			{
 				stuckInWeb = false; // free from web after duration
-				tryMoveInDirection(currentElementArray, oldElementArray, x, y, maxX, maxY, 0, -1, T); // try to move up out of web
+				tryMoveInDirection(oldElementArray, x, y, maxX, maxY, 0, -1, T); // try to move up out of web
 			}
-			burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+			FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
 			updateColor(T);
 			return; // can't move while stuck
 		}
@@ -58,14 +71,14 @@ public class Fly : Element, ILife, ISolid
 		directionChangeTimer++;
 		if (directionChangeTimer >= directionChangeInterval)
 		{
-			directionChangeTimer = rng.RandiRange(0, directionChangeInterval - 1); // reset timer with some randomness
+			directionChangeTimer = Random.Shared.Next(0, directionChangeInterval - 1); // reset timer with some randomness
 			changeDirection();
 		}
-		if (!tryMoveInDirection(currentElementArray, oldElementArray, x, y, maxX, maxY, currentDirection.Item1, currentDirection.Item2, T))
+		if (!tryMoveInDirection(oldElementArray, x, y, maxX, maxY, currentDirection.Item1, currentDirection.Item2, T))
 		{
 			// Try to change direction if blocked
 			changeDirection();
-			tryMoveInDirection(currentElementArray, oldElementArray, x, y, maxX, maxY, currentDirection.Item1, currentDirection.Item2, T);
+			tryMoveInDirection(oldElementArray, x, y, maxX, maxY, currentDirection.Item1, currentDirection.Item2, T);
 		}
 
 		for (int dx = -1; dx <= 1; dx++)
@@ -77,20 +90,27 @@ public class Fly : Element, ILife, ISolid
 				int ny = y + dy;
 				if (nx >= 0 && nx < maxX && ny >= 0 && ny < maxY)
 				{
-					if (currentElementArray[nx, ny] is Fruit fruit)
+					if (oldElementArray[nx, ny] is Fruit fruit)
 					{
 						if (pollinateFruit(fruit))
 						{
-							reproduce(currentElementArray, x, y, maxX, maxY);
-							reproduce(currentElementArray, x, y, maxX, maxY);
+							nutrient += 1.0f; // Gain nutrient from eating fruit
 						}
 					}
 				}
 			}
 		}
 
+		if (nutrient == maxNutrient)
+		{
+			reproduce(oldElementArray, x, y, maxX, maxY);
+			nutrient = 1.0f; // Reset nutrient after reproduction
+		}
+
+
+
 		// just move around in the dirt
-		burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+		FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
 		updateColor(T);
 
 	}
@@ -119,29 +139,28 @@ public class Fly : Element, ILife, ISolid
 			currentDirection = (1, 1); // down-right
 	}
 
-	private bool tryMoveInDirection(Element[,] currentElementArray, Element[,] oldElementArray, int x, int y, int maxX, int maxY, int dirX, int dirY, int T)
+	private bool tryMoveInDirection(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int dirX, int dirY, int T)
 	{
 		if (x + dirX < 0 || x + dirX >= maxX || y + dirY < 0 || y + dirY >= maxY)
 			return false; // out of bounds
-		if (currentElementArray[x + dirX, y + dirY] is Web)
+
+		if (oldElementArray[x + dirX, y + dirY] is Web)
 		{
 			stuckInWeb = true;
 			stuckInWebTime = T;
-			currentElementArray[x + dirX, y + dirY] = this;
-			currentElementArray[x, y] = null;
+			GridManager.Instance.RequestDeletion(x, y, x + dirX, y + dirY); // remove the fly from the grid
 			return true; // can't move into web
 		}
 
-		if (currentElementArray[x + dirX, y + dirY] == null || currentElementArray[x + dirX, y + dirY] is IGas)
+		if (oldElementArray[x + dirX, y + dirY] == null || oldElementArray[x + dirX, y + dirY] is IGas)
 		{
-			currentElementArray[x, y] = currentElementArray[x + dirX, y + dirY];
-			currentElementArray[x + dirX, y + dirY] = this;
+			MoveManager.Instance.AttemptMove(oldElementArray, x, y, dirX, dirY, maxX, maxY);
 			return true;
 		}
 		return false;
 	}
 
-	public void reproduce(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	public void reproduce(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
 	{
 		List<(int, int)> directions = new List<(int, int)> { (0, 1), (1, 0), (0, -1), (-1, 0) };
 		foreach (var dir in directions)
@@ -150,9 +169,9 @@ public class Fly : Element, ILife, ISolid
 			int ny = y + dir.Item2;
 			if (nx > 0 && nx < maxX && ny > 0 && ny < maxY)
 			{
-				if (currentElementArray[nx, ny] == null)
+				if (oldElementArray[nx, ny] == null)
 				{
-					currentElementArray[nx, ny] = new Fly();
+					oldElementArray[nx, ny] = new Fly();
 					return; // Only try to reproduce in one direction
 				}
 			}

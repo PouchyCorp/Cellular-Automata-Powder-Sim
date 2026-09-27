@@ -16,13 +16,18 @@ public static class GasBehavior
         float decision = Random.Shared.NextSingle();
 		int distFromCloudLine = Math.Abs(self.cloudLineY - y) + 1;
 
+		int movementX = 0;
+		int movementY = 0;
+
 		if (decision < 0.25f)
 		{
-			MoveManager.Instance.AttemptMove(oldElementArray, x, y, -1, 0, maxX, maxY);
+			movementX = -1;
+			movementY = 0;
 		}
 		else if (decision < 0.5f)
 		{
-			MoveManager.Instance.AttemptMove(oldElementArray, x, y, 1, 0, maxX, maxY);
+			movementX = 1;
+			movementY = 0;
 		}
 		else // if (decision >= 0.5f)
 		{
@@ -34,12 +39,24 @@ public static class GasBehavior
 
 			if (decision < (1f / distFromCloudLine))
 			{
-				MoveManager.Instance.AttemptMove(oldElementArray, x, y, 0, dir, maxX, maxY);
+				movementX = 0;
+				movementY = dir;
 			}
 			else if (decision > 0.9f) // small chance to move in the opposite direction of the cloud line
 			{
-				MoveManager.Instance.AttemptMove(oldElementArray, x, y, 0, -dir, maxX, maxY);
+				movementX = 0;
+				movementY = -dir;
 			}
 		}
+
+		if (movementX != 0 || movementY != 0){
+			if (oldElementArray[x + movementX, y + movementY] is Web)
+			{
+				GridManager.Instance.RequestDeletion(x, y, maxX, maxY);
+			}
+
+			MoveManager.Instance.AttemptMove(oldElementArray, x, y, movementX, movementY, maxX, maxY);
+		}
+			
     }
 }

@@ -2,6 +2,18 @@ using Godot;
 
 public class SurfBiomass : Element, IPowder, ISolid, ILife
 {
+	public float wetness;
+	public float nutrient;
+	public float maxNutrient { get; set; } = 10.0f;
+	
+	public SurfBiomass(float startingWetness, float startingNutrient)
+	{
+		density = 20;
+		color = Colors.DarkGreen;
+		wetness = startingWetness;
+		nutrient = startingNutrient;
+		modulateColor();
+	}
 	public override bool canMoveDownOnElement(Element elementWhereMovement)
 	{
 		return PowderBehavior.CanMoveDownOnElement(elementWhereMovement);
@@ -11,20 +23,14 @@ public class SurfBiomass : Element, IPowder, ISolid, ILife
 	{
 		return PowderBehavior.CanMoveSideOnElement(elementWhereMovement);
 	}
-
-	new public float wetness; // this is new to allow wetness > 1
-	public SurfBiomass(float wetness, float nutrient)
+	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
-		density = 20;
-		color = Colors.DarkGreen;
-		this.wetness = wetness;
-		this.nutrient = nutrient;
-		modulateColor();
-	}
-
-	public override void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
-	{
-		PowderBehavior.Update(this, oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+		if (wetness <= 0.0f && nutrient <= 0.0f)
+		{
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, null);
+			return;
+		}
+		PowderBehavior.Update(this, oldElementArray, x, y, maxX, maxY, T);
 	}
 
 	override public string getState()

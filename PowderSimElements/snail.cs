@@ -9,9 +9,10 @@ public class Snail : Element, ILife, ISolid
 	private int lastMoveTick = 0;
 	private List<(int, int)> lastPositions = new List<(int, int)>(); // to avoid going back and forth
 
-	// Infinite storage buffers for consumed nutrients and wetness
-	private float storedNutrient = 0.0f;
-	private float storedWetness = 0.0f;
+	public float maxNutrient => 100000000000.0f;
+	public float nutrient = 1.0f;
+	public float wetness = 0.0f;
+	public float maxWetness => 10000000000.0f;
 
 	// Eating behavior
 	private int eatingCooldown = 0;
@@ -27,34 +28,30 @@ public class Snail : Element, ILife, ISolid
 	private SnailState snailState = SnailState.Falling;
 	public Snail()
 	{
-		ashCreationPercentage = 0.0f;
 		density = 60;
 		color = Colors.Beige;
-		flammability = 3;
 	}
-	public override void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		// Handle eating cooldown
 		if (eatingCooldown > 0)
 		{
 			eatingCooldown--;
-			burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
 			updateColor(T);
 			return;
 		}
 
 		// Check for adjacent surface biomass to eat
-		if (checkAndEatSurfaceBiomass(oldElementArray, currentElementArray, x, y, maxX, maxY))
+		if (checkAndEatSurfaceBiomass(oldElementArray, x, y, maxX, maxY))
 		{
 			snailState = SnailState.Eating;
 			eatingCooldown = EATING_WAIT_TIME;
-			burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
 			updateColor(T);
 			return;
 		}
 
 		// Transfer nutrients to soil if available
-		transferNutrientsToSoil(currentElementArray, x, y, maxX, maxY);
+		transferNutrientsToSoil(oldElementArray, x, y, maxX, maxY);
 
 		// Validate current state - if we're not falling but have no solid surface, start falling
 		if (snailState != SnailState.Falling && !hasAdjacentSolidSurface(x, y, oldElementArray, maxX, maxY))
@@ -65,13 +62,13 @@ public class Snail : Element, ILife, ISolid
 		switch (snailState)
 		{
 			case SnailState.Falling:
-				handleFallingState(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+				handleFallingState(oldElementArray, x, y, maxX, maxY, T);
 				break;
 			case SnailState.Idle:
-				handleIdleState(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+				handleIdleState(oldElementArray, x, y, maxX, maxY, T);
 				break;
 			case SnailState.Moving:
-				handleMovingState(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+				handleMovingState(oldElementArray, x, y, maxX, maxY, T);
 				break;
 			case SnailState.Eating:
 				// Already handled above
@@ -79,11 +76,10 @@ public class Snail : Element, ILife, ISolid
 				break;
 		}
 
-		burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
 		updateColor(T);
 	}
 
-	private bool checkAndEatSurfaceBiomass(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	private bool checkAndEatSurfaceBiomass(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
 	{
 		// Check all 8 adjacent cells for surface biomass
 		for (int nx = Math.Max(0, x - 1); nx <= Math.Min(x + 1, maxX - 1); nx++)
@@ -95,13 +91,8 @@ public class Snail : Element, ILife, ISolid
 				if (oldElementArray[nx, ny] is SurfBiomass surfBiomass)
 				{
 					// Eat the surface biomass
-					storedNutrient += surfBiomass.nutrient;
-					storedWetness += surfBiomass.wetness;
-
-					// Remove the surface biomass and move to its location
-					currentElementArray[nx, ny] = this;
-					currentElementArray[x, y] = null;
-
+					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(x, y, x, y, surfBiomass.nutrient), maxX, maxY);
+					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(x, y, x, y, surfBiomass.nutrient), maxX, maxY);
 					return true;
 				}
 			}
@@ -109,76 +100,39 @@ public class Snail : Element, ILife, ISolid
 		return false;
 	}
 
-	private void transferNutrientsToSoil(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	private void transferNutrientsToSoil(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
 	{
-		if (storedNutrient <= 0 && storedWetness <= 0) return;
+		if (nutrient <= 0 && wetness <= 0) return;
 
 		// Check if snail is on soil
-		Element below = (y + 1 < maxY) ? currentElementArray[x, y + 1] : null;
+		Element below = (y + 1 < maxY) ? oldElementArray[x, y + 1] : null;
 		if (below is Soil soil)
 		{
-			soil.ChangeNutrient(storedNutrient, currentElementArray, x, y + 1, maxX, maxY);
-			float transferableWetness = Math.Min(storedWetness, 1f - soil.wetness); // ensure soil wetness does not exceed 1
-																					// for now, allow snail to transfer more wetness than it has stored (to be balanced later if needed)
-			soil.ChangeWetness(transferableWetness, currentElementArray, x, y + 1, maxX, maxY);
-			storedNutrient = 0;
-			storedWetness = -transferableWetness;
+			NutrientManager.Instance.AddGiveNutrientRequest(new GiveNutrientRequest(x, y, x, y + 1, nutrient), maxX, maxY);
+			NutrientManager.Instance.AddGiveWetnessRequest(new GiveWetnessRequest(x, y, x, y + 1, wetness), maxX, maxY);			
 			return;
 		}
 	}
 
-	private void handleFallingState(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	private void handleFallingState(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		// Check if we can continue falling down
-		bool canFall = y + 1 < maxY && (currentElementArray[x, y + 1] == null || currentElementArray[x, y + 1] is ILiquid);
+		bool canFall = y + 1 < maxY;
 
 		if (canFall)
 		{
-			// Continue falling
-			currentElementArray[x, y + 1] = this;
-			currentElementArray[x, y] = null;
-		}
-		else
-		{
-			// Can't fall anymore, check if we have solid surfaces to climb on
-			if (hasAdjacentSolidSurface(x, y, oldElementArray, maxX, maxY))
+			Element below = oldElementArray[x, y + 1];
+			if (below is not ISolid)
 			{
-				snailState = SnailState.Idle; // Found solid surface, can climb
-			}
-			else
-			{
-				// No solid surface to climb on, try to find one by checking nearby
-				bool foundSurface = false;
-				for (int nx = Math.Max(0, x - 1); nx <= Math.Min(x + 1, maxX - 1); nx++)
-				{
-					for (int ny = Math.Max(0, y - 1); ny <= Math.Min(y + 1, maxY - 1); ny++)
-					{
-						if (nx == x && ny == y) continue;
-
-						Element target = currentElementArray[nx, ny];
-						if ((target == null || target is ILiquid) && hasAdjacentSolidSurface(nx, ny, oldElementArray, maxX, maxY))
-						{
-							// Found a valid position to move to
-							currentElementArray[nx, ny] = this;
-							currentElementArray[x, y] = null;
-							snailState = SnailState.Idle;
-							foundSurface = true;
-							break;
-						}
-					}
-					if (foundSurface) break;
-				}
-
-				if (!foundSurface)
-				{
-					// Still no solid surface, remain in falling state but don't move
-					snailState = SnailState.Idle; // Give up and become idle
-				}
+				MoveManager.Instance.AttemptMove(oldElementArray, x, y, 0, 1, maxX, maxY);
+				return;
 			}
 		}
+
+		snailState = SnailState.Idle;
 	}
 
-	private void handleIdleState(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	private void handleIdleState(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		// First check if we should be falling instead of being idle
 		if (!hasAdjacentSolidSurface(x, y, oldElementArray, maxX, maxY))
@@ -194,7 +148,7 @@ public class Snail : Element, ILife, ISolid
 		}
 	}
 
-	private void handleMovingState(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	private void handleMovingState(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 
 		// small chance to stay idle instead of moving
@@ -241,7 +195,7 @@ public class Snail : Element, ILife, ISolid
 		}
 
 		// Choose a random valid cell to move to
-		int randomIndex = rng.RandiRange(0, availableCells.Count - 1);
+		int randomIndex = Random.Shared.Next(0, availableCells.Count - 1);
 		(int, int) targetCell = availableCells[randomIndex];
 
 		// Move to the target cell
@@ -251,12 +205,11 @@ public class Snail : Element, ILife, ISolid
 		// Destroy web if moving through one
 		if (oldElementArray[newX, newY] is Web)
 		{
-			// Web is destroyed, snail moves through
+			GridManager.Instance.RequestDeletion(newX, newY, maxX, maxY);
 		}
 
 
-		currentElementArray[x, y] = currentElementArray[newX, newY];
-		currentElementArray[newX, newY] = this;
+		MoveManager.Instance.AttemptMove(oldElementArray, x, y, newX - x, newY - y, maxX, maxY);
 		lastPositions.Add((x, y));
 
 		// Keep position history manageable
@@ -281,8 +234,7 @@ public class Snail : Element, ILife, ISolid
 			if (nx == x && ny == y) continue;
 
 			Element neighbor = elementArray[nx, ny];
-			if (neighbor != null && !(neighbor is ILiquid) && !(neighbor is Web) && !(neighbor is IGas)
-				&& !(neighbor is Snail) && !(neighbor is Fly))
+			if (neighbor is ISolid)
 			{
 				return true; // Found a solid surface that can support climbing
 			}
@@ -293,8 +245,8 @@ public class Snail : Element, ILife, ISolid
 	public override string inspectInfo()
 	{
 		return base.inspectInfo() + $"\nState: {snailState}\n" +
-			$"Stored Nutrient: {storedNutrient:F3}\n" +
-			$"Stored Wetness: {storedWetness:F3}\n" +
+			$"Stored Nutrient: {nutrient:F3}\n" +
+			$"Stored Wetness: {wetness:F3}\n" +
 			$"Eating Cooldown: {eatingCooldown}\n";
 	}
 
@@ -302,8 +254,8 @@ public class Snail : Element, ILife, ISolid
 	{
 		return base.getState() + ";" +
 			(int) snailState + ";" +
-			storedNutrient + ";" +
-			storedWetness + ";" +
+			nutrient + ";" +
+			wetness + ";" +
 			eatingCooldown + ";" +
 			lastMoveTick + ";";
 	}
@@ -313,8 +265,8 @@ public class Snail : Element, ILife, ISolid
 		int i = base.setState(state);
 		string[] stateArgs = state.Split(";", false);
 		snailState = (SnailState)stateArgs[i++].ToInt();
-		storedNutrient = stateArgs[i++].ToFloat();
-		storedWetness = stateArgs[i++].ToFloat();
+		nutrient = stateArgs[i++].ToFloat();
+		wetness = stateArgs[i++].ToFloat();
 		eatingCooldown = stateArgs[i++].ToInt();
 		return i;
 	}

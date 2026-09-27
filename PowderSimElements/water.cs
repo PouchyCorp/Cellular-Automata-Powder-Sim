@@ -6,17 +6,19 @@ public class Water : Element, ILiquid
     public int directionX { get; set; } = 1;
 	public int maxLifetime { get; set; } = 60 * 3;
 	public int lifetime { get; set; }
+	public float wetness = 1.0f;
+	public float maxWetness => 1.0f;
 	public float modulationIntensity = 0.075f;
 	private float random_offset;
 	private float evaporationChance = 0.0004f;
 
-	public Water()
+	public Water(float starting_wetness = 1.0f)
 	{
 		lifetime = maxLifetime;
 		random_offset = Random.Shared.NextSingle() * 3.0f;
+		wetness = starting_wetness;
 		density = 5;
 		color = Colors.Blue;
-		wetness = 1.0f;
 		modulateColor(0.05f);
 	}
 
@@ -31,44 +33,33 @@ public class Water : Element, ILiquid
 		color = color.Darkened(z);
 	}
 
-	public virtual void onEvaporate(Element[,] currentElementArray, int x, int y)
-	{
-		if (currentElementArray[x, y] != this) return;
-		currentElementArray[x, y] = null;
-	}
-
-
     // This definitely needs to be refactored, but for now it works
 	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		if (wetness <= 0)
 		{
-			DeleteManager.Instance.AttemptDelete(oldElementArray, x, y);
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, null);
 			return;
 		}
 
 		if (Random.Shared.NextSingle() < evaporationChance && y - 1 > 0 && oldElementArray[x, y - 1] == null)
 		{
-			onEvaporate(currentElementArray, x, y);
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, new Steam(wetness));
 			return;
 		}
 
-		if (currentElementArray[x, y] != this) return;
-
 		if (lifetime <= 0
-		&& !burning
 		&& (y - 1 == maxY
 		|| (y + 2 < maxY
-		&& currentElementArray[x, y + 1] is not ILiquid
-		&& currentElementArray[x, y + 2] is not ILiquid)))
+		&& oldElementArray[x, y + 1] is not ILiquid
+		&& oldElementArray[x, y + 2] is not ILiquid)))
 		{
-			onEvaporate(currentElementArray, x, y);
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, null);
 			return;
 		}
 
 		LiquidBehavior.update(this, oldElementArray, x, y, maxX, maxY, T);
 
-		burn(oldElementArray, x, y, maxX, maxY, T);
 		updateColor(T);
 	}
 }

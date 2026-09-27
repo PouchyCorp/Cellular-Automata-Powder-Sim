@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 public interface IFlammable
 {
     public bool burning { get; set; }
-    public double flammability { get; set; } // the chance that the element will catch fire when in contact with fire
+    public int flammability { get; set; } // the chance that the element will catch fire when in contact with fire, it is the denominator of the chance
 	public int burningLifetime { get; set; } // how long the element has been burning, in ticks
 }
 

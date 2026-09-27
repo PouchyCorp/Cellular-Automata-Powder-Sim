@@ -3,17 +3,29 @@ using System.Linq;
 using Godot;
 using System;
 
+// ---------------------------------------
+// TODO : Make the NutrientManager account for the maxNutrient and maxWetness of the target element when processing requests
+// ---------------------------------------
 public interface ILife
 {
-	public float nutrient { get; set; }
-	public float maxNutrient { get; set; }
+	public float nutrient
+    {
+		get { return nutrient; }   // get method
+		set {
+			ArgumentOutOfRangeException.ThrowIfGreaterThan(value, maxNutrient);
+			nutrient = value; }  // set method
+	}
+	public float maxNutrient => 10.0f;
+	
 	public float wetness
 	{
 		get { return wetness; }   // get method
 		set {
-			ArgumentOutOfRangeException.ThrowIfGreaterThan(value, 1);
+			ArgumentOutOfRangeException.ThrowIfGreaterThan(value, maxWetness);
 			wetness = value; }  // set method
 	}
+
+    public float maxWetness => 1.0f;
 }
 
 public class GiveNutrientRequest

@@ -79,7 +79,7 @@ public class Worm : Element, ILife, ISolid
 				if (directionChangeTimer >= directionChangeInterval)
 				{
 					changeDirection();
-					directionChangeTimer = rng.RandiRange(0, directionChangeInterval / 2); // reset timer to a random value to avoid synchronized direction changes
+					directionChangeTimer = Random.Shared.Next(0, directionChangeInterval / 2); // reset timer to a random value to avoid synchronized direction changes
 				}
 
 				// Try to move in current direction

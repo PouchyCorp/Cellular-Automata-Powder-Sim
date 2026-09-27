@@ -5,9 +5,11 @@ public class Root : Element, ILife, ISolid, IFlammable
 {
 	public float nutrient { get; set; } = 0f;
 	public float maxNutrient { get; set; } = 10f;
-	public float maxWetness { get; set; } = 1f;
-
 	public float wetness { get; set; } = 0f;
+
+	public int flammability { get; set; } = 10;
+	public bool burning { get; set; } = false;
+	public int burningLifetime { get; set; } = 0;
 
 	private (int, int) parentSeed;
 	private int lastActivity = 0;
@@ -22,9 +24,6 @@ public class Root : Element, ILife, ISolid, IFlammable
 		
 		density = 21;
 		color = Colors.SandyBrown;
-		flammability = 10;
-		ashCreationPercentage = 0.8f;
-		wetness = 0f;
 		modulateColor();
 	}
 

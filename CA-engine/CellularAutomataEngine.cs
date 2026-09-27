@@ -270,7 +270,7 @@ public partial class CellularAutomataEngine : Node2D
 		var rng = new RandomNumberGenerator();
 		for (int i = elementPositions.Count - 1; i > 0; i--)
 		{
-			int randomIndex = rng.RandiRange(0, i);
+			int randomIndex = Random.Shared.Next(0, i);
 			(elementPositions[i], elementPositions[randomIndex]) = (elementPositions[randomIndex], elementPositions[i]);
 		}
 

@@ -38,9 +38,9 @@ public class Seed : Element, ILife, ISolid
 	public Seed()
 	{
 		ashCreationPercentage = 0.2f;
-		maxLeafCount = rng.RandiRange(30, 50);
-		maxRootCount = rng.RandiRange(10, 20);
-		maxFruitCount = rng.RandiRange(1, 2);
+		maxLeafCount = Random.Shared.Next(30, 50);
+		maxRootCount = Random.Shared.Next(10, 20);
+		maxFruitCount = Random.Shared.Next(1, 2);
 		density = 15;
 		color = Colors.Burlywood;
 		setPlantColor();

@@ -43,7 +43,7 @@ public class Fruit : Element, ILife, ISolid
 			// chance to strafe left or right while falling
 			if (Random.Shared.NextSingle() < 0.4f)
 			{
-				if (rng.RandiRange(0, 1) == 0)
+				if (Random.Shared.Next(0, 1) == 0)
 				{
 					if (x - 1 >= 0 && (currentElementArray[x - 1, y + 1] == null || currentElementArray[x - 1, y + 1] is IGas || currentElementArray[x - 1, y + 1] is ILiquid))
 						move(oldElementArray, currentElementArray, x, y, maxX, maxY, -1, 0);

@@ -6,8 +6,12 @@ using System.Data;
 public class Soil : Element, IPowder, ISolid, ILife
 {
 	int lastActivity = 0;
-	bool needsUpdate = true;
 	int activityInterval = 15;
+	public float nutrient { get; set; } = 0f;
+	public float maxNutrient { get; set; } = 10f;
+	public float wetness { get; set; } = 0f;
+
+
 	public (int, int)[] cardinals = [(0, 1), (1, 0), (0, -1), (-1, 0)];
 	new private Color baseColor = Color.FromHtml("#8d7267ff");
 	private Color wetColor = Color.FromHtml("#3a1008ff");
@@ -17,9 +21,6 @@ public class Soil : Element, IPowder, ISolid, ILife
 	{
 		density = 20;
 		color = baseColor;
-		flammability = 0;
-		wetness = 0.0f;
-		nutrient = 0.0f;
 		modulateColor();
 	}
 
@@ -35,7 +36,7 @@ public class Soil : Element, IPowder, ISolid, ILife
 
 	public override void modulateColor(float intensity = 0.05F)
 	{
-		float z = rng.RandfRange(0.0f, intensity);
+		float z = Random.Shared.NextSingle() * intensity;
 		baseColor = baseColor.Darkened(z);
 	}
 
@@ -49,43 +50,43 @@ public class Soil : Element, IPowder, ISolid, ILife
 		color = nutriHue.Lerp(wetHue, 0.5f); // blend both effects TODO: adjust colors
 	}
 
-	public void ChangeNutrient(float change, Element[,] currentElementArray, int x, int y, int maxX, int maxY)
-	// Method to change nutrient level, the change is the amount to add or subtract from the current nutrient level
-	{
-		nutrient += change;
-		foreach ((int nx, int ny) in cardinals)
-		{
-			int neighborX = x + nx;
-			int neighborY = y + ny;
+	// public void ChangeNutrient(float change, Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	// // Method to change nutrient level, the change is the amount to add or subtract from the current nutrient level
+	// {
+		
+	// 	foreach ((int nx, int ny) in cardinals)
+	// 	{
+	// 		int neighborX = x + nx;
+	// 		int neighborY = y + ny;
 
-			if (neighborX >= 0 && neighborX < maxX && neighborY >= 0 && neighborY < maxY)
-			{   
-				// using currentElementArray as read and write here is not a problem because needsUpdate is not a state that can have consequences to the simulation order.
-				if (currentElementArray[neighborX, neighborY] is Soil neighborSoil){
-					neighborSoil.needsUpdate = true; // Mark neighbor soil for update
-				}
-			}
-		}
-	}
+	// 		if (neighborX >= 0 && neighborX < maxX && neighborY >= 0 && neighborY < maxY)
+	// 		{   
+	// 			// using currentElementArray as read and write here is not a problem because needsUpdate is not a state that can have consequences to the simulation order.
+	// 			if (currentElementArray[neighborX, neighborY] is Soil neighborSoil){
+	// 				neighborSoil.needsUpdate = true; // Mark neighbor soil for update
+	// 			}
+	// 		}
+	// 	}
+	// }
 
-	public void ChangeWetness(float change, Element[,] currentElementArray, int x, int y, int maxX, int maxY)
-	// Method to change wetness level, the change is the amount to add or subtract from the current wetness level
-	{
-		wetness += change;
-		foreach ((int nx, int ny) in cardinals)
-		{
-			int neighborX = x + nx;
-			int neighborY = y + ny;
+	// public void ChangeWetness(float change, Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	// // Method to change wetness level, the change is the amount to add or subtract from the current wetness level
+	// {
+	// 	wetness += change;
+	// 	foreach ((int nx, int ny) in cardinals)
+	// 	{
+	// 		int neighborX = x + nx;
+	// 		int neighborY = y + ny;
 
-			if (neighborX >= 0 && neighborX < maxX && neighborY >= 0 && neighborY < maxY)
-			{   
-				// using currentElementArray as read and write here is not a problem because needsUpdate is not a state that can have consequences to the simulation order.
-				if (currentElementArray[neighborX, neighborY] is Soil neighborSoil){
-					neighborSoil.needsUpdate = true; // Mark neighbor soil for update
-				}
-			}
-		}
-	}
+	// 		if (neighborX >= 0 && neighborX < maxX && neighborY >= 0 && neighborY < maxY)
+	// 		{   
+	// 			// using currentElementArray as read and write here is not a problem because needsUpdate is not a state that can have consequences to the simulation order.
+	// 			if (currentElementArray[neighborX, neighborY] is Soil neighborSoil){
+	// 				neighborSoil.needsUpdate = true; // Mark neighbor soil for update
+	// 			}
+	// 		}
+	// 	}
+	// }
 
 	((int, int)[], int) getNeighborsIndices(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
 	{
@@ -104,19 +105,18 @@ public class Soil : Element, IPowder, ISolid, ILife
 		return (neighbors, count);
 	}
 
-	override public void update(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int T)
+	override public void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
-		if (T - lastActivity < activityInterval && !needsUpdate) // Skip update if not enough time has passed and no external change has occurred
+		if (T - lastActivity < activityInterval) // Skip update if not enough time has passed and no external change has occurred
 		{
-			PowderBehavior.Update(this, oldElementArray, currentElementArray, x, y, maxX, maxY, T); // still needs to update for other base behaviors, but we skip the soil-specific updates
+			PowderBehavior.Update(this, oldElementArray, x, y, maxX, maxY, T); // still needs to update for other base behaviors, but we skip the soil-specific updates
 			return;
 		}
 
 		lastActivity = T;
-		needsUpdate = false;
 		
 		// this is for optimisation purposes, all the indices are valid.
-		((int, int)[] neighborsIndices, int count) = getNeighborsIndices(currentElementArray, x, y, maxX, maxY);
+		((int, int)[] neighborsIndices, int count) = getNeighborsIndices(oldElementArray, x, y, maxX, maxY);
 
 		// Handle nutrient diffusion
 		for (int i = 0; i < count; i++)
@@ -125,15 +125,17 @@ public class Soil : Element, IPowder, ISolid, ILife
 			int ny = neighborsIndices[i].Item2;
 		
 			// Again using the newElementArray as read is a bit problematic for a deterministic simulation, but fake it until you make it as they say.
-			float nutriDiff = (currentElementArray[nx, ny] as Soil).nutrient - nutrient;
+			float nutriDiff = (oldElementArray[nx, ny] as Soil).nutrient - nutrient;
 			if (nutriDiff > 0.1f) // Only transfer if significant difference
 			{
 				float transferAmount = nutriDiff * 0.1f; // Slower transfer rate
 				float maxTransfer = Math.Min(transferAmount, nutrient * 0.3f); // Limit how much can be transferred
 
-				nutrient -= maxTransfer;
-				(currentElementArray[nx, ny] as Soil).nutrient += maxTransfer;
-				(currentElementArray[nx, ny] as Soil).needsUpdate = true; // Mark neighbor soil for update
+				if (maxTransfer > 0){
+					NutrientManager.Instance.AddGiveNutrientRequest(new GiveNutrientRequest(x, y, nx, ny, maxTransfer), maxX, maxY);
+				} else if (maxTransfer < 0){
+					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(nx, ny, x, y, maxTransfer), maxX, maxY);
+				}
 			}
 
 		}
@@ -145,15 +147,17 @@ public class Soil : Element, IPowder, ISolid, ILife
 				int nx = neighborsIndices[i].Item1;
 				int ny = neighborsIndices[i].Item2;
 			
-				float wetnessDiff = wetness - (currentElementArray[nx, ny] as Soil).wetness;
+				float wetnessDiff = wetness - (oldElementArray[nx, ny] as Soil).wetness;
 				if (wetnessDiff > 0.1f) // Only transfer if significant difference and if wetness greater than neighbor's
 				{
 					float transferAmount = wetnessDiff * 0.1f; // Slower transfer rate
 					float maxTransfer = Math.Min(transferAmount, wetness * 0.3f); // Limit how much can be transferred
 
-					wetness -= maxTransfer;
-					(currentElementArray[nx, ny] as Soil).wetness += maxTransfer;
-					(currentElementArray[nx, ny] as Soil).needsUpdate = true; // Mark neighbor soil for update
+					if (maxTransfer > 0){
+						NutrientManager.Instance.AddGiveWetnessRequest(new GiveWetnessRequest(x, y, nx, ny, maxTransfer), maxX, maxY);
+					} else if (maxTransfer < 0){
+						NutrientManager.Instance.AddTakeWetnessRequest(new TakeWetnessRequest(nx, ny, x, y, maxTransfer), maxX, maxY);
+					}
 				}
 			}
 		}
@@ -166,7 +170,7 @@ public class Soil : Element, IPowder, ISolid, ILife
 			int neighborY = y + ny;
 			if (neighborX >= 0 && neighborX < maxX && neighborY >= 0 && neighborY < maxY)
 			{
-				if (oldElementArray[neighborX, neighborY] is Element water && water is ILiquid)
+				if (oldElementArray[neighborX, neighborY] is Water water)
 				{
 					float wetnessCap = Math.Min(water.wetness, 1 - wetness); // only absorb what we can take
 					water.wetness -= wetnessCap;
@@ -176,7 +180,7 @@ public class Soil : Element, IPowder, ISolid, ILife
 		}
 
 		updateColor(T);
-		PowderBehavior.Update(this, oldElementArray, currentElementArray, x, y, maxX, maxY, T); // keep at the end because of returns contained in base method
+		PowderBehavior.Update(this, oldElementArray, x, y, maxX, maxY, T); // keep at the end because of returns contained in base method
 	}
 
 	override public string getState()

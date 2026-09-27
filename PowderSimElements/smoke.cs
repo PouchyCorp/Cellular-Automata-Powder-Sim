@@ -10,8 +10,6 @@ public class Smoke : Element, IGas
 	{
 		density = 0.1f;
 		color = Colors.DarkGray;
-		flammability = 0;
-		wetness = 0.0f;
 	}
 
 	// override public bool move(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int movementX, int movementY)
@@ -39,7 +37,6 @@ public class Smoke : Element, IGas
 
 		GasBehavior.update(this, oldElementArray, x, y, maxX, maxY, T);
 
-		burn(oldElementArray, x, y, maxX, maxY, T);
 		updateColor(T);
 	}
 }
