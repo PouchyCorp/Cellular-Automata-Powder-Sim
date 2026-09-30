@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://byywe73idxrw8"]
+[gd_scene format=3 uid="uid://byywe73idxrw8"]
 
 [ext_resource type="Script" uid="uid://dk7gsocowutmi" path="res://Presentation/main_presentation.gd" id="1_2jtip"]
 [ext_resource type="Script" uid="uid://blhtmeuo5dqnc" path="res://addons/scene_container/scenes/scene_container.gd" id="1_ue730"]
@@ -12,11 +12,11 @@
 [ext_resource type="PackedScene" uid="uid://cjlusc1g334mf" path="res://Presentation/slides/slide_4_Eau.tscn" id="7_rpi3i"]
 [ext_resource type="PackedScene" uid="uid://chkwg6r603tyu" path="res://Presentation/slides/slide_4.5_EauDemo.tscn" id="9_m0n0c"]
 
-[node name="MainPresentation" type="Node"]
+[node name="MainPresentation" type="Node" unique_id=1652261992]
 script = ExtResource("1_2jtip")
 slides = Array[PackedScene]([ExtResource("2_nhwbb"), ExtResource("3_wqbx7"), ExtResource("4_wbw4r"), ExtResource("6_38aws"), ExtResource("7_m0n0c"), ExtResource("7_rpi3i"), ExtResource("9_m0n0c"), ExtResource("4_kf3nj")])
 
-[node name="SceneContainer" type="SubViewportContainer" parent="." node_paths=PackedStringArray("transition")]
+[node name="SceneContainer" type="SubViewportContainer" parent="." unique_id=502700749 node_paths=PackedStringArray("transition")]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -28,9 +28,9 @@ script = ExtResource("1_ue730")
 transition = NodePath("SubViewport/FadeTransition")
 metadata/_custom_type_script = "uid://blhtmeuo5dqnc"
 
-[node name="SubViewport" type="SubViewport" parent="SceneContainer"]
+[node name="SubViewport" type="SubViewport" parent="SceneContainer" unique_id=946558648]
 handle_input_locally = false
 size = Vector2i(1152, 648)
 render_target_update_mode = 4
 
-[node name="FadeTransition" parent="SceneContainer/SubViewport" instance=ExtResource("6_kf3nj")]
+[node name="FadeTransition" parent="SceneContainer/SubViewport" unique_id=598846608 instance=ExtResource("6_kf3nj")]

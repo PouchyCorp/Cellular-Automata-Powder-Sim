@@ -1,7 +1,12 @@
-<Project Sdk="Godot.NET.Sdk/4.5.0">
+<Project Sdk="Godot.NET.Sdk/4.6.2">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>CellularAutomata</RootNamespace>
   </PropertyGroup>
+
+
+  <ItemGroup>
+      <Compile Remove="to-implement-properly/*.cs" />
+  </ItemGroup>
 </Project>

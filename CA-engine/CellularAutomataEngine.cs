@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Data;
 using System.IO;
+using System.Linq.Expressions;
 public partial class CellularAutomataEngine : Node2D
 {
 
@@ -15,7 +16,7 @@ public partial class CellularAutomataEngine : Node2D
 	private DrawingState _drawingState = DrawingState.None;
 
 	// Elements that should only be placed once per click, not continuously
-	private readonly string[] singleClickElements = {"Spider", "Seed", "Worm", "Snail"};
+	private readonly string[] singleClickElements = {"Seed", "Worm", "Snail"};
 
 	private ButtonGroup buttonGroup;
 	public string selectedElement; // TODO idk how to do differently
@@ -242,7 +243,15 @@ public partial class CellularAutomataEngine : Node2D
 
 	private void createElement(int x, int y, string elementType)
 	{
-		elementArray[x, y] = (Element)Activator.CreateInstance(Type.GetType(elementType));
+		switch (elementType)
+		{
+			case "Water":
+				elementArray[x, y] = new Water();
+				break;
+			default:
+				elementArray[x, y] = (Element)Activator.CreateInstance(Type.GetType(elementType));
+				break;
+		}
 	}
 
 	private void createElement(int x, int y, string elementType, string state)
@@ -255,36 +264,22 @@ public partial class CellularAutomataEngine : Node2D
 	{
 		Element[,] oldElementArray = (Element[,])elementArray.Clone();
 
-		// Create a list of all element positions and shuffle them to eliminate processing order bias (created a problem with gas flow bias)
-		var elementPositions = new System.Collections.Generic.List<(int x, int y)>();
-		
+		// Process elements in random order
 		for (int x = 0; x < gridWidth; x++)
 		{
 			for (int y = 0; y < gridHeight; y++)
 			{
-				if (oldElementArray[x, y] != null)
-				{
-					elementPositions.Add((x, y));
-				}
+
+				oldElementArray[x, y]?.update(oldElementArray, x, y, gridWidth, gridHeight, tick);
+
 			}
 		}
 
-		// Shuffle the positions to randomize processing order
-		var rng = new RandomNumberGenerator();
-		for (int i = elementPositions.Count - 1; i > 0; i--)
-		{
-			int randomIndex = Random.Shared.Next(0, i);
-			(elementPositions[i], elementPositions[randomIndex]) = (elementPositions[randomIndex], elementPositions[i]);
-		}
-
-		// Process elements in random order
-		foreach ((int x, int y) in elementPositions)
-		{
-			if (oldElementArray[x, y] != null)
-			{
-				oldElementArray[x, y].update(oldElementArray, x, y, gridWidth, gridHeight, tick);
-			}
-		}
+		GridManager.Instance.ProcessDeletions(elementArray, gridWidth, gridHeight);
+		NutrientManager.Instance.ProcessNutrientRequests(oldElementArray, elementArray, gridWidth, gridHeight);
+		NutrientManager.Instance.ProcessWetnessRequests(oldElementArray, elementArray, gridWidth, gridHeight);
+		FireManager.Instance.ProcessIgnitionRequests(elementArray, gridWidth, gridHeight);
+		MoveManager.Instance.ProcessMoveRequests(oldElementArray, elementArray, gridWidth, gridHeight);
 		
 		tick++;
 	}

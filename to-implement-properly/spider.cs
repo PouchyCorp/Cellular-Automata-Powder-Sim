@@ -1,3 +1,4 @@
+#if TOOLS
 using Godot;
 using System;
 using System.Linq;
@@ -494,3 +495,5 @@ public class Spider : Element, ILife, ISolid
 		return i;
 	}
 }
+
+#endif
