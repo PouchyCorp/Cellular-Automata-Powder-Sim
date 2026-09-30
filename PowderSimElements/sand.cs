@@ -10,16 +10,6 @@ public class Sand : Element, IPowder, ISolid
 		modulateColor(0.2f);
 	}
 
-	public override bool canMoveDownOnElement(Element elementWhereMovement)
-	{
-		return PowderBehavior.CanMoveDownOnElement(elementWhereMovement);
-	}
-
-	public override bool canMoveSideOnElement(Element elementWhereMovement)
-	{
-		return PowderBehavior.CanMoveSideOnElement(elementWhereMovement);
-	}
-
 	public override void modulateColor(float intensity = 0.05F)
 	{
 		float w = Random.Shared.NextSingle() * intensity;

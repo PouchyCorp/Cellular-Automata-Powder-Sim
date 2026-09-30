@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Godot;
 
 
@@ -23,6 +24,30 @@ public class MoveRequest
 	{
 		return (movementX != 0 || movementY != 0) && !(x+movementX < 0 || x+movementX >= maxX || y+movementY < 0 || y+movementY >= maxY);
 	}
+
+	public static bool canMoveOnElement(Element element, Element target)
+	{
+		if (target == null)
+		{
+			return true;
+		}
+		if (target is IGas){
+			if (element is IGas && element.density < target.density){ // we assume that the gas density is always less than any other element density
+				return false;
+			}
+			return true;
+		}
+		if (target is ILiquid){
+			if (element is IGas){
+				return false;
+			}
+			if (element is ILiquid && element.density < target.density){
+				return false;
+			}
+			return true;
+		}
+		return false;
+	}
 	public static bool CanMove(Element[,] oldElementArray, int x, int y, int movementX, int movementY, int maxX, int maxY)
 	{
 		int newX = x + movementX;
@@ -33,23 +58,7 @@ public class MoveRequest
 			return false;
 		}
 
-		Element elementWhereMovement = oldElementArray[newX, newY];
-
-		if (
-				(movementY > 0 &&
-				oldElementArray[x, y].canMoveDownOnElement(elementWhereMovement))
-			||
-				(movementY < 0 &&
-				oldElementArray[x, y].canMoveUpOnElement(elementWhereMovement))
-			||
-				(movementY == 0 &&
-				oldElementArray[x, y].canMoveSideOnElement(elementWhereMovement))
-			)
-		{
-			return true;
-		}
-
-		return false;
+		return canMoveOnElement(oldElementArray[x, y], oldElementArray[newX, newY]);
 	}
 }
 

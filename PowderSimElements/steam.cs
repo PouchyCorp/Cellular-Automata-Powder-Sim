@@ -14,12 +14,6 @@ public class Steam : Element, IGas
 		color = new Color(Colors.WhiteSmoke.R, Colors.WhiteSmoke.G, Colors.WhiteSmoke.B, 0.05f);
 		this.wetness = wetness;
 	}
-
-	public override bool canMoveUpOnElement(Element elementWhereMovement)
-	{
-		return elementWhereMovement == null || elementWhereMovement.density < density || elementWhereMovement is IGas;
-	}
-
 	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		if (Random.Shared.NextSingle() < 0.01f)

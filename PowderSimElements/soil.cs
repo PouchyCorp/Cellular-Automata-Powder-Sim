@@ -24,16 +24,6 @@ public class Soil : Element, IPowder, ISolid, ILife
 		modulateColor();
 	}
 
-	public override bool canMoveDownOnElement(Element elementWhereMovement)
-	{
-		return PowderBehavior.CanMoveDownOnElement(elementWhereMovement);
-	}
-
-	public override bool canMoveSideOnElement(Element elementWhereMovement)
-	{
-		return PowderBehavior.CanMoveSideOnElement(elementWhereMovement);
-	}
-
 	public override void modulateColor(float intensity = 0.05F)
 	{
 		float z = Random.Shared.NextSingle() * intensity;

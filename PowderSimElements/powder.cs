@@ -2,29 +2,11 @@ using System;
 
 public interface IPowder
 {
-	public bool canMoveDownOnElement(Element elementWhereMovement)
-	{
-		return elementWhereMovement == null || elementWhereMovement is IGas || elementWhereMovement is ILiquid;
-	}
-
-	public bool canMoveSideOnElement(Element elementWhereMovement)
-	{
-		return elementWhereMovement == null || elementWhereMovement is IGas || elementWhereMovement is ILiquid;
-	}
+	// No specific properties for powders (everything is already in Element class)
 }
 
 public static class PowderBehavior
 {
-	public static bool CanMoveDownOnElement(Element elementWhereMovement)
-	{
-		return elementWhereMovement == null || elementWhereMovement is IGas || elementWhereMovement is ILiquid;
-	}
-
-	public static bool CanMoveSideOnElement(Element elementWhereMovement)
-	{
-		return elementWhereMovement == null || elementWhereMovement is IGas || elementWhereMovement is ILiquid;
-	}
-
 	public static void Update(IPowder self, Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 

@@ -42,17 +42,13 @@ public class Water : Element, ILiquid
 			return;
 		}
 
-		if (Random.Shared.NextSingle() < evaporationChance && y - 1 > 0 && oldElementArray[x, y - 1] == null)
-		{
-			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, new Steam(wetness));
-			return;
-		}
+		// if (Random.Shared.NextSingle() < evaporationChance && y - 1 > 0 && oldElementArray[x, y - 1] == null)
+		// {
+		// 	GridManager.Instance.RequestDeletion(x, y, maxX, maxY, new Steam(wetness));
+		// 	return;
+		// }
 
-		if (lifetime <= 0
-		&& (y - 1 == maxY
-		|| (y + 2 < maxY
-		&& oldElementArray[x, y + 1] is not ILiquid
-		&& oldElementArray[x, y + 2] is not ILiquid)))
+		if (lifetime <= 0)
 		{
 			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, null);
 			return;

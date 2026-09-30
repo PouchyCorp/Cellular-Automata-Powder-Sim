@@ -10,17 +10,7 @@ public class Ash : Element, IPowder, ILife
 		color = Colors.Gray;
 		nutrient = nutrientAmount; // ash is very nutritious (yum :3)
 	}
-
-	public override bool canMoveDownOnElement(Element elementWhereMovement)
-	{
-		return PowderBehavior.CanMoveDownOnElement(elementWhereMovement);
-	}
-
-	public override bool canMoveSideOnElement(Element elementWhereMovement)
-	{
-		return PowderBehavior.CanMoveSideOnElement(elementWhereMovement);
-	}
-
+	
 	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		PowderBehavior.Update(this, oldElementArray, x, y, maxX, maxY, T);

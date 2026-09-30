@@ -14,15 +14,6 @@ public class SurfBiomass : Element, IPowder, ISolid, ILife
 		nutrient = startingNutrient;
 		modulateColor();
 	}
-	public override bool canMoveDownOnElement(Element elementWhereMovement)
-	{
-		return PowderBehavior.CanMoveDownOnElement(elementWhereMovement);
-	}
-
-	public override bool canMoveSideOnElement(Element elementWhereMovement)
-	{
-		return PowderBehavior.CanMoveSideOnElement(elementWhereMovement);
-	}
 	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 		if (wetness <= 0.0f && nutrient <= 0.0f)

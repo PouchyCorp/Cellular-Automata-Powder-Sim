@@ -2,28 +2,33 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using System;
+using System.ComponentModel.DataAnnotations;
 
 // ---------------------------------------
 // TODO : Make the NutrientManager account for the maxNutrient and maxWetness of the target element when processing requests
 // ---------------------------------------
 public interface ILife
 {
-	public float nutrient
+    public float nutrient
     {
-		get { return nutrient; }   // get method
-		set {
-			ArgumentOutOfRangeException.ThrowIfGreaterThan(value, maxNutrient);
-			nutrient = value; }  // set method
-	}
-	public float maxNutrient => 10.0f;
-	
-	public float wetness
-	{
-		get { return wetness; }   // get method
-		set {
-			ArgumentOutOfRangeException.ThrowIfGreaterThan(value, maxWetness);
-			wetness = value; }  // set method
-	}
+        get { return nutrient; }   // get method
+        set
+        {
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(value, maxNutrient);
+            nutrient = value;
+        }  // set method
+    }
+    public float maxNutrient => 10.0f;
+
+    public float wetness
+    {
+        get { return wetness; }   // get method
+        set
+        {
+            ArgumentOutOfRangeException.ThrowIfGreaterThan(value, maxWetness);
+            wetness = value;
+        }  // set method
+    }
 
     public float maxWetness => 1.0f;
 }
@@ -62,7 +67,7 @@ public class TakeNutrientRequest
     public float NutrientAmount { get; set; }
 
     public TakeNutrientRequest(int x, int y, int targetX, int targetY, float nutrientAmount)
-   
+
     {
         this.x = x;
         this.y = y;
@@ -81,13 +86,13 @@ public class TakeWetnessRequest
 {
     public int x { get; set; }
     public int y { get; set; }
-        
+
     public int targetX { get; set; }
     public int targetY { get; set; }
     public float WetnessAmount { get; set; }
 
     public TakeWetnessRequest(int x, int y, int targetX, int targetY, float wetnessAmount)
-   
+
     {
         this.x = x;
         this.y = y;
@@ -106,7 +111,7 @@ public class GiveWetnessRequest
 {
     public int x { get; set; }
     public int y { get; set; }
-        
+
     public int targetX { get; set; }
     public int targetY { get; set; }
     public float WetnessAmount { get; set; }
@@ -204,102 +209,199 @@ public class NutrientManager
         }
     }
 
-    public void ProcessNutrientRequests(Element[,] oldElementArray, Element[,] currentElementArray, int maxX, int maxY)
+    public void ProcessNutrientRequests(
+    Element[,] oldElementArray,
+    Element[,] currentElementArray)
     {
-
-        // give nutrient requests are puposely processed before take nutrient requests to save of conflicts
         foreach (var position in uniqueNutrientTargets)
         {
-            // sum all the in and out nutrient requests for this position
-            float totalNutrientGiven = 0;
-            float totalNutrientTaken = 0;
+            if (currentElementArray[position.Item1, position.Item2] is not ILife targetElement)
+                continue;
 
-            totalNutrientGiven = giveNutrientRequests.ContainsKey(position) ? giveNutrientRequests[position].Sum(r => r.NutrientAmount) : 0;
-            totalNutrientTaken = takeNutrientRequests.ContainsKey(position) ? takeNutrientRequests[position].Sum(r => r.NutrientAmount) : 0;
+            bool hasGiveRequests = giveNutrientRequests.TryGetValue(
+                position, out var giveRequests);
 
-            if (currentElementArray[position.Item1, position.Item2] is ILife targetElement)
+            bool hasTakeRequests = takeNutrientRequests.TryGetValue(
+                position, out var takeRequests);
+
+            float totalNutrientGiven = hasGiveRequests
+                ? giveRequests.Sum(r => r.NutrientAmount)
+                : 0;
+
+            float totalNutrientTaken = hasTakeRequests
+                ? takeRequests.Sum(r => r.NutrientAmount)
+                : 0;
+
+            float nutrientBalance =
+                targetElement.nutrient
+                + totalNutrientGiven
+                - totalNutrientTaken;
+
+
+            // ------------------------------------------------------------
+            // The target would overflow.
+            // ------------------------------------------------------------
+            if (nutrientBalance > targetElement.maxNutrient)
             {
-
-                var nutrientBalance = targetElement.nutrient + totalNutrientGiven - totalNutrientTaken;
-                if (targetElement.maxNutrient < nutrientBalance)
+                // Process takes first
+                if (hasTakeRequests)
                 {
-                    // if the target element cannot hold all the nutrient, we need to adjust the totalNutrientToTake and totalNutrientToGive
-                    float excessNutrient = nutrientBalance - targetElement.maxNutrient;
-                    if (excessNutrient > 0)
-                    {
-                        // we need to reduce the totalNutrientToTake by the excess nutrient
-                        totalNutrientGiven -= excessNutrient;
-                    }
-
-                    foreach (var request in giveNutrientRequests[position])
+                    foreach (var request in takeRequests)
                     {
                         if (oldElementArray[request.x, request.y] is ILife nutrientElement)
                         {
-                            float nutrientToGive = Mathf.Min(request.NutrientAmount, totalNutrientGiven);
-                            nutrientElement.nutrient -= nutrientToGive;
-                            targetElement.nutrient += nutrientToGive;
-                            totalNutrientGiven -= nutrientToGive;
-                            if (totalNutrientGiven <= 0)
-                            {
-                                break;
-                            }
-                        }
-                    }
+                            float nutrientToTake = Mathf.Min(
+                                request.NutrientAmount,
+                                Mathf.Min(targetElement.nutrient,
+                                nutrientElement.maxNutrient - nutrientElement.nutrient)
+                            );
 
-                }
-                else if (nutrientBalance < 0)
-                {
-                    // more nutrient is being taken than given, so we can only take as much as is available
-                    float totalNutrientAvailable = targetElement.nutrient;
-                    float totalNutrientToTakeAdjusted = Mathf.Min(totalNutrientAvailable, totalNutrientTaken);
+                            if (nutrientToTake <= 0)
+                                continue;
 
-                    foreach (var request in takeNutrientRequests[position])
-                    {
-                        if (oldElementArray[request.x, request.y] is ILife nutrientElement)
-                        {
-                            float nutrientToTake = Mathf.Min(request.NutrientAmount, totalNutrientToTakeAdjusted);
                             targetElement.nutrient -= nutrientToTake;
                             nutrientElement.nutrient += nutrientToTake;
-                            totalNutrientToTakeAdjusted -= nutrientToTake;
-                            if (totalNutrientToTakeAdjusted <= 0)
-                            {
-                                break;
-                            }
                         }
                     }
                 }
-                else // if balance is 0 or positive, we can give all the nutrient
+
+                // Then process gives.
+                //
+                // There may still be more GIVE than the target can hold,
+                // so the last requests may only be partially fulfilled.
+                if (hasGiveRequests)
                 {
-                    // more nutrient is being given than taken, so we can give all the nutrient
-                    foreach (var request in giveNutrientRequests[position])
+                    foreach (var request in giveRequests)
                     {
                         if (oldElementArray[request.x, request.y] is ILife nutrientElement)
                         {
-                            nutrientElement.nutrient -= request.NutrientAmount;
+                            float nutrientToGive = Mathf.Min(
+                                request.NutrientAmount,
+                                Mathf.Min(nutrientElement.nutrient,
+                                targetElement.maxNutrient - targetElement.nutrient)
+                            );
+
+                            if (nutrientToGive <= 0)
+                                continue;
+
+                            nutrientElement.nutrient -= nutrientToGive;
+                            targetElement.nutrient += nutrientToGive;
                         }
                     }
+                }
+            }
 
-                    foreach (var request in takeNutrientRequests[position])
+
+            // ------------------------------------------------------------
+            // The target would underflow.
+            // ------------------------------------------------------------
+            else if (nutrientBalance < 0)
+            {
+                // Process gives first
+                if (hasGiveRequests)
+                {
+                    foreach (var request in giveRequests)
                     {
                         if (oldElementArray[request.x, request.y] is ILife nutrientElement)
                         {
-                            nutrientElement.nutrient += request.NutrientAmount;
+                            float nutrientToGive = Mathf.Min(
+                                request.NutrientAmount,
+                                Mathf.Min(nutrientElement.nutrient, targetElement.maxNutrient - targetElement.nutrient)
+                            );
+
+                            if (nutrientToGive <= 0)
+                                continue;
+
+                            nutrientElement.nutrient -= nutrientToGive;
+                            targetElement.nutrient += nutrientToGive;
                         }
                     }
+                }
 
-                    targetElement.nutrient = nutrientBalance; // set the target element's nutrient to the new value
+                // Then process takes
+                if (hasTakeRequests)
+                {
+                    foreach (var request in takeRequests)
+                    {
+                        if (oldElementArray[request.x, request.y] is ILife nutrientElement)
+                        {
+                            float nutrientToTake = Mathf.Min(
+                                request.NutrientAmount,
+                                Mathf.Min(targetElement.nutrient, nutrientElement.maxNutrient - nutrientElement.nutrient)
+                            );
+
+                            if (nutrientToTake <= 0)
+                                continue;
+
+                            targetElement.nutrient -= nutrientToTake;
+                            nutrientElement.nutrient += nutrientToTake;
+                        }
+                    }
+                }
+            }
+
+
+            // ------------------------------------------------------------
+            // The requested net change fits within the target.
+            //
+            // Either order is safe.
+            // ------------------------------------------------------------
+            else
+            {
+                // Give
+                if (hasGiveRequests)
+                {
+                    foreach (var request in giveRequests)
+                    {
+                        if (oldElementArray[request.x, request.y] is ILife nutrientElement)
+                        {
+                            float nutrientToGive = Mathf.Min(
+                                request.NutrientAmount,
+                                Mathf.Min(nutrientElement.nutrient, targetElement.maxNutrient - targetElement.nutrient)
+                            );
+
+                            if (nutrientToGive <= 0)
+                                continue;
+
+                            nutrientElement.nutrient -= nutrientToGive;
+                            targetElement.nutrient += nutrientToGive;
+                        }
+                    }
+                }
+
+                // Take
+                if (hasTakeRequests)
+                {
+                    foreach (var request in takeRequests)
+                    {
+                        if (oldElementArray[request.x, request.y] is ILife nutrientElement)
+                        {
+                            float nutrientToTake = Mathf.Min(
+                                request.NutrientAmount,
+                                Mathf.Min(targetElement.nutrient,
+                                nutrientElement.maxNutrient - nutrientElement.nutrient)
+                            );
+
+                            if (nutrientToTake <= 0)
+                                continue;
+
+                            targetElement.nutrient -= nutrientToTake;
+                            nutrientElement.nutrient += nutrientToTake;
+                        }
+                    }
                 }
             }
         }
-        
+
         takeNutrientRequests.Clear();
         giveNutrientRequests.Clear();
+        uniqueNutrientTargets.Clear();
     }
 
     public void ProcessWetnessRequests(Element[,] oldElementArray, Element[,] currentElementArray, int maxX, int maxY) // almost the same as ProcessWetnessRequests, but for wetness
-    // IMPORTANT : This was made by just copying and pasting the above method and it may be bugged
+                                                                                                                       // IMPORTANT : This was made by just copying and pasting the above method and it may be bugged
     {
-        
+
         // give wetness requests are puposely processed before take wetness requests to save of conflicts
         foreach (var position in uniqueWetnessTargets)
         {
@@ -307,8 +409,11 @@ public class NutrientManager
             float totalWetnessGiven = 0;
             float totalWetnessTaken = 0;
 
-            totalWetnessGiven = giveWetnessRequests.ContainsKey(position) ? giveWetnessRequests[position].Sum(r => r.WetnessAmount) : 0;
-            totalWetnessTaken = takeWetnessRequests.ContainsKey(position) ? takeWetnessRequests[position].Sum(r => r.WetnessAmount) : 0;
+            bool hasGiveRequests = giveWetnessRequests.ContainsKey(position);
+            bool hasTakeRequests = takeWetnessRequests.ContainsKey(position);
+
+            totalWetnessGiven = hasGiveRequests ? giveWetnessRequests[position].Sum(r => r.WetnessAmount) : 0;
+            totalWetnessTaken = hasTakeRequests ? takeWetnessRequests[position].Sum(r => r.WetnessAmount) : 0;
 
             if (currentElementArray[position.Item1, position.Item2] is ILife targetElement)
             {
@@ -324,6 +429,7 @@ public class NutrientManager
                         totalWetnessGiven -= excessWetness;
                     }
 
+                    if (!hasGiveRequests) continue;
                     foreach (var request in giveWetnessRequests[position])
                     {
                         if (oldElementArray[request.x, request.y] is ILife wetnessElement)
@@ -346,6 +452,7 @@ public class NutrientManager
                     float totalWetnessAvailable = targetElement.wetness;
                     float totalWetnessToTakeAdjusted = Mathf.Min(totalWetnessAvailable, totalWetnessTaken);
 
+                    if (!hasTakeRequests) continue;
                     foreach (var request in takeWetnessRequests[position])
                     {
                         if (oldElementArray[request.x, request.y] is ILife wetnessElement)
@@ -364,6 +471,7 @@ public class NutrientManager
                 else // if balance is 0 or positive, we can give all the wetness
                 {
                     // more wetness is being given than taken, so we can give all the wetness
+                    if (!hasGiveRequests) continue;
                     foreach (var request in giveWetnessRequests[position])
                     {
                         if (oldElementArray[request.x, request.y] is ILife wetnessElement)
@@ -371,7 +479,7 @@ public class NutrientManager
                             wetnessElement.wetness -= request.WetnessAmount;
                         }
                     }
-
+                    if (!hasTakeRequests) continue;
                     foreach (var request in takeWetnessRequests[position])
                     {
                         if (oldElementArray[request.x, request.y] is ILife wetnessElement)
@@ -384,8 +492,9 @@ public class NutrientManager
                 }
             }
         }
-        
+
         takeWetnessRequests.Clear();
         giveWetnessRequests.Clear();
+        uniqueWetnessTargets.Clear();
     }
 }

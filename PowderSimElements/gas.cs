@@ -7,10 +7,6 @@ public interface IGas
 
 public static class GasBehavior
 {
-    public static bool canMoveUpOnElement(this Element self, Element elementWhereMovement)
-	{
-		return elementWhereMovement == null || elementWhereMovement.density < self.density || elementWhereMovement is IGas;
-	}
     public static void update(this IGas self, Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T){
         float decision = Random.Shared.NextSingle();
 		int distFromCloudLine = Math.Abs(self.cloudLineY - y) + 1;

@@ -6,48 +6,7 @@ public abstract class Element
 	public bool needUpdate { get; set; } = true;
 	public Color baseColor { get; protected set; }
 	public double density { get; protected set; }
-
-	public virtual bool canMoveDownOnElement(Element elementWhereMovement)
-	{
-		return elementWhereMovement == null || elementWhereMovement.density < density;
-	}
-
-	public virtual bool canMoveUpOnElement(Element elementWhereMovement)
-	{
-		return elementWhereMovement == null || elementWhereMovement.density > density;
-	}
-
-	public virtual bool canMoveSideOnElement(Element elementWhereMovement)
-	{
-		return elementWhereMovement == null || elementWhereMovement.density < density;
-	}
-
-	public virtual bool move(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int movementX, int movementY)
-	{
-		int newX = x + movementX, newY = y + movementY;
-
-		if (newX >= maxX || newX < 0 ||
-			newY >= maxY || newY < 0) return false;
-
-		if (
-				(movementY > 0 &&
-				canMoveDownOnElement(oldElementArray[newX, newY]))
-			||
-				(movementY < 0 &&
-				canMoveUpOnElement(oldElementArray[newX, newY]))
-			||
-				(movementY == 0 &&
-				canMoveSideOnElement(oldElementArray[newX, newY]))
-			)
-		{
-			currentElementArray[x, y] = currentElementArray[newX, newY];
-			currentElementArray[newX, newY] = this;
-			return true;
-		}
-
-
-		return false;
-	}
+	
 	public virtual void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
 	{
 	}
