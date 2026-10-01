@@ -2,13 +2,13 @@ using System;
 
 public interface IGas
 {
-    public int cloudLineY { get; set; }
+	public int cloudLineY { get; set; }
 }
 
 public static class GasBehavior
 {
-    public static void update(this IGas self, Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T){
-        float decision = Random.Shared.NextSingle();
+	public static void update(this IGas self, Element[,] oldGrid, int x, int y, int maxX, int maxY, int T){
+		float decision = Random.Shared.NextSingle();
 		int distFromCloudLine = Math.Abs(self.cloudLineY - y) + 1;
 
 		int movementX = 0;
@@ -44,14 +44,14 @@ public static class GasBehavior
 			}
 		}
 
-		if (movementX != 0 || movementY != 0){
-			if (oldElementArray[x + movementX, y + movementY] is Web)
+		if ((movementX != 0 || movementY != 0) && x + movementX >= 0 && x + movementX < maxX && y + movementY >= 0 && y + movementY < maxY){
+			if (oldGrid[x + movementX, y + movementY] is Web)
 			{
 				GridManager.Instance.RequestDeletion(x, y, maxX, maxY);
 			}
 
-			MoveManager.Instance.AttemptMove(oldElementArray, x, y, movementX, movementY, maxX, maxY);
+			MoveManager.Instance.AttemptMove(oldGrid, x, y, movementX, movementY, maxX, maxY);
 		}
 			
-    }
+	}
 }

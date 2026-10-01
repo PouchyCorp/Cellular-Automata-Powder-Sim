@@ -11,8 +11,8 @@ public class Ash : Element, IPowder, ILife
 		nutrient = nutrientAmount; // ash is very nutritious (yum :3)
 	}
 	
-	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
-		PowderBehavior.Update(this, oldElementArray, x, y, maxX, maxY, T);
+		PowderBehavior.Update(this, oldGrid, x, y, maxX, maxY, T);
 	}
 }

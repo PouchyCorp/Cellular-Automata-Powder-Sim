@@ -17,7 +17,7 @@ public class Web : Element, ILife, IFlammable
 	{
 		lifetime = 100 * 60;
 	}
-	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		lifetime--;
 		if (lifetime <= 0)
@@ -25,7 +25,7 @@ public class Web : Element, ILife, IFlammable
 			GridManager.Instance.RequestDeletion(x, y, maxX, maxY);
 			return;
 		}
-		FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
+		FlammableBehavior.burn(this, oldGrid, x, y, maxX, maxY, T);
 		updateColor(T, x, y);
 	}
 

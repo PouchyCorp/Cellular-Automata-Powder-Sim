@@ -27,15 +27,15 @@ public class Root : Element, ILife, ISolid
 	/// <summary>
 	/// Returns the parent seed if it still exists, otherwise null
 	/// </summary>
-	public Seed getParentSeed(Element[,] currentElementArray, int maxX, int maxY)
+	public Seed getParentSeed(Element[,] currentGrid, int maxX, int maxY)
 	{
-		if (currentElementArray[parentSeed.Item1, parentSeed.Item2] is Seed seed)
+		if (currentGrid[parentSeed.Item1, parentSeed.Item2] is Seed seed)
 		{
 			return seed;
 		}
 		return null;
 	}
-	private void absorbNutrientsAndWetness(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	private void absorbNutrientsAndWetness(Element[,] currentGrid, int x, int y, int maxX, int maxY)
 	{
 		// absorb nutrients and wetness from adjacent soil in cardinal directions
 		(int, int)[] directions = [(0, -1), (0, 1), (-1, 0), (1, 0)];
@@ -46,7 +46,7 @@ public class Root : Element, ILife, ISolid
 			int targetY = y + dir.Item2;
 			if (targetX >= 0 && targetX < maxX && targetY >= 0 && targetY < maxY)
 			{
-				if (currentElementArray[targetX, targetY] is Soil soil)
+				if (currentGrid[targetX, targetY] is Soil soil)
 				{
 
 					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(x, y, targetX, targetY, soil.nutrient / 4), maxX, maxY);
@@ -56,10 +56,10 @@ public class Root : Element, ILife, ISolid
 		}
 	}
 
-	private void transferNutrientsUpwards(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	private void transferNutrientsUpwards(Element[,] currentGrid, int x, int y, int maxX, int maxY)
 	{
 		// transfer nutrients to parent seed if it exists
-		Seed seed = getParentSeed(currentElementArray, maxX, maxY);
+		Seed seed = getParentSeed(currentGrid, maxX, maxY);
 		if (seed != null)
 		{
 			if (seed.nutrient >= seed.maxNutrient && seed.wetness >= 1f) return; // parent seed full
@@ -75,10 +75,10 @@ public class Root : Element, ILife, ISolid
 		}
 	}
 
-	private bool isValidRootGrowthPosition(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	private bool isValidRootGrowthPosition(Element[,] currentGrid, int x, int y, int maxX, int maxY)
 	{
 		if (x < 0 || x >= maxX || y < 0 || y >= maxY) return false;
-		if (currentElementArray[x, y] is not Soil) return false;
+		if (currentGrid[x, y] is not Soil) return false;
 		int adjacentRoots = 0;
 		for (int nx = x - 1; nx <= x + 1; nx++)
 		{
@@ -87,7 +87,7 @@ public class Root : Element, ILife, ISolid
 				if ((nx, ny) == (x, y)) continue;
 				if (nx >= 0 && nx < maxX && ny >= 0 && ny < maxY)
 				{
-					if (currentElementArray[nx, ny] is Root)
+					if (currentGrid[nx, ny] is Root)
 					{
 						adjacentRoots++;
 					}
@@ -98,13 +98,13 @@ public class Root : Element, ILife, ISolid
 		return true;
 	}
 
-	public bool growRoot(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	public bool growRoot(Element[,] oldGrid, Element[,] currentGrid, int x, int y, int maxX, int maxY)
 	{
 		if (nutrient < 1) return false;
 		if (wetness < 0.2f) return false;
 		if (y + 1 >= maxY) return false;
 
-		Seed parent = getParentSeed(currentElementArray, maxX, maxY);
+		Seed parent = getParentSeed(currentGrid, maxX, maxY);
 		if (parent == null) return false;
 		if (parent?.rootCount >= parent?.maxRootCount) return false;
 
@@ -114,7 +114,7 @@ public class Root : Element, ILife, ISolid
 		{
 			for (int ny = y; ny <= y + 1; ny++)
 			{
-				if (isValidRootGrowthPosition(oldElementArray, nx, ny, maxX, maxY))
+				if (isValidRootGrowthPosition(oldGrid, nx, ny, maxX, maxY))
 				{
 					possibleGrowthPositions.Add((nx, ny));
 				}
@@ -124,7 +124,7 @@ public class Root : Element, ILife, ISolid
 		{
 			var rand = new Random();
 			var chosenPos = possibleGrowthPositions[rand.Next(possibleGrowthPositions.Count)]; // found this online
-			currentElementArray[chosenPos.Item1, chosenPos.Item2] = new Root(parentSeed);
+			currentGrid[chosenPos.Item1, chosenPos.Item2] = new Root(parentSeed);
 			parent.rootCount++;
 			nutrient -= 1f;
 			wetness -= 0.2f;
@@ -136,10 +136,10 @@ public class Root : Element, ILife, ISolid
 		}
 	}
 
-	override public void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	override public void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		// if parent seed no longer exists, turn into soil with same nutrient and wetness to not lose resources
-		Seed parent = getParentSeed(oldElementArray, maxX, maxY);
+		Seed parent = getParentSeed(oldGrid, maxX, maxY);
 		if (parent == null || parent.plantState == Seed.PlantState.Dying)
 		{
 			if (Random.Shared.NextSingle() > 0.01f) return; // 99% chance to delay transformation to biomass
@@ -152,9 +152,9 @@ public class Root : Element, ILife, ISolid
 		if (T - lastActivity >= activityInterval)
 		{
 			lastActivity = T;
-			absorbNutrientsAndWetness(oldElementArray, x, y, maxX, maxY);
-			transferNutrientsUpwards(oldElementArray, x, y, maxX, maxY);
-			growRoot(oldElementArray, oldElementArray, x, y, maxX, maxY);
+			absorbNutrientsAndWetness(oldGrid, x, y, maxX, maxY);
+			transferNutrientsUpwards(oldGrid, x, y, maxX, maxY);
+			growRoot(oldGrid, oldGrid, x, y, maxX, maxY);
 		}
 
 		updateColor(T, x, y);

@@ -30,11 +30,11 @@ public class Fruit : Element, ILife, ISolid, IFlammable
         base.updateColor(T, x, y);
     }
 
-	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		if (y + 1 >= maxY) return; // out of bounds below
 
-		if (oldElementArray[x, y + 1] is not Leaf)
+		if (oldGrid[x, y + 1] is not Leaf)
 		{
 			lifetimeOnSoil--;
 		}
@@ -46,7 +46,7 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 			return;
 		}
 
-		if (oldElementArray[x, y + 1] is not ISolid)
+		if (oldGrid[x, y + 1] is not ISolid)
 		{
 			
 			int strafeChance = Random.Shared.Next(1, 4);
@@ -55,7 +55,7 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 				// strafe left (25% chance)
 			if (strafeChance == 2 && x - 1 >= 0)
 			{
-				MoveManager.Instance.AttemptMove(oldElementArray, x, y, -1, 1, maxX, maxY);
+				MoveManager.Instance.AttemptMove(oldGrid, x, y, -1, 1, maxX, maxY);
 				return;
 			}
 					
@@ -63,18 +63,18 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 			// strafe right (25% chance)
 			if (strafeChance == 1 && x + 1 < maxX)
 			{
-				MoveManager.Instance.AttemptMove(oldElementArray, x, y, 1, 1, maxX, maxY);
+				MoveManager.Instance.AttemptMove(oldGrid, x, y, 1, 1, maxX, maxY);
 				return;
 			}
 
 
 			// move down (50% chance)
-			MoveManager.Instance.AttemptMove(oldElementArray, x, y, 0, 1, maxX, maxY);
+			MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, 1, maxX, maxY);
 			return;
 		}
 
 		// if polliated and on soil, try to grow a seed
-		if (pollinated && oldElementArray[x, y + 1] is Soil)
+		if (pollinated && oldGrid[x, y + 1] is Soil)
 		{
 			// 2% chance each tick to grow a seed
 			if (Random.Shared.NextSingle() < 0.02f)
@@ -85,7 +85,7 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 			}
 		}
 
-		FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
+		FlammableBehavior.burn(this, oldGrid, x, y, maxX, maxY, T);
 		updateColor(T, x, y);
 	}
 

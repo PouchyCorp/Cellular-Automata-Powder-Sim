@@ -7,7 +7,7 @@ public abstract class Element
 	public Color baseColor { get; protected set; }
 	public double density { get; protected set; }
 	
-	public virtual void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	public virtual void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 	}
 

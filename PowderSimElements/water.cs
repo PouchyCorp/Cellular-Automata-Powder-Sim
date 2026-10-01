@@ -34,7 +34,7 @@ public class Water : Element, ILiquid
 	}
 
     // This definitely needs to be refactored, but for now it works
-	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		if (wetness <= 0)
 		{
@@ -42,7 +42,7 @@ public class Water : Element, ILiquid
 			return;
 		}
 
-		// if (Random.Shared.NextSingle() < evaporationChance && y - 1 > 0 && oldElementArray[x, y - 1] == null)
+		// if (Random.Shared.NextSingle() < evaporationChance && y - 1 > 0 && oldGrid[x, y - 1] == null)
 		// {
 		// 	GridManager.Instance.RequestDeletion(x, y, maxX, maxY, new Steam(wetness));
 		// 	return;
@@ -50,12 +50,21 @@ public class Water : Element, ILiquid
 
 		if (lifetime <= 0)
 		{
-			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, null);
+			if (wetness > 0)
+			{
+				GridManager.Instance.RequestDeletion(x, y, maxX, maxY, new Steam(wetness));
+			}
+			else
+			{
+				GridManager.Instance.RequestDeletion(x, y, maxX, maxY, null);
+			}
 			return;
 		}
 
-		LiquidBehavior.update(this, oldElementArray, x, y, maxX, maxY, T);
+		LiquidBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 
 		updateColor(T, x, y);
 	}
+
+
 }

@@ -36,7 +36,7 @@ public class Fly : Element, ILife, ISolid, IFlammable
 	}
 
 
-	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		lifetime--;
 		if (lifetime <= 0)
@@ -48,7 +48,7 @@ public class Fly : Element, ILife, ISolid, IFlammable
 		if (T - lastActivity < activityInterval)
 		{
 			// Not time to act yet
-			FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
+			FlammableBehavior.burn(this, oldGrid, x, y, maxX, maxY, T);
 			updateColor(T, x, y);
 			return;
 		}
@@ -62,9 +62,9 @@ public class Fly : Element, ILife, ISolid, IFlammable
 			if (T - stuckInWebTime > stuckInWebDuration)
 			{
 				stuckInWeb = false; // free from web after duration
-				tryMoveInDirection(oldElementArray, x, y, maxX, maxY, 0, -1, T); // try to move up out of web
+				tryMoveInDirection(oldGrid, x, y, maxX, maxY, 0, -1, T); // try to move up out of web
 			}
-			FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
+			FlammableBehavior.burn(this, oldGrid, x, y, maxX, maxY, T);
 			updateColor(T, x, y);
 			return; // can't move while stuck
 		}
@@ -76,11 +76,11 @@ public class Fly : Element, ILife, ISolid, IFlammable
 			directionChangeTimer = Random.Shared.Next(0, directionChangeInterval - 1); // reset timer with some randomness
 			changeDirection();
 		}
-		if (!tryMoveInDirection(oldElementArray, x, y, maxX, maxY, currentDirection.Item1, currentDirection.Item2, T))
+		if (!tryMoveInDirection(oldGrid, x, y, maxX, maxY, currentDirection.Item1, currentDirection.Item2, T))
 		{
 			// Try to change direction if blocked
 			changeDirection();
-			tryMoveInDirection(oldElementArray, x, y, maxX, maxY, currentDirection.Item1, currentDirection.Item2, T);
+			tryMoveInDirection(oldGrid, x, y, maxX, maxY, currentDirection.Item1, currentDirection.Item2, T);
 		}
 
 		for (int dx = -1; dx <= 1; dx++)
@@ -92,7 +92,7 @@ public class Fly : Element, ILife, ISolid, IFlammable
 				int ny = y + dy;
 				if (nx >= 0 && nx < maxX && ny >= 0 && ny < maxY)
 				{
-					if (oldElementArray[nx, ny] is Fruit fruit)
+					if (oldGrid[nx, ny] is Fruit fruit)
 					{
 						if (pollinateFruit(fruit))
 						{
@@ -106,14 +106,14 @@ public class Fly : Element, ILife, ISolid, IFlammable
 
 		if (nutrient == maxNutrient)
 		{
-			reproduce(oldElementArray, x, y, maxX, maxY);
+			reproduce(oldGrid, x, y, maxX, maxY);
 			nutrient = 1.0f; // Reset nutrient after reproduction
 		}
 
 
 
 		// just move around in the dirt
-		FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
+		FlammableBehavior.burn(this, oldGrid, x, y, maxX, maxY, T);
 		updateColor(T, x, y);
 
 	}
@@ -142,12 +142,12 @@ public class Fly : Element, ILife, ISolid, IFlammable
 			currentDirection = (1, 1); // down-right
 	}
 
-	private bool tryMoveInDirection(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int dirX, int dirY, int T)
+	private bool tryMoveInDirection(Element[,] oldGrid, int x, int y, int maxX, int maxY, int dirX, int dirY, int T)
 	{
 		if (x + dirX < 0 || x + dirX >= maxX || y + dirY < 0 || y + dirY >= maxY)
 			return false; // out of bounds
 
-		if (oldElementArray[x + dirX, y + dirY] is Web)
+		if (oldGrid[x + dirX, y + dirY] is Web)
 		{
 			stuckInWeb = true;
 			stuckInWebTime = T;
@@ -155,15 +155,15 @@ public class Fly : Element, ILife, ISolid, IFlammable
 			return true; // can't move into web
 		}
 
-		if (oldElementArray[x + dirX, y + dirY] == null || oldElementArray[x + dirX, y + dirY] is IGas)
+		if (oldGrid[x + dirX, y + dirY] == null || oldGrid[x + dirX, y + dirY] is IGas)
 		{
-			MoveManager.Instance.AttemptMove(oldElementArray, x, y, dirX, dirY, maxX, maxY);
+			MoveManager.Instance.AttemptMove(oldGrid, x, y, dirX, dirY, maxX, maxY);
 			return true;
 		}
 		return false;
 	}
 
-	public void reproduce(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
+	public void reproduce(Element[,] oldGrid, int x, int y, int maxX, int maxY)
 	{
 		List<(int, int)> directions = new List<(int, int)> { (0, 1), (1, 0), (0, -1), (-1, 0) };
 		foreach (var dir in directions)
@@ -172,9 +172,9 @@ public class Fly : Element, ILife, ISolid, IFlammable
 			int ny = y + dir.Item2;
 			if (nx > 0 && nx < maxX && ny > 0 && ny < maxY)
 			{
-				if (oldElementArray[nx, ny] == null)
+				if (oldGrid[nx, ny] == null)
 				{
-					oldElementArray[nx, ny] = new Fly();
+					oldGrid[nx, ny] = new Fly();
 					return; // Only try to reproduce in one direction
 				}
 			}

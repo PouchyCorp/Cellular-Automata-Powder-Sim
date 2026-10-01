@@ -29,7 +29,7 @@ public class Snail : Element, ILife, ISolid
 		density = 60;
 		color = Colors.Beige;
 	}
-	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		// Handle eating cooldown
 		if (eatingCooldown > 0)
@@ -40,7 +40,7 @@ public class Snail : Element, ILife, ISolid
 		}
 
 		// Check for adjacent surface biomass to eat
-		if (checkAndEatSurfaceBiomass(oldElementArray, x, y, maxX, maxY))
+		if (checkAndEatSurfaceBiomass(oldGrid, x, y, maxX, maxY))
 		{
 			snailState = SnailState.Eating;
 			eatingCooldown = EATING_WAIT_TIME;
@@ -49,10 +49,10 @@ public class Snail : Element, ILife, ISolid
 		}
 
 		// Transfer nutrients to soil if available
-		transferNutrientsToSoil(oldElementArray, x, y, maxX, maxY);
+		transferNutrientsToSoil(oldGrid, x, y, maxX, maxY);
 
 		// Validate current state - if we're not falling but have no solid surface, start falling
-		if (snailState != SnailState.Falling && !hasAdjacentSolidSurface(x, y, oldElementArray, maxX, maxY))
+		if (snailState != SnailState.Falling && !hasAdjacentSolidSurface(x, y, oldGrid, maxX, maxY))
 		{
 			snailState = SnailState.Falling;
 		}
@@ -60,13 +60,13 @@ public class Snail : Element, ILife, ISolid
 		switch (snailState)
 		{
 			case SnailState.Falling:
-				handleFallingState(oldElementArray, x, y, maxX, maxY, T);
+				handleFallingState(oldGrid, x, y, maxX, maxY, T);
 				break;
 			case SnailState.Idle:
-				handleIdleState(oldElementArray, x, y, maxX, maxY, T);
+				handleIdleState(oldGrid, x, y, maxX, maxY, T);
 				break;
 			case SnailState.Moving:
-				handleMovingState(oldElementArray, x, y, maxX, maxY, T);
+				handleMovingState(oldGrid, x, y, maxX, maxY, T);
 				break;
 			case SnailState.Eating:
 				// Already handled above
@@ -77,7 +77,7 @@ public class Snail : Element, ILife, ISolid
 		updateColor(T, x, y);
 	}
 
-	private bool checkAndEatSurfaceBiomass(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
+	private bool checkAndEatSurfaceBiomass(Element[,] oldGrid, int x, int y, int maxX, int maxY)
 	{
 		// Check all 8 adjacent cells for surface biomass
 		for (int nx = Math.Max(0, x - 1); nx <= Math.Min(x + 1, maxX - 1); nx++)
@@ -86,7 +86,7 @@ public class Snail : Element, ILife, ISolid
 			{
 				if (nx == x && ny == y) continue;
 
-				if (oldElementArray[nx, ny] is SurfBiomass surfBiomass)
+				if (oldGrid[nx, ny] is SurfBiomass surfBiomass)
 				{
 					// Eat the surface biomass
 					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(x, y, x, y, surfBiomass.nutrient), maxX, maxY);
@@ -98,12 +98,12 @@ public class Snail : Element, ILife, ISolid
 		return false;
 	}
 
-	private void transferNutrientsToSoil(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
+	private void transferNutrientsToSoil(Element[,] oldGrid, int x, int y, int maxX, int maxY)
 	{
 		if (nutrient <= 0 && wetness <= 0) return;
 
 		// Check if snail is on soil
-		Element below = (y + 1 < maxY) ? oldElementArray[x, y + 1] : null;
+		Element below = (y + 1 < maxY) ? oldGrid[x, y + 1] : null;
 		if (below is Soil soil)
 		{
 			NutrientManager.Instance.AddGiveNutrientRequest(new GiveNutrientRequest(x, y, x, y + 1, nutrient), maxX, maxY);
@@ -112,17 +112,17 @@ public class Snail : Element, ILife, ISolid
 		}
 	}
 
-	private void handleFallingState(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	private void handleFallingState(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		// Check if we can continue falling down
 		bool canFall = y + 1 < maxY;
 
 		if (canFall)
 		{
-			Element below = oldElementArray[x, y + 1];
+			Element below = oldGrid[x, y + 1];
 			if (below is not ISolid)
 			{
-				MoveManager.Instance.AttemptMove(oldElementArray, x, y, 0, 1, maxX, maxY);
+				MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, 1, maxX, maxY);
 				return;
 			}
 		}
@@ -130,10 +130,10 @@ public class Snail : Element, ILife, ISolid
 		snailState = SnailState.Idle;
 	}
 
-	private void handleIdleState(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	private void handleIdleState(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		// First check if we should be falling instead of being idle
-		if (!hasAdjacentSolidSurface(x, y, oldElementArray, maxX, maxY))
+		if (!hasAdjacentSolidSurface(x, y, oldGrid, maxX, maxY))
 		{
 			snailState = SnailState.Falling;
 			return;
@@ -146,7 +146,7 @@ public class Snail : Element, ILife, ISolid
 		}
 	}
 
-	private void handleMovingState(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	private void handleMovingState(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 
 		// small chance to stay idle instead of moving
@@ -168,13 +168,13 @@ public class Snail : Element, ILife, ISolid
 			{
 				if (nx == x && ny == y) continue;
 
-				Element target = oldElementArray[nx, ny];
+				Element target = oldGrid[nx, ny];
 
 				// Can only move to empty spaces or through webs
 				if (target == null || target is Web || target is ILiquid)
 				{
 					// CRITICAL: Must have at least one solid neighbor to climb on
-					if (hasAdjacentSolidSurface(nx, ny, oldElementArray, maxX, maxY) && !lastPositions.Contains((nx, ny)))
+					if (hasAdjacentSolidSurface(nx, ny, oldGrid, maxX, maxY) && !lastPositions.Contains((nx, ny)))
 					{
 						availableCells.Add((nx, ny));
 					}
@@ -201,13 +201,13 @@ public class Snail : Element, ILife, ISolid
 		int newY = targetCell.Item2;
 
 		// Destroy web if moving through one
-		if (oldElementArray[newX, newY] is Web)
+		if (oldGrid[newX, newY] is Web)
 		{
 			GridManager.Instance.RequestDeletion(newX, newY, maxX, maxY);
 		}
 
 
-		MoveManager.Instance.AttemptMove(oldElementArray, x, y, newX - x, newY - y, maxX, maxY);
+		MoveManager.Instance.AttemptMove(oldGrid, x, y, newX - x, newY - y, maxX, maxY);
 		lastPositions.Add((x, y));
 
 		// Keep position history manageable

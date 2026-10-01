@@ -11,7 +11,7 @@ public interface IFlammable
 
 public static class FlammableBehavior
 {
-    public static void burn(IFlammable self, Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+    public static void burn(IFlammable self, Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		if (!self.burning) return;
 
@@ -23,9 +23,9 @@ public static class FlammableBehavior
 
 			if (nx >= 0 && nx < maxX && ny >= 0 && ny < maxY)
 			{
-				if (oldElementArray[nx, ny] != null)
+				if (oldGrid[nx, ny] != null)
 				{
-					Element neighbor = oldElementArray[nx, ny];
+					Element neighbor = oldGrid[nx, ny];
 					if (neighbor is IFlammable flammableNeighbor && flammableNeighbor.flammability > 0 && !flammableNeighbor.burning)
 					{
 						// Chance to ignite based on flammability

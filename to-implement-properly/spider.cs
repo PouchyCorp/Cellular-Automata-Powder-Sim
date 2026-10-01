@@ -32,15 +32,15 @@ public class Spider : Element, ILife, ISolid
 	/// <summary>
 	/// No bounds checking, make sure to call only with valid coordinates
 	/// </summary>
-	private bool isValidBuildDestination(int x, int y, Element[,] oldElementArray, int maxX, int maxY)
+	private bool isValidBuildDestination(int x, int y, Element[,] oldGrid, int maxX, int maxY)
 	{
 		if (x == 0 || x == maxX - 1 || y == 0 || y == maxY - 1) return true; // bounds are valid
-		if (oldElementArray[x, y] != null
-		&& (oldElementArray[x, y] is Web
-		|| oldElementArray[x, y] is ISolid)) return true; // valid solid cell or web
+		if (oldGrid[x, y] != null
+		&& (oldGrid[x, y] is Web
+		|| oldGrid[x, y] is ISolid)) return true; // valid solid cell or web
 		return false;
 	}
-	private (int, int) getBuildDirection(int x, int y, Element[,] oldElementArray, int maxX, int maxY)
+	private (int, int) getBuildDirection(int x, int y, Element[,] oldGrid, int maxX, int maxY)
 	{
 		// Check all 8 directions for a solid cell to build from
 		var directions = new (int, int)[]
@@ -59,7 +59,7 @@ public class Spider : Element, ILife, ISolid
 				int checkX = x + dir.Item1 * dist;
 				int checkY = y + dir.Item2 * dist;
 				if (checkX < 0 || checkX >= maxX || checkY < 0 || checkY >= maxY) break; // out of bounds
-				if (dist < 4 && isValidBuildDestination(checkX, checkY, oldElementArray, maxX, maxY)) break;
+				if (dist < 4 && isValidBuildDestination(checkX, checkY, oldGrid, maxX, maxY)) break;
 
 				// Check for adjacent solids along the build path (perpendicular directions)
 				int perpX = -dir.Item2, perpY = dir.Item1;
@@ -71,7 +71,7 @@ public class Spider : Element, ILife, ISolid
 					int adjY = checkY + perpY * p;
 					if (adjX >= 0 && adjX < maxX && adjY >= 0 && adjY < maxY)
 					{
-						Element e = oldElementArray[adjX, adjY];
+						Element e = oldGrid[adjX, adjY];
 						if (e != null) // including webs
 						{
 							adjacentWebsAndSolids += 1;
@@ -84,7 +84,7 @@ public class Spider : Element, ILife, ISolid
 				}
 				if (!valid) break;
 
-				if (isValidBuildDestination(checkX, checkY, oldElementArray, maxX, maxY)) return dir; // found a valid build direction
+				if (isValidBuildDestination(checkX, checkY, oldGrid, maxX, maxY)) return dir; // found a valid build direction
 			}
 		}
 		return (0, 0); // No valid direction found
@@ -144,7 +144,7 @@ public class Spider : Element, ILife, ISolid
 		buildingDirection = buildDir;
 	}
 
-	private void handleFallingState(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	private void handleFallingState(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		bool solidNeighbor = false;
 		for (int nx = Math.Max(0, x - 1); nx <= Math.Min(x + 1, maxX - 1); nx++) // including diagonals
@@ -155,7 +155,7 @@ public class Spider : Element, ILife, ISolid
 				{
 					continue;
 				}
-				if (oldElementArray[nx, ny] != null && oldElementArray[nx, ny].density >= density && oldElementArray[nx, ny] is not Spider)
+				if (oldGrid[nx, ny] != null && oldGrid[nx, ny].density >= density && oldGrid[nx, ny] is not Spider)
 				{
 					solidNeighbor = true;
 					break;
@@ -170,9 +170,9 @@ public class Spider : Element, ILife, ISolid
 		else
 		{
 			// Continue falling
-			if (y + 1 < maxY && (currentElementArray[x, y + 1] == null || currentElementArray[x, y + 1] is Web))
+			if (y + 1 < maxY && (currentGrid[x, y + 1] == null || currentGrid[x, y + 1] is Web))
 			{
-				specialMove(oldElementArray, currentElementArray, x, y, maxX, maxY, 0, 1);
+				specialMove(oldGrid, currentGrid, x, y, maxX, maxY, 0, 1);
 				if (onWeb != null)
 				{
 					// Fell onto a web, transition to wandering on web
@@ -182,7 +182,7 @@ public class Spider : Element, ILife, ISolid
 		}
 	}
 
-	private void handleWanderingOnWebState(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	private void handleWanderingOnWebState(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		if (T - lastMeaningfulStateChangeTick > 10 * 60 && Random.Shared.NextSingle() < 0.01f) // After 10 seconds, small chance to start wandering to build site
 		{
@@ -198,19 +198,19 @@ public class Spider : Element, ILife, ISolid
 			{
 				if ((nx, ny) == (x, y)) { continue; }
 
-				if (oldElementArray[nx, ny] is Fly fly && T - lastFlyEatTick > flyEatingCooldown) // can eat a fly every so often
+				if (oldGrid[nx, ny] is Fly fly && T - lastFlyEatTick > flyEatingCooldown) // can eat a fly every so often
 				{
 					lastFlyEatTick = T;
 					// eat the fly
-					currentElementArray[nx, ny] = new Web();
+					currentGrid[nx, ny] = new Web();
 				}
 
 				// Check if there's a web in the old array (what we're reading from)
-				if (oldElementArray[nx, ny] is Web web)
+				if (oldGrid[nx, ny] is Web web)
 				{
 					web.resetLifetime(); // the spider is taking care of adjacent webs (awww so cute)
 										 // Check if the current array position is either empty or has a web (safe to move)
-					Element currentTarget = currentElementArray[nx, ny];
+					Element currentTarget = currentGrid[nx, ny];
 					if (currentTarget == null || currentTarget is Web)
 					{
 						availableWebCells.Add((nx, ny));
@@ -239,17 +239,17 @@ public class Spider : Element, ILife, ISolid
 			{
 				int randomIndex = Random.Shared.Next(0, validCells.Count - 1);
 				(int, int) targetCell = validCells[randomIndex];
-				specialMove(oldElementArray, x, y, maxX, maxY, targetCell.Item1 - x, targetCell.Item2 - y);
+				specialMove(oldGrid, x, y, maxX, maxY, targetCell.Item1 - x, targetCell.Item2 - y);
 			}
 		}
 	}
 
-	private void handleWanderingToBuildSiteState(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	private void handleWanderingToBuildSiteState(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		if (T - lastMeaningfulStateChangeTick > 15)
 		{
 			// The spider wandered enough, start building
-			(int, int) buildDir = getBuildDirection(x, y, oldElementArray, maxX, maxY);
+			(int, int) buildDir = getBuildDirection(x, y, oldGrid, maxX, maxY);
 			if (buildDir != (0, 0))
 			{
 				transitionToBuilding(T, buildDir);
@@ -267,7 +267,7 @@ public class Spider : Element, ILife, ISolid
 		{
 			for (int ny = Math.Max(0, y - 1); ny <= Math.Min(y + 1, maxY - 1); ny++)
 			{
-				if (oldElementArray[nx, ny] is Web || (oldElementArray[nx, ny] == null))
+				if (oldGrid[nx, ny] is Web || (oldGrid[nx, ny] == null))
 				{
 					availableCellsList.Add((nx, ny));
 				}
@@ -276,7 +276,7 @@ public class Spider : Element, ILife, ISolid
 		// remove non web cells that are not adjacent to solid cells
 		foreach ((int, int) cell in availableCellsList.ToArray()) // iterate over a copy since we may remove items
 		{
-			if (oldElementArray[cell.Item1, cell.Item2] == null)
+			if (oldGrid[cell.Item1, cell.Item2] == null)
 			{
 				bool solidNeighbor = false;
 				// for each empty cell, check if it has a solid neighbor to climb on, otherwise remove it from the list
@@ -285,7 +285,7 @@ public class Spider : Element, ILife, ISolid
 					for (int nny = Math.Max(0, cell.Item2 - 1); nny <= Math.Min(cell.Item2 + 1, maxY - 1); nny++)
 					{
 						if ((nnx, nny) == (cell.Item1, cell.Item2)) continue;
-						if (oldElementArray[nnx, nny] != null && oldElementArray[nnx, nny].density > density)
+						if (oldGrid[nnx, nny] != null && oldGrid[nnx, nny].density > density)
 						{
 							solidNeighbor = true; // found a solid neighbor, keep this cell
 							break;
@@ -311,7 +311,7 @@ public class Spider : Element, ILife, ISolid
 		if (availableCellsList.Count == 1)
 		{
 			(int, int) nextCell = availableCellsList[0];
-			move(oldElementArray, currentElementArray, x, y, maxX, maxY, nextCell.Item1 - x, nextCell.Item2 - y);
+			move(oldGrid, currentGrid, x, y, maxX, maxY, nextCell.Item1 - x, nextCell.Item2 - y);
 			return;
 		}
 
@@ -326,10 +326,10 @@ public class Spider : Element, ILife, ISolid
 		int randomIndex = Random.Shared.Next(0, validCells.Count - 1);
 		(int, int) bestCell = validCells[randomIndex];
 
-		specialMove(oldElementArray, currentElementArray, x, y, maxX, maxY, bestCell.Item1 - x, bestCell.Item2 - y);
+		specialMove(oldGrid, currentGrid, x, y, maxX, maxY, bestCell.Item1 - x, bestCell.Item2 - y);
 	}
 
-	private void handleBuildingState(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	private void handleBuildingState(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		// Place a web in the building direction if the cell is empty
 		int targetX = x + buildingDirection.Item1;
@@ -340,17 +340,17 @@ public class Spider : Element, ILife, ISolid
 			transitionToWanderingOnWeb(T);
 			return;
 		}
-		if (oldElementArray[targetX, targetY] != null)
+		if (oldGrid[targetX, targetY] != null)
 		{
 			// Can't build there anymore, transition to wandering on web
 			transitionToWanderingOnWeb(T);
 			return;
 		}
 		Web web = new Web();
-		currentElementArray[targetX, targetY] = web;
+		currentGrid[targetX, targetY] = web;
 
 		// Move onto the newly built web
-		bool moveSuccess = specialMove(oldElementArray, currentElementArray, x, y, maxX, maxY, buildingDirection.Item1, buildingDirection.Item2);
+		bool moveSuccess = specialMove(oldGrid, currentGrid, x, y, maxX, maxY, buildingDirection.Item1, buildingDirection.Item2);
 
 		if (!moveSuccess)
 		{
@@ -359,14 +359,14 @@ public class Spider : Element, ILife, ISolid
 			return;
 		}
 
-		if (currentElementArray[x, y] == null)
+		if (currentGrid[x, y] == null)
 		{
 			// Fix any holes left behind by placing a web
-			currentElementArray[x, y] = new Web();
+			currentGrid[x, y] = new Web();
 		}
 	}
 
-	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		if (sleepTime > 0)
 		{
@@ -381,30 +381,30 @@ public class Spider : Element, ILife, ISolid
 		switch (currentState)
 		{
 			case SpiderFSM.FALLING:
-				handleFallingState(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+				handleFallingState(oldGrid, currentGrid, x, y, maxX, maxY, T);
 				break;
 			case SpiderFSM.WANDERING_ON_WEB:
-				handleWanderingOnWebState(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+				handleWanderingOnWebState(oldGrid, currentGrid, x, y, maxX, maxY, T);
 				break;
 			case SpiderFSM.WANDERING_TO_BUILD_SITE:
-				handleWanderingToBuildSiteState(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+				handleWanderingToBuildSiteState(oldGrid, currentGrid, x, y, maxX, maxY, T);
 				break;
 			case SpiderFSM.BUILDING:
-				handleBuildingState(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+				handleBuildingState(oldGrid, currentGrid, x, y, maxX, maxY, T);
 				break;
 		}
 
-		burn(oldElementArray, currentElementArray, x, y, maxX, maxY, T);
+		burn(oldGrid, currentGrid, x, y, maxX, maxY, T);
 		updateColor(T, x, y);
 	}
 
 	/// <summary>
 	/// SOME CHECKS ARE NOT DONE TO SEE IF THE MOVE IS VALID, please do so before calling this function
 	/// </summary>
-	public bool specialMove(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int movementX, int movementY)
+	public bool specialMove(Element[,] oldGrid, int x, int y, int maxX, int maxY, int movementX, int movementY)
 	{
 		// Safety: Only move if this spider is still at (x, y)
-		if (currentElementArray[x, y] != this)
+		if (currentGrid[x, y] != this)
 			return false;
 
 		int targetX = x + movementX;
@@ -415,23 +415,23 @@ public class Spider : Element, ILife, ISolid
 			return false;
 
 		// Check if target cell is occupied by something other than a web
-		Element targetElem = currentElementArray[targetX, targetY];
+		Element targetElem = currentGrid[targetX, targetY];
 		if (targetElem != null && targetElem is not Web)
 			return false;
 
 		// Handle leaving a web behind if moving off a web
 		if (onWeb != null && (movementX != 0 || movementY != 0))
 		{
-			currentElementArray[x, y] = onWeb;
+			currentGrid[x, y] = onWeb;
 			onWeb = null;
 		}
 		else
 		{
-			currentElementArray[x, y] = null;
+			currentGrid[x, y] = null;
 		}
 
 		// If moving onto a web, "pick it up"
-		if (currentElementArray[targetX, targetY] is Web web)
+		if (currentGrid[targetX, targetY] is Web web)
 		{
 			onWeb = web;
 		}
@@ -441,7 +441,7 @@ public class Spider : Element, ILife, ISolid
 		}
 
 		// Move spider to new position
-		currentElementArray[targetX, targetY] = this;
+		currentGrid[targetX, targetY] = this;
 		addToPositionHistory(x, y); // Add the old position to history
 
 		return true;

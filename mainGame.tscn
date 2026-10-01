@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3 uid="uid://clrsw6fo3fdc5"]
+[gd_scene format=3 uid="uid://clrsw6fo3fdc5"]
 
 [ext_resource type="Script" uid="uid://vdw0sy04gdyy" path="res://mainGame.gd" id="1_3ttq8"]
 [ext_resource type="PackedScene" uid="uid://dbvagnprf4hru" path="res://CA-engine/cellular_automata_engine.tscn" id="2_l7q4m"]
@@ -10,10 +10,10 @@ allow_unpress = true
 outline_size = 3
 outline_color = Color(0, 0, 0, 1)
 
-[node name="MainGame" type="Node"]
+[node name="MainGame" type="Node" unique_id=1492357914]
 script = ExtResource("1_3ttq8")
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="." unique_id=852021305]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -21,9 +21,11 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.4686678, 0.6325981, 0.950756, 1)
 
-[node name="CellularAutomataEngine" parent="." instance=ExtResource("2_l7q4m")]
+[node name="CellularAutomataEngine" parent="." unique_id=753324543 instance=ExtResource("2_l7q4m")]
+cellSize = Vector2(48, 48)
+gridSize = Vector2(24, 14)
 
-[node name="Control" type="MarginContainer" parent="."]
+[node name="Control" type="MarginContainer" parent="." unique_id=2077378141]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -35,44 +37,44 @@ theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="Control"]
+[node name="VBoxContainer2" type="VBoxContainer" parent="Control" unique_id=498210591]
 layout_mode = 2
 
-[node name="FPS" type="Label" parent="Control/VBoxContainer2"]
+[node name="FPS" type="Label" parent="Control/VBoxContainer2" unique_id=305473179]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 0
 text = "100"
 
-[node name="WetnessLabel" type="Label" parent="Control/VBoxContainer2"]
+[node name="WetnessLabel" type="Label" parent="Control/VBoxContainer2" unique_id=937041255]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 0
 text = "Total Wetness :"
 
-[node name="NutrientLabel" type="Label" parent="Control/VBoxContainer2"]
+[node name="NutrientLabel" type="Label" parent="Control/VBoxContainer2" unique_id=1627338366]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 0
 text = "Total Nutrient :"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="Control"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Control" unique_id=1817707109]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Control/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Control/VBoxContainer" unique_id=1086654749]
 layout_mode = 2
 
-[node name="ElementContainer" type="VBoxContainer" parent="Control/VBoxContainer/HBoxContainer"]
+[node name="ElementContainer" type="VBoxContainer" parent="Control/VBoxContainer/HBoxContainer" unique_id=1097616259]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 0
 
-[node name="Sand" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer"]
+[node name="Sand" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=190385820]
 unique_name_in_owner = true
 layout_mode = 2
 toggle_mode = true
@@ -81,42 +83,42 @@ button_group = SubResource("ButtonGroup_0xm2m")
 text = "SAND"
 metadata/element = "Sand"
 
-[node name="Soil" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer"]
+[node name="Soil" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=2053724908]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
 text = "SOIL"
 metadata/element = "Soil"
 
-[node name="Seed" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer"]
+[node name="Seed" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=1521522973]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
 text = "SEED"
 metadata/element = "Seed"
 
-[node name="Wood" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer"]
+[node name="Wood" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=2043567667]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
 text = "WOOD"
 metadata/element = "Wood"
 
-[node name="Fire" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer"]
+[node name="Fire" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=240481742]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
 text = "FIRE"
 metadata/element = "Fire"
 
-[node name="Nutrient" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer"]
+[node name="Nutrient" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=1444031877]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
 text = "NUTRIENT"
 metadata/element = "Nutrient"
 
-[node name="Water" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer"]
+[node name="Water" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=963697563]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
@@ -124,62 +126,62 @@ text = "WATER
 "
 metadata/element = "Water"
 
-[node name="Oil" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer"]
+[node name="Oil" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=1496632579]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
 text = "OIL"
 metadata/element = "Oil"
 
-[node name="Steam" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer"]
+[node name="Steam" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=740720925]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
 text = "STEAM"
 metadata/element = "Steam"
 
-[node name="Spider" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer"]
+[node name="Spider" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=1026836380]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
 text = "SPIDER"
 metadata/element = "Spider"
 
-[node name="Snail" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer"]
+[node name="Snail" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=748418157]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
 text = "SNAIL"
 metadata/element = "Snail"
 
-[node name="Fly" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer"]
+[node name="Fly" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=1025795931]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
 text = "FLY"
 metadata/element = "Fly"
 
-[node name="Worm" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer"]
+[node name="Worm" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=453543730]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
 text = "WORM"
 metadata/element = "Worm"
 
-[node name="Sliders" type="VBoxContainer" parent="Control/VBoxContainer/HBoxContainer"]
+[node name="Sliders" type="VBoxContainer" parent="Control/VBoxContainer/HBoxContainer" unique_id=1746935899]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/separation = 0
 
-[node name="BrushSizeLabel" type="Label" parent="Control/VBoxContainer/HBoxContainer/Sliders"]
+[node name="BrushSizeLabel" type="Label" parent="Control/VBoxContainer/HBoxContainer/Sliders" unique_id=164554444]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 1
 text = "Brush size : 1"
 
-[node name="BrushSize" type="HSlider" parent="Control/VBoxContainer/HBoxContainer/Sliders"]
+[node name="BrushSize" type="HSlider" parent="Control/VBoxContainer/HBoxContainer/Sliders" unique_id=547322332]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
@@ -189,51 +191,51 @@ value = 1.0
 rounded = true
 tick_count = 11
 
-[node name="GameSpeedLabel" type="Label" parent="Control/VBoxContainer/HBoxContainer/Sliders"]
+[node name="GameSpeedLabel" type="Label" parent="Control/VBoxContainer/HBoxContainer/Sliders" unique_id=1593774715]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
-text = "Game Speed : 1"
+text = "Game Speed : 1.0"
 
-[node name="GameSpeed" type="HSlider" parent="Control/VBoxContainer/HBoxContainer/Sliders"]
+[node name="GameSpeed" type="HSlider" parent="Control/VBoxContainer/HBoxContainer/Sliders" unique_id=1644942546]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
-max_value = 15.0
+max_value = 2.0
+step = 0.2
 value = 1.0
-rounded = true
-tick_count = 11
+tick_count = 10
 ticks_on_borders = true
 
-[node name="SkipTimeButton" type="Button" parent="Control/VBoxContainer/HBoxContainer/Sliders"]
+[node name="SkipTimeButton" type="Button" parent="Control/VBoxContainer/HBoxContainer/Sliders" unique_id=1413347728]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Skip time"
 
-[node name="HSeparator" type="HSeparator" parent="Control/VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="Control/VBoxContainer" unique_id=1240734702]
 layout_mode = 2
 theme_override_constants/separation = 25
 
-[node name="SaveLoadContainer" type="HBoxContainer" parent="Control/VBoxContainer"]
+[node name="SaveLoadContainer" type="HBoxContainer" parent="Control/VBoxContainer" unique_id=132435864]
 layout_mode = 2
 alignment = 1
 
-[node name="Load" type="Button" parent="Control/VBoxContainer/SaveLoadContainer"]
+[node name="Load" type="Button" parent="Control/VBoxContainer/SaveLoadContainer" unique_id=805254479]
 layout_mode = 2
 text = "Load"
 
-[node name="Save" type="Button" parent="Control/VBoxContainer/SaveLoadContainer"]
+[node name="Save" type="Button" parent="Control/VBoxContainer/SaveLoadContainer" unique_id=367519539]
 layout_mode = 2
 text = "Save"
 
-[node name="InspectLabel" type="Label" parent="Control"]
+[node name="InspectLabel" type="Label" parent="Control" unique_id=850954771]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 8
 size_flags_vertical = 8
 label_settings = SubResource("LabelSettings_0xm2m")
 
-[node name="FileDialog" type="FileDialog" parent="."]
+[node name="FileDialog" type="FileDialog" parent="." unique_id=235934497]
 access = 2
 filters = PackedStringArray("*.gs")
 use_native_dialog = true

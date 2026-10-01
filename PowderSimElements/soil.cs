@@ -40,7 +40,7 @@ public class Soil : Element, IPowder, ISolid, ILife
 		color = nutriHue.Lerp(wetHue, 0.5f); // blend both effects TODO: adjust colors
 	}
 
-	// public void ChangeNutrient(float change, Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	// public void ChangeNutrient(float change, Element[,] currentGrid, int x, int y, int maxX, int maxY)
 	// // Method to change nutrient level, the change is the amount to add or subtract from the current nutrient level
 	// {
 		
@@ -51,15 +51,15 @@ public class Soil : Element, IPowder, ISolid, ILife
 
 	// 		if (neighborX >= 0 && neighborX < maxX && neighborY >= 0 && neighborY < maxY)
 	// 		{   
-	// 			// using currentElementArray as read and write here is not a problem because needsUpdate is not a state that can have consequences to the simulation order.
-	// 			if (currentElementArray[neighborX, neighborY] is Soil neighborSoil){
+	// 			// using currentGrid as read and write here is not a problem because needsUpdate is not a state that can have consequences to the simulation order.
+	// 			if (currentGrid[neighborX, neighborY] is Soil neighborSoil){
 	// 				neighborSoil.needsUpdate = true; // Mark neighbor soil for update
 	// 			}
 	// 		}
 	// 	}
 	// }
 
-	// public void ChangeWetness(float change, Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	// public void ChangeWetness(float change, Element[,] currentGrid, int x, int y, int maxX, int maxY)
 	// // Method to change wetness level, the change is the amount to add or subtract from the current wetness level
 	// {
 	// 	wetness += change;
@@ -70,15 +70,15 @@ public class Soil : Element, IPowder, ISolid, ILife
 
 	// 		if (neighborX >= 0 && neighborX < maxX && neighborY >= 0 && neighborY < maxY)
 	// 		{   
-	// 			// using currentElementArray as read and write here is not a problem because needsUpdate is not a state that can have consequences to the simulation order.
-	// 			if (currentElementArray[neighborX, neighborY] is Soil neighborSoil){
+	// 			// using currentGrid as read and write here is not a problem because needsUpdate is not a state that can have consequences to the simulation order.
+	// 			if (currentGrid[neighborX, neighborY] is Soil neighborSoil){
 	// 				neighborSoil.needsUpdate = true; // Mark neighbor soil for update
 	// 			}
 	// 		}
 	// 	}
 	// }
 
-	((int, int)[], int) getNeighborsIndices(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	((int, int)[], int) getNeighborsIndices(Element[,] currentGrid, int x, int y, int maxX, int maxY)
 	{
 		(int, int)[] neighbors = new (int, int)[4];
 		int count = 0;
@@ -87,7 +87,7 @@ public class Soil : Element, IPowder, ISolid, ILife
 			int nx = x + cardinals[i].Item1;
 			int ny = y + cardinals[i].Item2;
 
-			if (nx >= 0 && nx < maxX && ny >= 0 && ny < maxY && currentElementArray[nx, ny] is Soil)
+			if (nx >= 0 && nx < maxX && ny >= 0 && ny < maxY && currentGrid[nx, ny] is Soil)
 			{
 				neighbors[count++] = (nx, ny);
 			}
@@ -95,18 +95,18 @@ public class Soil : Element, IPowder, ISolid, ILife
 		return (neighbors, count);
 	}
 
-	override public void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	override public void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		if (T - lastActivity < activityInterval) // Skip update if not enough time has passed and no external change has occurred
 		{
-			PowderBehavior.Update(this, oldElementArray, x, y, maxX, maxY, T); // still needs to update for other base behaviors, but we skip the soil-specific updates
+			PowderBehavior.Update(this, oldGrid, x, y, maxX, maxY, T); // still needs to update for other base behaviors, but we skip the soil-specific updates
 			return;
 		}
 
 		lastActivity = T;
 		
 		// this is for optimisation purposes, all the indices are valid.
-		((int, int)[] neighborsIndices, int count) = getNeighborsIndices(oldElementArray, x, y, maxX, maxY);
+		((int, int)[] neighborsIndices, int count) = getNeighborsIndices(oldGrid, x, y, maxX, maxY);
 
 		// Handle nutrient diffusion
 		for (int i = 0; i < count; i++)
@@ -115,7 +115,7 @@ public class Soil : Element, IPowder, ISolid, ILife
 			int ny = neighborsIndices[i].Item2;
 		
 			// Again using the newElementArray as read is a bit problematic for a deterministic simulation, but fake it until you make it as they say.
-			float nutriDiff = (oldElementArray[nx, ny] as Soil).nutrient - nutrient;
+			float nutriDiff = (oldGrid[nx, ny] as Soil).nutrient - nutrient;
 			if (nutriDiff > 0.1f) // Only transfer if significant difference
 			{
 				float transferAmount = nutriDiff * 0.1f; // Slower transfer rate
@@ -137,7 +137,7 @@ public class Soil : Element, IPowder, ISolid, ILife
 				int nx = neighborsIndices[i].Item1;
 				int ny = neighborsIndices[i].Item2;
 			
-				float wetnessDiff = wetness - (oldElementArray[nx, ny] as Soil).wetness;
+				float wetnessDiff = wetness - (oldGrid[nx, ny] as Soil).wetness;
 				if (wetnessDiff > 0.1f) // Only transfer if significant difference and if wetness greater than neighbor's
 				{
 					float transferAmount = wetnessDiff * 0.1f; // Slower transfer rate
@@ -153,24 +153,22 @@ public class Soil : Element, IPowder, ISolid, ILife
 		}
 
 		// Handle water absorption from adjacent and above water elements
-		(int, int)[] waterNeighbors =  { (0, 1), (1, 0), (-1, 0)};
+		(int, int)[] waterNeighbors =  { (0, -1), (1, 0), (-1, 0)};
 		foreach ((int nx, int ny) in waterNeighbors)
 		{
 			int neighborX = x + nx;
 			int neighborY = y + ny;
 			if (neighborX >= 0 && neighborX < maxX && neighborY >= 0 && neighborY < maxY)
 			{
-				if (oldElementArray[neighborX, neighborY] is Water water)
+				if (oldGrid[neighborX, neighborY] is Water)
 				{
-					float wetnessCap = Math.Min(water.wetness, 1 - wetness); // only absorb what we can take
-					water.wetness -= wetnessCap;
-					wetness += wetnessCap;
+					NutrientManager.Instance.AddTakeWetnessRequest(new TakeWetnessRequest(x, y, neighborX, neighborY, 1.0f), maxX, maxY);
 				}
 			}
 		}
 
 		updateColor(T, x, y);
-		PowderBehavior.Update(this, oldElementArray, x, y, maxX, maxY, T); // keep at the end because of returns contained in base method
+		PowderBehavior.Update(this, oldGrid, x, y, maxX, maxY, T); // keep at the end because of returns contained in base method
 	}
 
 	override public string getState()

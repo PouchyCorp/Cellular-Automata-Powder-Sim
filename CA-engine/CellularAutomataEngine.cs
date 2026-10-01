@@ -22,20 +22,20 @@ public partial class CellularAutomataEngine : Node2D
 	public string selectedElement; // TODO idk how to do differently
 
 	private Slider gameSpeedSlider;
-	public int gameSpeed = 1;
+	public float gameSpeed = 1;
 
 	private Slider brushSizeSlider;
 	public int brushSize = 1;
-
+	float gameSpeedCounter = 0f;
 	public int tick = 0;
 
 
 	// --- Public (exported) element instantiation --- //
 	[ExportCategory("Simulation Size")]
 	[Export]
-	public Vector2 cellSize { get; set; } = new Vector2(8, 8);
+	public Vector2 cellSize { get; set; } = new Vector2(2*2, 2*2);
 	[Export]
-	public Vector2 gridSize { get; set; } = new Vector2(144, 81);
+	public Vector2 gridSize { get; set; } = new Vector2(288, 162);
 
 	// --- Methods --- //
 	public override void _Ready()
@@ -88,9 +88,11 @@ public partial class CellularAutomataEngine : Node2D
 		base._Process(delta);
 		UiHandler();
 		PlacementHandler();
-		for (int _ = 0; _ < gameSpeed; _++) // game speed just skips steps
+		gameSpeedCounter += gameSpeed;
+		while (Math.Floor(gameSpeedCounter) > 0) // game speed just skips steps
 		{
 			CellUpdateHandler();
+			gameSpeedCounter--;
 		}
 
 		// Commented code to prevent stuff
@@ -163,7 +165,8 @@ public partial class CellularAutomataEngine : Node2D
 			}
 		}
 
-		gameSpeed = (int)gameSpeedSlider.Value;
+		gameSpeed = (float)gameSpeedSlider.Value;
+
 		brushSize = (int)brushSizeSlider.Value;
 
 		((Label)GetNode("%InspectLabel")).Text = GetCellInfoAtCursor();
@@ -262,7 +265,7 @@ public partial class CellularAutomataEngine : Node2D
 
 	private void CellUpdateHandler()
 	{
-		Element[,] oldElementArray = (Element[,])elementArray.Clone();
+		Element[,] oldGrid = (Element[,])elementArray.Clone();
 
 		// Process elements in random order
 		for (int x = 0; x < gridWidth; x++)
@@ -270,16 +273,16 @@ public partial class CellularAutomataEngine : Node2D
 			for (int y = 0; y < gridHeight; y++)
 			{
 
-				oldElementArray[x, y]?.update(oldElementArray, x, y, gridWidth, gridHeight, tick);
+				oldGrid[x, y]?.update(oldGrid, x, y, gridWidth, gridHeight, tick);
 
 			}
 		}
 
 		GridManager.Instance.ProcessDeletions(elementArray, gridWidth, gridHeight);
-		NutrientManager.Instance.ProcessNutrientRequests(oldElementArray, elementArray, gridWidth, gridHeight);
-		NutrientManager.Instance.ProcessWetnessRequests(oldElementArray, elementArray, gridWidth, gridHeight);
+		NutrientManager.Instance.ProcessNutrientRequests(oldGrid, elementArray);
+		NutrientManager.Instance.ProcessWetnessRequests(oldGrid, elementArray);
 		FireManager.Instance.ProcessIgnitionRequests(elementArray, gridWidth, gridHeight);
-		MoveManager.Instance.ProcessMoveRequests(oldElementArray, elementArray, gridWidth, gridHeight);
+		MoveManager.Instance.ProcessMoveRequests(oldGrid, elementArray, gridWidth, gridHeight);
 		
 		tick++;
 	}

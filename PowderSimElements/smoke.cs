@@ -12,21 +12,21 @@ public class Smoke : Element, IGas
 		color = Colors.DarkGray;
 	}
 
-	// override public bool move(Element[,] oldElementArray, Element[,] currentElementArray, int x, int y, int maxX, int maxY, int movementX, int movementY)
+	// override public bool move(Element[,] oldGrid, Element[,] currentGrid, int x, int y, int maxX, int maxY, int movementX, int movementY)
 	// {
 	// 	int newX = x + movementX, newY = y + movementY;
 	// 	if (newY < 0 || newY >= maxY || newX < 0 || newX >= maxX) return false;
 
-	// 	if (currentElementArray[newX, newY] is Web)
+	// 	if (currentGrid[newX, newY] is Web)
 	// 	{
-	// 		currentElementArray[x, y] = null;
-	// 		currentElementArray[newX, newY] = this;
+	// 		currentGrid[x, y] = null;
+	// 		currentGrid[newX, newY] = this;
 	// 		return true;
 	// 	}
-	// 	return base.move(oldElementArray, currentElementArray, x, y, maxX, maxY, movementX, movementY);
+	// 	return base.move(oldGrid, currentGrid, x, y, maxX, maxY, movementX, movementY);
 	// }
 
-	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		if (sleeping)
 		{
@@ -35,7 +35,7 @@ public class Smoke : Element, IGas
 		}
 		sleeping = true;
 
-		GasBehavior.update(this, oldElementArray, x, y, maxX, maxY, T);
+		GasBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 
 		updateColor(T, x, y);
 	}

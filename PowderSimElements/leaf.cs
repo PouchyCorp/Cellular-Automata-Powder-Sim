@@ -43,18 +43,18 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 		color = Colors.Green;
 		modulateColor(); // idk why it there
 	}
-	public Seed getParentSeed(Element[,] oldElementArray)
+	public Seed getParentSeed(Element[,] oldGrid)
 	{
-		if (oldElementArray[parentSeed.Item1, parentSeed.Item2] is Seed seed)
+		if (oldGrid[parentSeed.Item1, parentSeed.Item2] is Seed seed)
 		{
 			return seed;
 		}
 		return null;
 	}
 
-	public void alignToPlantColor(Element[,] oldElementArray)
+	public void alignToPlantColor(Element[,] oldGrid)
 	{
-		Seed seed = getParentSeed(oldElementArray);
+		Seed seed = getParentSeed(oldGrid);
 		if (seed != null)
 		{
 			color = new Color(seed.plantColor);
@@ -65,10 +65,10 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 		return dir != 0 && ((dir > 0 && pos <= origin) || (dir < 0 && pos >= origin));
 	}
 
-	private bool isValidLeafGrowthPosition(Element[,] oldElementArray, int x, int y, int maxX, int maxY, (int, int) growthDir, (int, int) growthOrigin)
+	private bool isValidLeafGrowthPosition(Element[,] oldGrid, int x, int y, int maxX, int maxY, (int, int) growthDir, (int, int) growthOrigin)
 	{
 		if (x < 0 || x >= maxX || y < 0 || y >= maxY) return false; // out of bounds
-		if (oldElementArray[x, y] != null) return false; // must be empty
+		if (oldGrid[x, y] != null) return false; // must be empty
 		int adjacentLeaves = 0;
 
 		for (int nx = x - 1; nx <= x + 1; nx++)
@@ -85,7 +85,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 						continue;
 					}
 
-					if (oldElementArray[nx, ny] is Leaf)
+					if (oldGrid[nx, ny] is Leaf)
 					{
 						adjacentLeaves++;
 					}
@@ -146,7 +146,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 		return bestPos;
 	}
 
-	public bool growLeaf(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
+	public bool growLeaf(Element[,] oldGrid, int x, int y, int maxX, int maxY)
 	{
 		if (nutrient < BASE_LEAF_NUTRIENT_COST) return false;
 		if (wetness < BASE_LEAF_WETNESS_COST) return false;
@@ -154,7 +154,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 
 		List<(int, int)> possibleGrowthPositions = [];
 
-		Seed seed = getParentSeed(oldElementArray);
+		Seed seed = getParentSeed(oldGrid);
 		if (seed?.leafCount >= seed?.maxLeafCount) return false;
 
 
@@ -163,7 +163,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 		{
 			int nx = x + dx;
 			int ny = y + dy;
-			if (isValidLeafGrowthPosition(oldElementArray, nx, ny, maxX, maxY, (nx - x, ny - y), (x, y))) // ------------------------------------------ 
+			if (isValidLeafGrowthPosition(oldGrid, nx, ny, maxX, maxY, (nx - x, ny - y), (x, y))) // ------------------------------------------ 
 			{
 				possibleGrowthPositions.Add((nx, ny));
 			}
@@ -176,7 +176,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 			if (chosenPos == (-1, -1)) return false; // No valid position found
 			GridManager.Instance.RequestSpawn(chosenPos.Item1, chosenPos.Item2, new Leaf(parentSeed), maxX, maxY);
 			childLeafs.Add(chosenPos);
-			var parent = getParentSeed(oldElementArray);
+			var parent = getParentSeed(oldGrid);
 			if (parent != null)
 			{
 				parent.leafCount++;
@@ -195,14 +195,14 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 		}
 	}
 
-	public void transferNutrientsToChildLeafs(Element[,] currentElementArray)
+	public void transferNutrientsToChildLeafs(Element[,] currentGrid)
 	{
 		if (childLeafs.Count == 0) return;
 		float maxNutrientTransferAmountPerChild = Math.Min(nutrient / childLeafs.Count, 0.2f); // max 0.2 nutrient per child per activity tick
 		float maxWetnessTransferAmountPerChild = Math.Min(wetness / childLeafs.Count, 0.1f); // max 0.1 wetness per child per activity tick
 		foreach (var pos in childLeafs)
 		{
-			if (currentElementArray[pos.Item1, pos.Item2] is Leaf childLeaf)
+			if (currentGrid[pos.Item1, pos.Item2] is Leaf childLeaf)
 			{
 				// transfer nutrients
 				if (childLeaf.nutrient < childLeaf.maxNutrient && nutrient - maxNutrientTransferAmountPerChild > 0)
@@ -222,9 +222,9 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 			}
 		}
 	}
-	override public void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	override public void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
-		Seed seed = getParentSeed(oldElementArray);
+		Seed seed = getParentSeed(oldGrid);
 		if (seed == null || seed?.plantState == Seed.PlantState.Dying) // if parent seed is gone or dying, start dying
 		{
 			leafState = LeafState.Dying;
@@ -238,7 +238,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 		&& seed.fruitCount < seed.maxFruitCount
 		)
 		{
-			if (Random.Shared.NextSingle() < 0.01f && y - 1 >= 0 && oldElementArray[x, y - 1] == null && y + 1 < maxY && oldElementArray[x, y + 1] is Leaf) // 1% chance each tick to grow fruit
+			if (Random.Shared.NextSingle() < 0.01f && y - 1 >= 0 && oldGrid[x, y - 1] == null && y + 1 < maxY && oldGrid[x, y + 1] is Leaf) // 1% chance each tick to grow fruit
 			{
 				// grow fruit
 				GridManager.Instance.RequestSpawn(x, y - 1, new Fruit(BASE_FRUIT_NUTRIENT_COST, BASE_FRUIT_WETNESS_COST), maxX, maxY);
@@ -260,7 +260,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 		if (leafState == LeafState.Growing && T - lastGrowthTick >= growthInterval)
 		{
 			lastGrowthTick = T;
-			growLeaf(oldElementArray, x, y, maxX, maxY);
+			growLeaf(oldGrid, x, y, maxX, maxY);
 
 		}
 
@@ -269,13 +269,13 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 			leafState = LeafState.Growing;
 		}
 
-		transferNutrientsToChildLeafs(oldElementArray);
+		transferNutrientsToChildLeafs(oldGrid);
 
 		if (!alignedToPlantColor){
-			alignToPlantColor(oldElementArray);
+			alignToPlantColor(oldGrid);
 			alignedToPlantColor = true;
 		}
-		FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
+		FlammableBehavior.burn(this, oldGrid, x, y, maxX, maxY, T);
 		updateColor(T, x, y);
 	}
 

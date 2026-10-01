@@ -1,4 +1,5 @@
 using System;
+using Godot;
 
 public interface ILiquid
 {
@@ -9,25 +10,25 @@ public interface ILiquid
 
 public static class LiquidBehavior
 {
-    public static void update(this ILiquid self, Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T){
-        if (y + 2 < maxY && oldElementArray[x, y + 1] is Leaf && oldElementArray[x, y + 2] is IGas or null)
+    public static void update(this ILiquid self, Element[,] oldGrid, int x, int y, int maxX, int maxY, int T){
+        if (y + 2 < maxY && oldGrid[x, y + 1] is Leaf && oldGrid[x, y + 2] is IGas or null)
 		{
-			MoveManager.Instance.AttemptMove(oldElementArray, x, y, 0, 2, maxX, maxY);
+			MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, 2, maxX, maxY);
 			return;
 		}
 
-		if (MoveManager.Instance.AttemptMove(oldElementArray, x, y, 0, 1, maxX, maxY)) { self.lifetime = self.maxLifetime; return; }
+		if (MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, 1, maxX, maxY)) { self.lifetime = self.maxLifetime; return; }
 
 		float randomFloat = Random.Shared.NextSingle();
 		if (randomFloat < 0.5f)
 		{
-			if (MoveManager.Instance.AttemptMove(oldElementArray, x, y, -1, 1, maxX, maxY)) { self.lifetime = self.maxLifetime; return; }
-			if (MoveManager.Instance.AttemptMove(oldElementArray, x, y, 1, 1, maxX, maxY)) { self.lifetime = self.maxLifetime; return; }
+			if (MoveManager.Instance.AttemptMove(oldGrid, x, y, -1, 1, maxX, maxY)) { self.lifetime = self.maxLifetime; return; }
+			if (MoveManager.Instance.AttemptMove(oldGrid, x, y, 1, 1, maxX, maxY)) { self.lifetime = self.maxLifetime; return; }
 		}
 		else
 		{
-			if (MoveManager.Instance.AttemptMove(oldElementArray, x, y, -1, 1, maxX, maxY)) { self.lifetime = self.maxLifetime; return; }
-			if (MoveManager.Instance.AttemptMove(oldElementArray, x, y, 1, 1, maxX, maxY)) { self.lifetime = self.maxLifetime; return; }
+			if (MoveManager.Instance.AttemptMove(oldGrid, x, y, 1, 1, maxX, maxY)) { self.lifetime = self.maxLifetime; return; }
+			if (MoveManager.Instance.AttemptMove(oldGrid, x, y, -1, 1, maxX, maxY)) { self.lifetime = self.maxLifetime; return; }
 		}
 
 		if (randomFloat < 0.1f)
@@ -35,7 +36,7 @@ public static class LiquidBehavior
 			self.directionX *= -1;
 		}
 
-		if (MoveManager.Instance.AttemptMove(oldElementArray, x, y, self.directionX, 0, maxX, maxY)) { self.lifetime--; return; }
+		if (MoveManager.Instance.AttemptMove(oldGrid, x, y, self.directionX, 0, maxX, maxY)) { self.lifetime--; return; }
 		else
 		{
 			self.directionX *= -1;

@@ -36,7 +36,7 @@ public class Worm : Element, ILife, ISolid
 		color = Colors.Pink;
 	}
 
-	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		if (T - lastActivity < activityInterval)
 		{
@@ -53,14 +53,14 @@ public class Worm : Element, ILife, ISolid
 		{
 			case WormState.Falling:
 				// check if can fall down
-				if (y + 1 < maxY && (oldElementArray[x, y + 1] == null || oldElementArray[x, y + 1] is ILiquid))
+				if (y + 1 < maxY && (oldGrid[x, y + 1] == null || oldGrid[x, y + 1] is ILiquid))
 				{
 					// fall down
-					MoveManager.Instance.AttemptMove(oldElementArray, x, y, 0, 1, maxX, maxY);
+					MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, 1, maxX, maxY);
 					break;
 				}
 
-				if (y + 1 >= maxY || oldElementArray[x, y + 1] is Soil)
+				if (y + 1 >= maxY || oldGrid[x, y + 1] is Soil)
 				{
 					// landed on solid ground
 					wormState = WormState.Moving;
@@ -87,20 +87,20 @@ public class Worm : Element, ILife, ISolid
 				}
 
 				// Try to move in current direction
-				(int, int) nearbyBiomass = findNearbyBiomass(oldElementArray, x, y, maxX, maxY);
+				(int, int) nearbyBiomass = findNearbyBiomass(oldGrid, x, y, maxX, maxY);
 				if (nearbyBiomass != (-1, -1))
 				{
 					// Move towards biomass
 					int dx = nearbyBiomass.Item1 - x;
 					int dy = nearbyBiomass.Item2 - y;
-					if (moveInSoil(oldElementArray, x, y, maxX, maxY, dx, dy))
+					if (moveInSoil(oldGrid, x, y, maxX, maxY, dx, dy))
 					{
 						// Successfully moved to biomass
 						break;
 					}
 				}
 				
-				if (moveInSoil(oldElementArray, x, y, maxX, maxY, currentDirection.Item1, currentDirection.Item2))
+				if (moveInSoil(oldGrid, x, y, maxX, maxY, currentDirection.Item1, currentDirection.Item2))
 				{
 					// Successfully moved in current direction
 					break;
@@ -133,7 +133,7 @@ public class Worm : Element, ILife, ISolid
 			currentDirection = (0, 1); // down
 	}
 
-	public (int, int) findNearbyBiomass(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
+	public (int, int) findNearbyBiomass(Element[,] oldGrid, int x, int y, int maxX, int maxY)
 	{
 		foreach ((int dx, int dy) in new (int, int)[] { (0, -1), (0, 1), (-1, 0), (1, 0) })
 		{
@@ -143,7 +143,7 @@ public class Worm : Element, ILife, ISolid
 			if (nx < 0 || nx >= maxX || ny < 0 || ny >= maxY)
 				continue; // Out of bounds
 
-			if (oldElementArray[nx, ny] is Biomass)
+			if (oldGrid[nx, ny] is Biomass)
 			{
 				return (nx, ny); // Return the position of the eaten biomass
 			}
@@ -151,9 +151,9 @@ public class Worm : Element, ILife, ISolid
 		return (-1, -1); // No biomass found
 	}
 
-	public Soil getDirtFromBiomass(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
+	public Soil getDirtFromBiomass(Element[,] oldGrid, int x, int y, int maxX, int maxY)
 	{
-		Biomass biomass = oldElementArray[x, y] as Biomass; // checks are done before calling this function
+		Biomass biomass = oldGrid[x, y] as Biomass; // checks are done before calling this function
 		float biomassNutrient = biomass.nutrient;
 		float biomassWetness = biomass.wetness;
 
@@ -175,7 +175,7 @@ public class Worm : Element, ILife, ISolid
 		return newSoil;
 	}
 
-	public bool moveInSoil(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int movementX, int movementY)
+	public bool moveInSoil(Element[,] oldGrid, int x, int y, int maxX, int maxY, int movementX, int movementY)
 	{
 		int targetX = x + movementX;
 		int targetY = y + movementY;
@@ -185,7 +185,7 @@ public class Worm : Element, ILife, ISolid
 			return false;
 
 		// Check if target cell is occupied by something other than a soil
-		Element targetElem = oldElementArray[targetX, targetY];
+		Element targetElem = oldGrid[targetX, targetY];
 		if (targetElem != null && targetElem is not Soil)
 			return false;
 
@@ -193,15 +193,15 @@ public class Worm : Element, ILife, ISolid
 		GridManager.Instance.RequestDeletion(x, y, maxX, maxY, inSoil); // leave the stored soil behind by replacing the worm
 
 		// If moving onto a soil, "pick it up"
-		if (oldElementArray[targetX, targetY] is Soil soil)
+		if (oldGrid[targetX, targetY] is Soil soil)
 		{
 			inSoil = soil; // store the soil the worm is moving onto
 		}
 
-		if (oldElementArray[targetX, targetY] is Biomass)
+		if (oldGrid[targetX, targetY] is Biomass)
 		{
 			// If moving onto a biomass, convert it to soil, store its nutrient and wetness into the soil, and "pick it up"
-			inSoil = getDirtFromBiomass(oldElementArray, targetX, targetY, maxX, maxY);
+			inSoil = getDirtFromBiomass(oldGrid, targetX, targetY, maxX, maxY);
 		}
 		
 		GridManager.Instance.RequestDeletion(targetX, targetY, maxX, maxY, this); // move the worm to the new position (the soil is stored in inSoil don't worry)

@@ -1,5 +1,6 @@
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
+using System;
+using System.Linq;
 using Godot;
 
 
@@ -22,7 +23,7 @@ public class MoveRequest
 	// also the bounds of the x and y of the calling element are not checked (should cause problems only if there is an implementation error in the calling code) 
 	public bool IsValid(int maxX, int maxY)
 	{
-		return (movementX != 0 || movementY != 0) && !(x+movementX < 0 || x+movementX >= maxX || y+movementY < 0 || y+movementY >= maxY);
+		return (movementX != 0 || movementY != 0) && !(x + movementX < 0 || x + movementX >= maxX || y + movementY < 0 || y + movementY >= maxY);
 	}
 
 	public static bool canMoveOnElement(Element element, Element target)
@@ -31,24 +32,29 @@ public class MoveRequest
 		{
 			return true;
 		}
-		if (target is IGas){
-			if (element is IGas && element.density < target.density){ // we assume that the gas density is always less than any other element density
+		if (target is IGas)
+		{
+			if (element is IGas && element.density < target.density)
+			{ // we assume that the gas density is always less than any other element density
 				return false;
 			}
 			return true;
 		}
-		if (target is ILiquid){
-			if (element is IGas){
+		if (target is ILiquid)
+		{
+			if (element is IGas)
+			{
 				return false;
 			}
-			if (element is ILiquid && element.density < target.density){
+			if (element is ILiquid && element.density < target.density)
+			{
 				return false;
 			}
 			return true;
 		}
 		return false;
 	}
-	public static bool CanMove(Element[,] oldElementArray, int x, int y, int movementX, int movementY, int maxX, int maxY)
+	public static bool CanMove(Element[,] oldGrid, int x, int y, int movementX, int movementY, int maxX, int maxY)
 	{
 		int newX = x + movementX;
 		int newY = y + movementY;
@@ -58,108 +64,77 @@ public class MoveRequest
 			return false;
 		}
 
-		return canMoveOnElement(oldElementArray[x, y], oldElementArray[newX, newY]);
+		return canMoveOnElement(oldGrid[x, y], oldGrid[newX, newY]);
 	}
 }
-
-
 public sealed class MoveManager
 {
-	
-	private static MoveManager instance = null;
+    private static MoveManager instance = new();
+    public static MoveManager Instance => instance;
 
-	private MoveManager()
-	{
-	}
+    private readonly List<MoveRequest> requests = new();
+    private readonly HashSet<(int, int)> sources = new();
+    private readonly HashSet<(int, int)> destinations = new();
 
-	public static MoveManager Instance
-	{
-		get
-		{
-			if (instance == null)
-			{
-				instance = new MoveManager();
-			}
-			return instance;
-		}
-	}
+    private MoveManager() { }
 
-	private Dictionary<(int, int), List<MoveRequest>> moveRequests = [];
-	private List<(int, int)> uniqueMoveTargets = [];
+    public bool AttemptMove(
+        Element[,] oldGrid,
+        int x, int y,
+        int dx, int dy,
+        int maxX, int maxY)
+    {
+        if (sources.Contains((x, y)))
+        	return false;
 
-	private HashSet<(int, int)> uniqueMoveSources = [];
+        if (!MoveRequest.CanMove(oldGrid, x, y, dx, dy, maxX, maxY))
+            return false;
 
-	public bool AttemptMove(Element[,] oldElementArray, int x, int y, int movementX, int movementY, int maxX, int maxY)
-	{
-		if (MoveRequest.CanMove(oldElementArray, x, y, movementX, movementY, maxX, maxY) && !uniqueMoveSources.Contains((x, y)))
-		{
-			if (AddMoveRequest(new MoveRequest(x, y, movementX, movementY), maxX, maxY))
-			{
-				uniqueMoveSources.Add((x, y));
-				return true;
-			}
-		}
-		return false;
-	}
+        int tx = x + dx;
+        int ty = y + dy;
 
-	public bool AddMoveRequest(MoveRequest request, int maxX, int maxY)
-	{
-		if (request.IsValid(maxX, maxY))
-		{
-			if (!moveRequests.ContainsKey((request.x, request.y)))
-			{
-				moveRequests.Add((request.x, request.y), new List<MoveRequest>());
-				uniqueMoveTargets.Add((request.x, request.y));
-			}
-			moveRequests[(request.x, request.y)].Add(request);
-			return true;
-		}
-		return false;
-	}
+        if (destinations.Contains((tx, ty)))
+            return false;
 
-	public void ProcessMoveRequests(Element[,] oldElementArray, Element[,] currentElementArray, int maxX, int maxY)
-	{
+        requests.Add(new MoveRequest(x, y, dx, dy));
+        sources.Add((x, y));
+        destinations.Add((tx, ty));
 
-		// for each unique target position, process the move requests in the order they were added
-		foreach (var position in uniqueMoveTargets)
-		{
-			var requests = moveRequests[position];
-			var validRequests = new List<MoveRequest>();
-			// Sort out every cell that cannot make the move for whatever reason
-			foreach (var request in requests)
-			{
-				if (MoveRequest.CanMove(oldElementArray, request.x, request.y, request.movementX, request.movementY, maxX, maxY))
-				{
-					validRequests.Add(request);
-				}
-			}
+        return true;
+    }
 
-			if (validRequests.Count == 0)
-			{
-				continue; // No valid requests for this position, skip to the next
-			}
+    public void ProcessMoveRequests(
+        Element[,] oldGrid,
+        Element[,] currentGrid,
+        int maxX, int maxY)
+    {
+        // Randomize the processing order to reduce directional bias.
+        for (int i = requests.Count - 1; i > 0; i--)
+        {
+            int j = Random.Shared.Next(i + 1);
+            (requests[i], requests[j]) = (requests[j], requests[i]);
+        }
 
-			// Sort the valid requests by density between them
-			validRequests.Sort((a, b) =>
-			{
-				var elementA = oldElementArray[a.x, a.y];
-				var elementB = oldElementArray[b.x, b.y];
+        foreach (var request in requests)
+        {
+            int tx = request.x + request.movementX;
+            int ty = request.y + request.movementY;
 
-				return elementB.density.CompareTo(elementA.density);
-			});
+            // Don't move into an occupied cell, even if it is
+            // expected to move away later in this update.
+            if (currentGrid[tx, ty] != null)
+                continue;
 
-			// Pick the first one
-			var pickedRequest = validRequests[0];
-			int newX = pickedRequest.x + pickedRequest.movementX;
-			int newY = pickedRequest.y + pickedRequest.movementY;
+            // The source must still contain the expected element.
+            if (currentGrid[request.x, request.y] == null)
+                continue;
 
-			// Swap the elements in the currentElementArray
-			currentElementArray[pickedRequest.x, pickedRequest.y] = currentElementArray[newX, newY];
-			currentElementArray[newX, newY] = oldElementArray[pickedRequest.x, pickedRequest.y];
-		}
+            currentGrid[tx, ty] = currentGrid[request.x, request.y];
+            currentGrid[request.x, request.y] = null;
+        }
 
-		// Clear the requests after processing
-		moveRequests.Clear();
-		uniqueMoveTargets.Clear();
-	}
+        requests.Clear();
+        sources.Clear();
+        destinations.Clear();
+    }
 }

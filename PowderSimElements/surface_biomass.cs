@@ -14,14 +14,14 @@ public class SurfBiomass : Element, IPowder, ISolid, ILife
 		nutrient = startingNutrient;
 		modulateColor();
 	}
-	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		if (wetness <= 0.0f && nutrient <= 0.0f)
 		{
 			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, null);
 			return;
 		}
-		PowderBehavior.Update(this, oldElementArray, x, y, maxX, maxY, T);
+		PowderBehavior.Update(this, oldGrid, x, y, maxX, maxY, T);
 	}
 
 	override public string getState()

@@ -14,7 +14,7 @@ public class Steam : Element, IGas
 		color = new Color(Colors.WhiteSmoke.R, Colors.WhiteSmoke.G, Colors.WhiteSmoke.B, 0.05f);
 		this.wetness = wetness;
 	}
-	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		if (Random.Shared.NextSingle() < 0.01f)
 		{
@@ -23,7 +23,7 @@ public class Steam : Element, IGas
 			{
 				for (int ny = Math.Max(0, y - 1); ny < Math.Min(y + 1, maxY); ny++)
 				{
-					if ((nx, ny) != (x, y) && oldElementArray[nx, ny] is Steam)
+					if ((nx, ny) != (x, y) && oldGrid[nx, ny] is Steam)
 					{
 						neighbourCount++;
 					}
@@ -44,7 +44,7 @@ public class Steam : Element, IGas
 		}
 		sleeping = true;
 
-		GasBehavior.update(this, oldElementArray, x, y, maxX, maxY, T);
+		GasBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 
 		updateColor(T, x, y);
 	}

@@ -14,9 +14,9 @@ public class Wood : Element, ILife, ISolid, IFlammable
 		color = Colors.Brown;
 		modulateColor(0.05f);
 	}
-	override public void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	override public void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
-		FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
+		FlammableBehavior.burn(this, oldGrid, x, y, maxX, maxY, T);
 		updateColor(T, x, y);
 		// Wood just peacefully exists
 	}

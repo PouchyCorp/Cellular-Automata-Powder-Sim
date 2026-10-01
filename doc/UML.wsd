@@ -9,7 +9,7 @@ abstract class Element {
     # color : Color
     # density : double
 
-    + update(oldElementArray Element[,], currentElementArray : Element[,], x : int, y : int, maxX : int, maxY : int)
+    + update(oldGrid Element[,], currentGrid : Element[,], x : int, y : int, maxX : int, maxY : int)
 }
 
 abstract class Gas extends Element {

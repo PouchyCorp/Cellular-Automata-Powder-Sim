@@ -51,10 +51,10 @@ public class Seed : Element, ILife, ISolid
 		setPlantColor();
 	}
 
-	private bool growStartingRoot(Element[,] currentElementArray, int x, int y, int maxX, int maxY)
+	private bool growStartingRoot(Element[,] currentGrid, int x, int y, int maxX, int maxY)
 	{
 		// Try to grow root downwards if there's space
-		if (y + 1 < maxY && currentElementArray[x, y + 1] is Soil)
+		if (y + 1 < maxY && currentGrid[x, y + 1] is Soil)
 		{
 			GridManager.Instance.RequestDeletion(x, y + 1, maxX, maxY, new Root((x, y)));
 			rootCount++;
@@ -95,13 +95,13 @@ public class Seed : Element, ILife, ISolid
 		}
 	}
 
-	private (int, int) growStartingLeaf(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
+	private (int, int) growStartingLeaf(Element[,] oldGrid, int x, int y, int maxX, int maxY)
 	{
 		if (nutrient < 1) return (-1, -1); // not enough nutrient to grow
 		if (y - 1 < 0) return (-1, -1); // no space above
 
 		// Try to grow leaves upwards if there's space
-		if (oldElementArray[x, y - 1] == null)
+		if (oldGrid[x, y - 1] == null)
 		{
 			GridManager.Instance.RequestSpawn(x, y - 1, new Leaf((x, y)), maxX, maxY); // there is a redundant check in the RequestSpawn method, but it's fine to have it here as well
 			startingLeaf = (x, y - 1);
@@ -113,10 +113,10 @@ public class Seed : Element, ILife, ISolid
 		return (-1, -1);
 	}
 
-	private void transferNutrientsUpwards(Element[,] oldElementArray, int x, int y, int maxX, int maxY)
+	private void transferNutrientsUpwards(Element[,] oldGrid, int x, int y, int maxX, int maxY)
 	{
 		if (y - 1 < 0) return; // no space above
-		if (oldElementArray[x, y-1] is Leaf firstLeaf)
+		if (oldGrid[x, y-1] is Leaf firstLeaf)
 		{
 			if (firstLeaf.nutrient < 5f)
 			{
@@ -141,7 +141,7 @@ public class Seed : Element, ILife, ISolid
 			plantState = PlantState.Dying; // first leaf no longer exists, die
 		}
 	}
-	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		if (y == maxY - 1 || y == 0){
 			plantState = PlantState.Dying;
@@ -149,7 +149,7 @@ public class Seed : Element, ILife, ISolid
 
 		lifetime--;
 		// if it is uprooted why not being in a seed state, it dies
-		if (plantState != PlantState.Dying && plantState != PlantState.Seed && (lifetime <= 0 || oldElementArray[x, y + 1] is not Root))
+		if (plantState != PlantState.Dying && plantState != PlantState.Seed && (lifetime <= 0 || oldGrid[x, y + 1] is not Root))
 		{
 			// Seed has withered away
 			plantState = PlantState.Dying;
@@ -158,7 +158,7 @@ public class Seed : Element, ILife, ISolid
 		// -- Falling state --
 		if (y + 1 < maxY && plantState == PlantState.Falling)
 		{
-			if (!MoveManager.Instance.AttemptMove(oldElementArray, x, y, 0, 1, maxX, maxY)) // if cannot fall further
+			if (!MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, 1, maxX, maxY)) // if cannot fall further
 			{
 				plantState = PlantState.Seed; // become a seed
 			}
@@ -169,29 +169,29 @@ public class Seed : Element, ILife, ISolid
 		{
 			lastGrowthTick = T;
 			// Try to grow roots first
-			if (y + 1 < maxY && oldElementArray[x, y + 1] is not Soil && oldElementArray[x, y + 1] is not Root)
+			if (y + 1 < maxY && oldGrid[x, y + 1] is not Soil && oldGrid[x, y + 1] is not Root)
 			{
 				plantState = PlantState.Dying; // no soil below, die. Poor thing :(
 				return;
 			}
 
-			if (y - 1 >= 0 && oldElementArray[x, y - 1] is Leaf)
+			if (y - 1 >= 0 && oldGrid[x, y - 1] is Leaf)
 			{
 				plantState = PlantState.Dying; // no space above to grow leaves, die. Poor thing :(
 				return;
 			}
 			
-			if (!growStartingRoot(oldElementArray, x, y, maxX, maxY))
+			if (!growStartingRoot(oldGrid, x, y, maxX, maxY))
 			{
 				// try to grow leaves
-				growStartingLeaf(oldElementArray, x, y, maxX, maxY);
+				growStartingLeaf(oldGrid, x, y, maxX, maxY);
 			}
 		}
 
 		// -- Growing state --
 		if (plantState == PlantState.Growing && nutrient > 0) // only transfer nutrients if we are in growing phase
 		{
-			transferNutrientsUpwards(oldElementArray, x, y, maxX, maxY);
+			transferNutrientsUpwards(oldGrid, x, y, maxX, maxY);
 		}
 		if (plantState == PlantState.Growing && leafCount >= maxLeafCount)
 		{

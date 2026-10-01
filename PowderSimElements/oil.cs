@@ -33,7 +33,7 @@ public class Oil : Element, ILiquid, IFlammable
 		color = color.Lightened(w);
 		color = color.Darkened(z);
 	}
-	public override void update(Element[,] oldElementArray, int x, int y, int maxX, int maxY, int T)
+	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 
 		if (lifetime <= 0
@@ -43,9 +43,9 @@ public class Oil : Element, ILiquid, IFlammable
 			return;
 		}
 
-		LiquidBehavior.update(this, oldElementArray, x, y, maxX, maxY, T);
+		LiquidBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 
-		FlammableBehavior.burn(this, oldElementArray, x, y, maxX, maxY, T);
+		FlammableBehavior.burn(this, oldGrid, x, y, maxX, maxY, T);
 		updateColor(T, x, y);
 	}
 }
