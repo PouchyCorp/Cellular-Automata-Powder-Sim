@@ -2,7 +2,7 @@ using System;
 
 public interface IGas
 {
-	public int cloudLineY { get; set; }
+	public int cloudLineY => 2;
 }
 
 public static class GasBehavior

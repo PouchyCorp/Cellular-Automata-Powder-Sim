@@ -85,7 +85,7 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 			}
 		}
 
-		FlammableBehavior.burn(this, oldGrid, x, y, maxX, maxY, T);
+		FlammableBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 		updateColor(T, x, y);
 	}
 

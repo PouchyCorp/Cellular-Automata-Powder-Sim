@@ -275,7 +275,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 			alignToPlantColor(oldGrid);
 			alignedToPlantColor = true;
 		}
-		FlammableBehavior.burn(this, oldGrid, x, y, maxX, maxY, T);
+		FlammableBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 		updateColor(T, x, y);
 	}
 

@@ -3,7 +3,6 @@ using System;
 
 public class Smoke : Element, IGas
 {
-	int IGas.cloudLineY { get; set; } = 10;
 	public bool sleeping = false;
 
 	public Smoke()

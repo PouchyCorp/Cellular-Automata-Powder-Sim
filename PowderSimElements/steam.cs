@@ -3,7 +3,6 @@ using System;
 
 public class Steam : Element, IGas
 {
-	public int cloudLineY { get; set; } = 10;
 	public float wetness;
 	public float maxWetness => 1.0f;
 	public bool sleeping = false;

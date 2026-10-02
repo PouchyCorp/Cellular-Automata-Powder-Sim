@@ -48,7 +48,7 @@ public class Fly : Element, ILife, ISolid, IFlammable
 		if (T - lastActivity < activityInterval)
 		{
 			// Not time to act yet
-			FlammableBehavior.burn(this, oldGrid, x, y, maxX, maxY, T);
+			FlammableBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 			updateColor(T, x, y);
 			return;
 		}
@@ -64,7 +64,7 @@ public class Fly : Element, ILife, ISolid, IFlammable
 				stuckInWeb = false; // free from web after duration
 				tryMoveInDirection(oldGrid, x, y, maxX, maxY, 0, -1, T); // try to move up out of web
 			}
-			FlammableBehavior.burn(this, oldGrid, x, y, maxX, maxY, T);
+			FlammableBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 			updateColor(T, x, y);
 			return; // can't move while stuck
 		}
@@ -113,7 +113,7 @@ public class Fly : Element, ILife, ISolid, IFlammable
 
 
 		// just move around in the dirt
-		FlammableBehavior.burn(this, oldGrid, x, y, maxX, maxY, T);
+		FlammableBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 		updateColor(T, x, y);
 
 	}

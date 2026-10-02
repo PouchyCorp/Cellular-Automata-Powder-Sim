@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel.DataAnnotations;
 using Godot;
 public abstract class Element
 {
@@ -23,9 +24,9 @@ public abstract class Element
 		}
 		color = baseColor; // reset to base color before applying effects
 
-		if (this is IFlammable burningElement)
+		if (this is IFlammable && (this as IFlammable).burning)
 		{
-			float lerpIntensity = Math.Max(0, (float)Math.Sin((T + x * y) / 10));
+			float lerpIntensity = Math.Max(0, (float)Math.Sin((T + (x * y + x) % Math.Max(x/(y+1), 1)) / 10));
 			Color fireHue = Colors.Red.Lerp(Colors.Orange, lerpIntensity);
 			//fireHue = fireHue.Lerp(Colors.DarkOrange, Math.Max(1, 200 / (float)burningLifetime)); // longer burning -> darker fire color
 			color = baseColor.Lerp(fireHue, 0.4f); // blend both effects

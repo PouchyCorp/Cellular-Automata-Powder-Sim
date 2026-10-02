@@ -1,6 +1,6 @@
 using Godot;
 
-public class SurfBiomass : Element, IPowder, ISolid, ILife
+public class SurfBiomass : Element, IPowder, ILife
 {
 	public float wetness;
 	public float nutrient;

@@ -23,19 +23,9 @@ public class Oil : Element, ILiquid, IFlammable
 		modulateColor(0.001f);
 	}
 
-	public override void updateColor(int T, int x, int y)
-	{
-		base.updateColor(T, x, y);
-		float modulationSpeed = random_offset * 0.005f;
-		float modulation = (Mathf.Sin(T * modulationSpeed + random_offset) + 1) / 2;
-		float w = modulation * modulationIntensity;
-		float z = (1 - modulation) * modulationIntensity;
-		color = color.Lightened(w);
-		color = color.Darkened(z);
-	}
 	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
-
+		GD.Print($"Oil update called at ({x}, {y}) with lifetime {lifetime} and burning {burning}");
 		if (lifetime <= 0
 		&& !burning)
 		{
@@ -45,7 +35,7 @@ public class Oil : Element, ILiquid, IFlammable
 
 		LiquidBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 
-		FlammableBehavior.burn(this, oldGrid, x, y, maxX, maxY, T);
+		FlammableBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 		updateColor(T, x, y);
 	}
 }

@@ -83,7 +83,7 @@ public partial class CellularAutomataEngine : Node2D
 
 	public override void _Process(double delta)
 	{
-
+		GD.Print($"Processing frame at tick {tick}.");
 		tick ++;
 		base._Process(delta);
 		UiHandler();
@@ -95,11 +95,8 @@ public partial class CellularAutomataEngine : Node2D
 			gameSpeedCounter--;
 		}
 
-		// Commented code to prevent stuff
-		//float totalWetness = GetTotalWetness();
-		//GD.Print($"Total wetness in simulation: {totalWetness:F3}");
-
 		QueueRedraw();
+		GD.Print($"Finished tick {tick}.");
 	}
 
 	//Those inputs may be ignored by filters
@@ -272,9 +269,9 @@ public partial class CellularAutomataEngine : Node2D
 		{
 			for (int y = 0; y < gridHeight; y++)
 			{
+				if (oldGrid[x, y] == null) continue;
 
-				oldGrid[x, y]?.update(oldGrid, x, y, gridWidth, gridHeight, tick);
-
+				oldGrid[x, y].update(oldGrid, x, y, gridWidth, gridHeight, tick);
 			}
 		}
 
@@ -284,8 +281,6 @@ public partial class CellularAutomataEngine : Node2D
 		NutrientManager.Instance.ProcessWetnessRequests(oldGrid, elementArray);
 		FireManager.Instance.ProcessIgnitionRequests(elementArray, gridWidth, gridHeight);
 		MoveManager.Instance.ProcessMoveRequests(oldGrid, elementArray, gridWidth, gridHeight);
-		
-		tick++;
 	}
 
 

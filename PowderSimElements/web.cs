@@ -25,7 +25,7 @@ public class Web : Element, ILife, IFlammable
 			GridManager.Instance.RequestDeletion(x, y, maxX, maxY);
 			return;
 		}
-		FlammableBehavior.burn(this, oldGrid, x, y, maxX, maxY, T);
+		FlammableBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 		updateColor(T, x, y);
 	}
 

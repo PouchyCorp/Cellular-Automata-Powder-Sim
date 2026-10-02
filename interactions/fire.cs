@@ -11,7 +11,7 @@ public interface IFlammable
 
 public static class FlammableBehavior
 {
-    public static void burn(IFlammable self, Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
+    public static void update(IFlammable self, Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		if (!self.burning) return;
 
@@ -23,30 +23,30 @@ public static class FlammableBehavior
 
 			if (nx >= 0 && nx < maxX && ny >= 0 && ny < maxY)
 			{
-				if (oldGrid[nx, ny] != null)
-				{
-					Element neighbor = oldGrid[nx, ny];
-					if (neighbor is IFlammable flammableNeighbor && flammableNeighbor.flammability > 0 && !flammableNeighbor.burning)
-					{
-						// Chance to ignite based on flammability
-						if (Random.Shared.NextSingle() < 100 / Math.Max(1, flammableNeighbor.flammability)) // Adjust ignition chance factor as needed
-						{
-							ignite(nx, ny, maxX, maxY);
-						}
-					}
-				}
+
+                Element neighbor = oldGrid[nx, ny];
+                if (neighbor is IFlammable flammableNeighbor && flammableNeighbor.flammability > 0 && !flammableNeighbor.burning)
+                {
+                    // Chance to ignite based on flammability
+                    if (Random.Shared.NextSingle() < 100 / Math.Max(1, flammableNeighbor.flammability)) // Adjust ignition chance factor as needed
+                    {
+                        ignite(nx, ny, maxX, maxY);
+                    }
+                }
 			}
 		}
 
         if (Random.Shared.NextSingle() < 0.01f){
-            GridManager.Instance.RequestSpawn(x, y+1, new Smoke(), maxX, maxY); // spawn smoke above the burning element
+            GridManager.Instance.RequestSpawn(x, y-1, new Smoke(), maxX, maxY); // spawn smoke above the burning element
         }
 
 		self.burningLifetime--;
 		if (self.burningLifetime <= 0)
 		{
+            self.burning = false; // stop burning before being consumed
             if (self is ILife nutrientElement)
             {
+                
                 GridManager.Instance.RequestDeletion(x, y, maxX, maxY ,new Ash(nutrientElement.nutrient)); // element is consumed by fire and turned to ash
             }
             else

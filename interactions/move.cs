@@ -72,9 +72,9 @@ public sealed class MoveManager
     private static MoveManager instance = new();
     public static MoveManager Instance => instance;
 
-    private readonly List<MoveRequest> requests = new();
-    private readonly HashSet<(int, int)> sources = new();
-    private readonly HashSet<(int, int)> destinations = new();
+    private List<MoveRequest> requests = new();
+    private HashSet<(int, int)> sources = new();
+    private HashSet<(int, int)> destinations = new();
 
     private MoveManager() { }
 

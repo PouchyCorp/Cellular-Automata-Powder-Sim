@@ -17,18 +17,18 @@ public static class LiquidBehavior
 			return;
 		}
 
-		if (MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, 1, maxX, maxY)) { self.lifetime = self.maxLifetime; return; }
+		if (MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, 1, maxX, maxY)) {return; }
 
 		float randomFloat = Random.Shared.NextSingle();
 		if (randomFloat < 0.5f)
 		{
-			if (MoveManager.Instance.AttemptMove(oldGrid, x, y, -1, 1, maxX, maxY)) { self.lifetime = self.maxLifetime; return; }
-			if (MoveManager.Instance.AttemptMove(oldGrid, x, y, 1, 1, maxX, maxY)) { self.lifetime = self.maxLifetime; return; }
+			if (MoveManager.Instance.AttemptMove(oldGrid, x, y, -1, 1, maxX, maxY)) {return; }
+			if (MoveManager.Instance.AttemptMove(oldGrid, x, y, 1, 1, maxX, maxY)) {return; }
 		}
 		else
 		{
-			if (MoveManager.Instance.AttemptMove(oldGrid, x, y, 1, 1, maxX, maxY)) { self.lifetime = self.maxLifetime; return; }
-			if (MoveManager.Instance.AttemptMove(oldGrid, x, y, -1, 1, maxX, maxY)) { self.lifetime = self.maxLifetime; return; }
+			if (MoveManager.Instance.AttemptMove(oldGrid, x, y, 1, 1, maxX, maxY)) {return; }
+			if (MoveManager.Instance.AttemptMove(oldGrid, x, y, -1, 1, maxX, maxY)) {return; }
 		}
 
 		if (randomFloat < 0.1f)
@@ -36,7 +36,7 @@ public static class LiquidBehavior
 			self.directionX *= -1;
 		}
 
-		if (MoveManager.Instance.AttemptMove(oldGrid, x, y, self.directionX, 0, maxX, maxY)) { self.lifetime--; return; }
+		if (MoveManager.Instance.AttemptMove(oldGrid, x, y, self.directionX, 0, maxX, maxY)) { return; }
 		else
 		{
 			self.directionX *= -1;

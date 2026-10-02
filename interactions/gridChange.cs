@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel;
+using Godot;
 
 
 public class DeletionRequest
@@ -67,7 +68,14 @@ public class GridManager
     {
         DeletionRequest request = new DeletionRequest(x, y, replace);
         if (request.IsValid(maxX, maxY)){
+            if (!DeletionRequests.ContainsKey((x, y)))
+            {
                 DeletionRequests.Add((x, y), [request]);
+            }
+            else
+            {
+                DeletionRequests[(x, y)].Add(request);
+            }
             return true; 
         }
         return false; 
@@ -78,7 +86,14 @@ public class GridManager
         // this will fail if the place is not empty, use RequestDeletion first if you want to forcefully spawn an element
         SpawnRequest request = new SpawnRequest(x, y, elementToSpawn);
         if (request.IsValid(maxX, maxY)){
-            SpawnRequests.Add((x, y), [request]);
+            if (!SpawnRequests.ContainsKey((x, y)))
+            {
+                SpawnRequests.Add((x, y), [request]);
+            }
+            else
+            {
+                SpawnRequests[(x, y)].Add(request);
+            }
             return true; 
         }
         return false;   
@@ -95,6 +110,7 @@ public class GridManager
     {
         foreach (var ((x, y), requests) in DeletionRequests)
         {
+            GD.Print($"Processing deletion requests at ({x}, {y}) with {requests.Count} requests.");
             // find highest priority request
             DeletionRequest highestPriorityRequest = requests[0];
             foreach (var request in requests)
@@ -106,6 +122,8 @@ public class GridManager
             }
 
             elements[x, y] = highestPriorityRequest.replace; // replace with the specified element or null if none specified
+
+            GD.Print($"Done.");
 
         }
         DeletionRequests.Clear();
