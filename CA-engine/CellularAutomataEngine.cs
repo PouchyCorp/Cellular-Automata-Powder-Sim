@@ -279,6 +279,7 @@ public partial class CellularAutomataEngine : Node2D
 		}
 
 		GridManager.Instance.ProcessDeletions(elementArray, gridWidth, gridHeight);
+		GridManager.Instance.ProcessSpawns(elementArray, gridWidth, gridHeight);
 		NutrientManager.Instance.ProcessNutrientRequests(oldGrid, elementArray);
 		NutrientManager.Instance.ProcessWetnessRequests(oldGrid, elementArray);
 		FireManager.Instance.ProcessIgnitionRequests(elementArray, gridWidth, gridHeight);
