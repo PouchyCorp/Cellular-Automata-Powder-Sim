@@ -6,7 +6,7 @@ using System.Data;
 public class Soil : Element, IPowder, ISolid, ILife
 {
 	int lastActivity = 0;
-	int activityInterval = 15;
+	int activityInterval = 30;
 	public float nutrient { get; set; } = 0f;
 	public float maxNutrient => 1000f;
 	public float wetness { get; set; } = 0f;
@@ -40,44 +40,6 @@ public class Soil : Element, IPowder, ISolid, ILife
 		color = nutriHue.Lerp(wetHue, 0.5f); // blend both effects TODO: adjust colors
 	}
 
-	// public void ChangeNutrient(float change, Element[,] currentGrid, int x, int y, int maxX, int maxY)
-	// // Method to change nutrient level, the change is the amount to add or subtract from the current nutrient level
-	// {
-		
-	// 	foreach ((int nx, int ny) in cardinals)
-	// 	{
-	// 		int neighborX = x + nx;
-	// 		int neighborY = y + ny;
-
-	// 		if (neighborX >= 0 && neighborX < maxX && neighborY >= 0 && neighborY < maxY)
-	// 		{   
-	// 			// using currentGrid as read and write here is not a problem because needsUpdate is not a state that can have consequences to the simulation order.
-	// 			if (currentGrid[neighborX, neighborY] is Soil neighborSoil){
-	// 				neighborSoil.needsUpdate = true; // Mark neighbor soil for update
-	// 			}
-	// 		}
-	// 	}
-	// }
-
-	// public void ChangeWetness(float change, Element[,] currentGrid, int x, int y, int maxX, int maxY)
-	// // Method to change wetness level, the change is the amount to add or subtract from the current wetness level
-	// {
-	// 	wetness += change;
-	// 	foreach ((int nx, int ny) in cardinals)
-	// 	{
-	// 		int neighborX = x + nx;
-	// 		int neighborY = y + ny;
-
-	// 		if (neighborX >= 0 && neighborX < maxX && neighborY >= 0 && neighborY < maxY)
-	// 		{   
-	// 			// using currentGrid as read and write here is not a problem because needsUpdate is not a state that can have consequences to the simulation order.
-	// 			if (currentGrid[neighborX, neighborY] is Soil neighborSoil){
-	// 				neighborSoil.needsUpdate = true; // Mark neighbor soil for update
-	// 			}
-	// 		}
-	// 	}
-	// }
-
 	((int, int)[], int) getNeighborsIndices(Element[,] currentGrid, int x, int y, int maxX, int maxY)
 	{
 		(int, int)[] neighbors = new (int, int)[4];
@@ -99,6 +61,7 @@ public class Soil : Element, IPowder, ISolid, ILife
 	{
 		if (T - lastActivity < activityInterval) // Skip update if not enough time has passed and no external change has occurred
 		{
+			updateColor(T, x, y);
 			PowderBehavior.Update(this, oldGrid, x, y, maxX, maxY, T); // still needs to update for other base behaviors, but we skip the soil-specific updates
 			return;
 		}
@@ -116,15 +79,14 @@ public class Soil : Element, IPowder, ISolid, ILife
 		
 			// Again using the newElementArray as read is a bit problematic for a deterministic simulation, but fake it until you make it as they say.
 			float nutriDiff = (oldGrid[nx, ny] as Soil).nutrient - nutrient;
-			if (nutriDiff > 0.1f) // Only transfer if significant difference
+			if (nutriDiff < -0.1f)
 			{
-				float transferAmount = nutriDiff * 0.1f; // Slower transfer rate
-				float maxTransfer = Math.Min(transferAmount, nutrient * 0.3f); // Limit how much can be transferred
+				float transferAmount = Math.Abs(nutriDiff) * 0.1f;
 
-				if (maxTransfer > 0){
-					NutrientManager.Instance.AddGiveNutrientRequest(new GiveNutrientRequest(x, y, nx, ny, maxTransfer), maxX, maxY);
-				} else if (maxTransfer < 0){
-					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(nx, ny, x, y, maxTransfer), maxX, maxY);
+				if (nutriDiff < 0)
+				{
+					// Current soil is richer: give nutrients to the poorer neighbor.
+					NutrientManager.Instance.AddGiveNutrientRequest(new GiveNutrientRequest(x, y, nx, ny, transferAmount), maxX, maxY);
 				}
 			}
 
@@ -137,16 +99,15 @@ public class Soil : Element, IPowder, ISolid, ILife
 				int nx = neighborsIndices[i].Item1;
 				int ny = neighborsIndices[i].Item2;
 			
-				float wetnessDiff = wetness - (oldGrid[nx, ny] as Soil).wetness;
-				if (wetnessDiff > 0.1f) // Only transfer if significant difference and if wetness greater than neighbor's
+				float wetnessDiff = (oldGrid[nx, ny] as Soil).wetness - wetness;
+				if (wetnessDiff < -0.1f)
 				{
-					float transferAmount = wetnessDiff * 0.1f; // Slower transfer rate
-					float maxTransfer = Math.Min(transferAmount, wetness * 0.3f); // Limit how much can be transferred
+					float transferAmount = Math.Abs(wetnessDiff) * 0.1f;
 
-					if (maxTransfer > 0){
-						NutrientManager.Instance.AddGiveWetnessRequest(new GiveWetnessRequest(x, y, nx, ny, maxTransfer), maxX, maxY);
-					} else if (maxTransfer < 0){
-						NutrientManager.Instance.AddTakeWetnessRequest(new TakeWetnessRequest(nx, ny, x, y, maxTransfer), maxX, maxY);
+					if (wetnessDiff < 0)
+					{
+						// Current soil is wetter: give wetness to the drier neighbor.
+						NutrientManager.Instance.AddGiveWetnessRequest(new GiveWetnessRequest(x, y, nx, ny, transferAmount), maxX, maxY);
 					}
 				}
 			}

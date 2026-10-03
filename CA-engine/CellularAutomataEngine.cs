@@ -2,8 +2,6 @@ using Godot;
 using System;
 using System.Data;
 using System.IO;
-using System.Linq.Expressions;
-using System.IO;
 
 
 public partial class CellularAutomataEngine : Node2D
@@ -86,7 +84,6 @@ public partial class CellularAutomataEngine : Node2D
 
 	public override void _Process(double delta)
 	{
-		tick++;
 		base._Process(delta);
 		UiHandler();
 		PlacementHandler();
@@ -94,6 +91,7 @@ public partial class CellularAutomataEngine : Node2D
 		while (Math.Floor(gameSpeedCounter) > 0) // game speed just skips steps
 		{
 			CellUpdateHandler();
+			tick++;
 			gameSpeedCounter--;
 		}
 
@@ -248,6 +246,9 @@ public partial class CellularAutomataEngine : Node2D
 			case "Water":
 				elementArray[x, y] = new Water();
 				break;
+			case "Seed":
+				elementArray[x, y] = new Seed(5,5);
+				break;
 			default:
 				elementArray[x, y] = (Element)Activator.CreateInstance(Type.GetType(elementType));
 				break;
@@ -261,7 +262,7 @@ public partial class CellularAutomataEngine : Node2D
 	}
 
 	private void CellUpdateHandler()
-	{	
+	{
 
 		Element[,] oldGrid = (Element[,])elementArray.Clone();
 
@@ -401,10 +402,18 @@ public partial class CellularAutomataEngine : Node2D
 				if (elementArray[x, y] is ILife element)
 				{
 					totalWetness += element.wetness;
+
+				}
+				else if (elementArray[x, y] is Water water)
+				{
+					totalWetness += water.wetness;
+				}
+				else if (elementArray[x, y] is Steam steam)
+				{
+					totalWetness += steam.wetness;
 				}
 			}
 		}
-
 		return totalWetness;
 	}
 

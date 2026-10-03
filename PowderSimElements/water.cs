@@ -1,12 +1,14 @@
 using Godot;
 using System;
 
-public class Water : Element, ILiquid
+public class Water : Element, ILiquid, ILife
 {
     public int directionX { get; set; } = 1;
 	public int maxLifetime { get; set; } = 60 * 3;
 	public int lifetime { get; set; }
-	public float wetness = 1.0f;
+	public float nutrient { get; set; } = 0f;
+	public float maxNutrient => 0f;
+	public float wetness { get; set; } = 1.0f;
 	public float maxWetness => 1.0f;
 	public float modulationIntensity = 0.075f;
 	private float random_offset;
@@ -42,11 +44,11 @@ public class Water : Element, ILiquid
 			return;
 		}
 
-		// if (Random.Shared.NextSingle() < evaporationChance && y - 1 > 0 && oldGrid[x, y - 1] == null)
-		// {
-		// 	GridManager.Instance.RequestDeletion(x, y, maxX, maxY, new Steam(wetness));
-		// 	return;
-		// }
+		if (Random.Shared.NextSingle() < evaporationChance && y - 1 > 0 && oldGrid[x, y - 1] == null)
+		{
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, new Steam(wetness));
+			return;
+		}
 
 		if (lifetime <= 0)
 		{

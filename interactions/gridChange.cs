@@ -110,7 +110,6 @@ public class GridManager
     {
         foreach (var ((x, y), requests) in DeletionRequests)
         {
-            GD.Print($"Processing deletion requests at ({x}, {y}) with {requests.Count} requests.");
             // find highest priority request
             DeletionRequest highestPriorityRequest = requests[0];
             foreach (var request in requests)
@@ -122,9 +121,6 @@ public class GridManager
             }
 
             elements[x, y] = highestPriorityRequest.replace; // replace with the specified element or null if none specified
-
-            GD.Print($"Done.");
-
         }
         DeletionRequests.Clear();
     }

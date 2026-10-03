@@ -149,7 +149,7 @@ public class Seed : Element, ILife, ISolid
 
 		lifetime--;
 		// if it is uprooted why not being in a seed state, it dies
-		if (plantState != PlantState.Dying && plantState != PlantState.Seed && (lifetime <= 0 || oldGrid[x, y + 1] is not Root))
+		if (plantState != PlantState.Dying && plantState != PlantState.Seed && plantState != PlantState.Falling && (lifetime <= 0 || oldGrid[x, y + 1] is not Root))
 		{
 			// Seed has withered away
 			plantState = PlantState.Dying;
@@ -172,12 +172,6 @@ public class Seed : Element, ILife, ISolid
 			if (y + 1 < maxY && oldGrid[x, y + 1] is not Soil && oldGrid[x, y + 1] is not Root)
 			{
 				plantState = PlantState.Dying; // no soil below, die. Poor thing :(
-				return;
-			}
-
-			if (y - 1 >= 0 && oldGrid[x, y - 1] is Leaf)
-			{
-				plantState = PlantState.Dying; // no space above to grow leaves, die. Poor thing :(
 				return;
 			}
 			

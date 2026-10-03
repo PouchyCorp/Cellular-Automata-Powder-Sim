@@ -2,11 +2,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Godot;
 using System;
-using System.ComponentModel.DataAnnotations;
-
-// ---------------------------------------
-// TODO : Potential bug when an element is deleted before being processed
-// ---------------------------------------
 public interface ILife
 {
 	public float nutrient { get; set; }
@@ -33,6 +28,11 @@ public class GiveNutrientRequest
 		this.targetX = targetX;
 		this.targetY = targetY;
 		this.NutrientAmount = nutrientAmount;
+
+		if (NutrientAmount < 0)
+		{
+			throw new ArgumentException("NutrientAmount not be negative");
+		}
 	}
 
 	public bool IsValid(int maxX, int maxY)
@@ -58,6 +58,11 @@ public class TakeNutrientRequest
 		this.targetX = targetX;
 		this.targetY = targetY;
 		this.NutrientAmount = nutrientAmount;
+
+		if (NutrientAmount < 0)
+		{
+			throw new ArgumentException("NutrientAmount must not be negative");
+		}
 	}
 
 	public bool IsValid(int maxX, int maxY)
@@ -83,6 +88,10 @@ public class TakeWetnessRequest
 		this.targetX = targetX;
 		this.targetY = targetY;
 		this.WetnessAmount = wetnessAmount;
+		if (WetnessAmount < 0)
+		{
+			throw new ArgumentException("WetnessAmount must not be negative");
+		}
 	}
 
 	public bool IsValid(int maxX, int maxY)
@@ -100,8 +109,14 @@ public class GiveWetnessRequest
 	public int targetY { get; set; }
 	public float WetnessAmount { get; set; }
 
+	
+
 	public GiveWetnessRequest(int x, int y, int targetX, int targetY, float wetnessAmount)
 	{
+		if (wetnessAmount < 0)
+		{
+			throw new ArgumentException("WetnessAmount must not be negative");
+		}
 		this.x = x;
 		this.y = y;
 		this.targetX = targetX;
@@ -193,224 +208,106 @@ public class NutrientManager
 		}
 	}
 
+	private static void ProcessIncomingNutrientRequests(
+		IReadOnlyList<GiveNutrientRequest> requests,
+		Element[,] currentGrid,
+		ILife targetElement)
+	{
+		float remainingCapacity = targetElement.maxNutrient - targetElement.nutrient;
+		foreach (var request in requests)
+		{
+			if (remainingCapacity <= 0)
+				break;
+
+			if (currentGrid[request.x, request.y] is not ILife givingElement)
+				continue;
+
+			float nutrientToGive = Mathf.Min(
+				request.NutrientAmount,
+				Mathf.Min(remainingCapacity, givingElement.nutrient)
+			);
+
+			if (nutrientToGive <= 0)
+				continue;
+
+			givingElement.nutrient -= nutrientToGive;
+			targetElement.nutrient += nutrientToGive;
+			remainingCapacity -= nutrientToGive;
+		}
+	}
+
+	private static void ProcessOutgoingNutrientRequests(
+		IReadOnlyList<TakeNutrientRequest> requests,
+		Element[,] currentGrid,
+		ILife targetElement)
+	{
+		float remainingNutrient = targetElement.nutrient;
+		foreach (var request in requests)
+		{
+			if (remainingNutrient <= 0)
+				break;
+
+			if (currentGrid[request.x, request.y] is not ILife takingElement)
+				continue;
+
+			float nutrientToTake = Mathf.Min(
+				request.NutrientAmount,
+				Mathf.Min(remainingNutrient, takingElement.maxNutrient - takingElement.nutrient)
+			);
+
+			if (nutrientToTake <= 0)
+				continue;
+
+			targetElement.nutrient -= nutrientToTake;
+			takingElement.nutrient += nutrientToTake;
+			remainingNutrient -= nutrientToTake;
+		}
+	}
+
 	public void ProcessNutrientRequests(
 	Element[,] oldGrid,
 	Element[,] currentGrid)
 	{
-		// Most of this function is probably overkill, and can maybe have unintended consequences, but it should be safe and correct, and it should be fast enough for now. (I think)
-		foreach (var position in uniqueNutrientTargets)
+		
+		foreach (var position in uniqueNutrientTargets.ToList())
 		{
+		
 			if (currentGrid[position.Item1, position.Item2] is not ILife targetElement)
 				continue;
 
-			bool hasGiveRequests = giveNutrientRequests.TryGetValue(
-				position, out var giveRequests);
+			var giveRequests = giveNutrientRequests.TryGetValue(position, out var giveList)
+				? giveList.OrderByDescending(request => request.NutrientAmount).ToList()
+				: new List<GiveNutrientRequest>();
 
-			bool hasTakeRequests = takeNutrientRequests.TryGetValue(
-				position, out var takeRequests);
+			var takeRequests = takeNutrientRequests.TryGetValue(position, out var takeList)
+				? takeList.OrderByDescending(request => request.NutrientAmount).ToList()
+				: new List<TakeNutrientRequest>();
 
-			float totalNutrientGiven = 0;
-			for (int i = 0; i < giveRequests?.Count; i++)
+			float totalIncoming = 0f;
+			foreach (var request in giveRequests)
 			{
-				var request = giveRequests[i];
-				if (oldGrid[request.x, request.y] is ILife nutrientElement)
-				{
-					totalNutrientGiven += Mathf.Min(
-						request.NutrientAmount,
-						nutrientElement.nutrient
-					);
-				}
+				if (currentGrid[request.x, request.y] is not ILife givingElement)
+					continue;
+				totalIncoming += Mathf.Min(request.NutrientAmount, givingElement.nutrient);
 			}
 
-			float totalNutrientTaken = 0;
-			for (int i = 0; i < takeRequests?.Count; i++)
+			float totalOutgoing = 0f;
+			foreach (var request in takeRequests)
 			{
-				var request = takeRequests[i];
-				if (oldGrid[request.x, request.y] is ILife nutrientElement)
-				{
-					totalNutrientTaken += Mathf.Min(
-						request.NutrientAmount,
-						nutrientElement.maxNutrient - nutrientElement.nutrient
-					);
-				}
+				if (currentGrid[request.x, request.y] is not ILife takingElement)
+					continue;
+				totalOutgoing += Mathf.Min(request.NutrientAmount, takingElement.maxNutrient - takingElement.nutrient);
 			}
 
-			float nutrientBalance =
-				targetElement.nutrient
-				+ totalNutrientGiven
-				- totalNutrientTaken;
-
-
-			// ------------------------------------------------------------
-			// The target would overflow.
-			// the nutrient balance need to be trusted (every take and give request must be able to be truthfully fulfilled) or else, this procedure will delete nutrients from the world
-			// ------------------------------------------------------------
-			if (nutrientBalance > targetElement.maxNutrient)
+			if (totalIncoming >= totalOutgoing)
 			{
-				// Process takes first (it can be entirely fulfilled, since the target is overflowing)
-				if (hasTakeRequests)
-				{
-					foreach (var request in takeRequests)
-					{
-						if (oldGrid[request.x, request.y] is ILife takingElements)
-						{
-							// purposefully not accounting the available nutrient in the target element (we know it can be fulfilled and it improves nutrient flow)
-							float nutrientToTake = Mathf.Min(
-								request.NutrientAmount,
-								takingElements.maxNutrient - takingElements.nutrient
-							);
-
-							if (nutrientToTake <= 0)
-								continue;
-
-							takingElements.nutrient += nutrientToTake;
-						}
-					}
-				}
-
-				// Then process gives.
-				//
-				// There may still be more GIVE than the target can hold,
-				// so the last requests may only be partially fulfilled.
-				if (hasGiveRequests)
-				{
-					float givenNutrient = 0;
-					float nutrientToBeGiven = targetElement.maxNutrient - targetElement.nutrient + totalNutrientTaken;
-					foreach (var request in giveRequests)
-					{
-						if (oldGrid[request.x, request.y] is ILife givingElement)
-						{
-							if (givenNutrient >= nutrientToBeGiven)
-								break;
-							// purposefully not accounting the available nutrient in the target element (we know it can be fulfilled and it improves nutrient flow)
-							float nutrientToGive = Mathf.Min(
-								request.NutrientAmount,
-								Math.Min(nutrientToBeGiven - givenNutrient, givingElement.nutrient)
-							);
-
-							if (nutrientToGive <= 0)
-								continue;
-
-							givenNutrient += nutrientToGive;
-							givingElement.nutrient -= nutrientToGive;
-						}
-					}
-				}
-
-				targetElement.nutrient = targetElement.maxNutrient; // the target element is overflowing, so we set it to its max
+				ProcessIncomingNutrientRequests(giveRequests, currentGrid, targetElement);
+				ProcessOutgoingNutrientRequests(takeRequests, currentGrid, targetElement);
 			}
-
-
-			// ------------------------------------------------------------
-			// The target would underflow.
-			// ------------------------------------------------------------
-			else if (nutrientBalance < 0)
-			{
-				// Process takes first (it can be entirely fulfilled, since the target is overflowing)
-				if (hasGiveRequests)
-				{
-					foreach (var request in giveRequests)
-					{
-						if (oldGrid[request.x, request.y] is ILife givingElement)
-						{
-							// purposefully not accounting the available nutrient in the target element (we know every GIVE can be fulfilled and it improves nutrient flow)
-							// the Min is redundant, but just to be sure ...
-							float nutrientToTake = Mathf.Min(
-								request.NutrientAmount,
-								givingElement.nutrient
-							);
-
-							if (nutrientToTake <= 0)
-								continue;
-
-							givingElement.nutrient -= nutrientToTake;
-						}
-					}
-				}
-
-				// Then process gives.
-				//
-				// There may still be more GIVE than the target can hold,
-				// so the last requests may only be partially fulfilled.
-				if (hasGiveRequests)
-				{
-					float takenNutrient = 0;
-					float nutrientToBeTaken = Mathf.Min(targetElement.nutrient + totalNutrientGiven, totalNutrientTaken);
-					foreach (var request in giveRequests)
-					{
-						if (oldGrid[request.x, request.y] is ILife takingElement)
-						{
-							if (takenNutrient >= nutrientToBeTaken)
-								break;
-
-							// purposefully not accounting the available nutrient in the target element (we know it will be 0 at the end)
-							float nutrientToTake = Mathf.Min(
-								request.NutrientAmount,
-								Math.Min(nutrientToBeTaken - takenNutrient, takingElement.maxNutrient - takingElement.nutrient)
-							);
-
-							if (nutrientToTake <= 0)
-								continue;
-
-							takenNutrient += nutrientToTake;
-							takingElement.nutrient += nutrientToTake;
-						}
-					}
-				}
-
-				// The requested outflow exceeds the available nutrient.
-				targetElement.nutrient = 0;
-			}
-
-
-			// ------------------------------------------------------------
-			// The requested net change fits within the target. (every GIVE and TAKE can be fulfilled)
-			// 
-			// Either order is safe.
-			// ------------------------------------------------------------
 			else
 			{
-				if (hasTakeRequests)
-				{
-					foreach (var request in takeRequests)
-					{
-						if (oldGrid[request.x, request.y] is ILife takingElements)
-						{
-							// purposefully not accounting the available nutrient in the target element (we know it can be fulfilled and it improves nutrient flow)
-							float nutrientToTake = Mathf.Min(
-								request.NutrientAmount,
-								takingElements.maxNutrient - takingElements.nutrient
-							);
-
-							if (nutrientToTake <= 0)
-								continue;
-
-							takingElements.nutrient += nutrientToTake;
-						}
-					}
-				}
-
-				if (hasGiveRequests)
-				{
-					foreach (var request in giveRequests)
-					{
-						if (oldGrid[request.x, request.y] is ILife givingElement)
-						{
-							// purposefully not accounting the available nutrient in the target element (we know it can be fulfilled and it improves nutrient flow)
-							float nutrientToGive = Mathf.Min(
-								request.NutrientAmount,
-								givingElement.nutrient
-							);
-
-							if (nutrientToGive <= 0)
-								continue;
-
-							givingElement.nutrient -= nutrientToGive;
-						}
-					}
-				}
-
-				targetElement.nutrient = nutrientBalance;
+				ProcessOutgoingNutrientRequests(takeRequests, currentGrid, targetElement);
+				ProcessIncomingNutrientRequests(giveRequests, currentGrid, targetElement);
 			}
 		}
 
@@ -418,224 +315,105 @@ public class NutrientManager
 		giveNutrientRequests.Clear();
 		uniqueNutrientTargets.Clear();
 	}
+	private static void ProcessIncomingWetnessRequests(
+		IReadOnlyList<GiveWetnessRequest> requests,
+		Element[,] oldGrid,
+		ILife targetElement)
+	{
+		float remainingCapacity = targetElement.maxWetness - targetElement.wetness;
+		foreach (var request in requests)
+		{
+			if (remainingCapacity <= 0)
+				break;
+
+			if (oldGrid[request.x, request.y] is not ILife givingElement)
+				continue;
+
+			float wetnessToGive = Mathf.Min(
+				request.WetnessAmount,
+				Mathf.Min(remainingCapacity, givingElement.wetness)
+			);
+
+			if (wetnessToGive <= 0)
+				continue;
+
+
+			givingElement.wetness -= wetnessToGive;
+			targetElement.wetness += wetnessToGive;
+			remainingCapacity -= wetnessToGive;
+		}
+	}
+
+	private static void ProcessOutgoingWetnessRequests(
+		IReadOnlyList<TakeWetnessRequest> requests,
+		Element[,] oldGrid,
+		ILife targetElement)
+	{
+		float remainingWetness = targetElement.wetness;
+		foreach (var request in requests)
+		{
+			if (remainingWetness <= 0)
+				break;
+
+			if (oldGrid[request.x, request.y] is not ILife takingElement)
+				continue;
+
+			float wetnessToTake = Mathf.Min(
+				request.WetnessAmount,
+				Mathf.Min(remainingWetness, takingElement.maxWetness - takingElement.wetness)
+			);
+
+			if (wetnessToTake <= 0)
+				continue;
+
+			targetElement.wetness -= wetnessToTake;
+			takingElement.wetness += wetnessToTake;
+			remainingWetness -= wetnessToTake;
+		}
+	}
+
 	public void ProcessWetnessRequests(
 	Element[,] oldGrid,
 	Element[,] currentGrid)
 	{
-		// This function is exactly the same as ProcessNutrientRequests, but for wetness instead of nutrient. It is duplicated to avoid having to use reflection or generics, which would be slower and more complicated.
-		foreach (var position in uniqueWetnessTargets)
+		foreach (var position in uniqueWetnessTargets.ToList())
 		{
 			if (currentGrid[position.Item1, position.Item2] is not ILife targetElement)
 				continue;
 
-			bool hasGiveRequests = giveWetnessRequests.TryGetValue(
-				position, out var giveRequests);
+			var giveRequests = giveWetnessRequests.TryGetValue(position, out var giveList)
+				? giveList.OrderByDescending(request => request.WetnessAmount).ToList()
+				: new List<GiveWetnessRequest>();
 
-			bool hasTakeRequests = takeWetnessRequests.TryGetValue(
-				position, out var takeRequests);
+			var takeRequests = takeWetnessRequests.TryGetValue(position, out var takeList)
+				? takeList.OrderByDescending(request => request.WetnessAmount).ToList()
+				: new List<TakeWetnessRequest>();
 
-			float totalWetnessGiven = 0;
-			for (int i = 0; i < giveRequests?.Count; i++)
+			float totalIncoming = 0f;
+			foreach (var request in giveRequests)
 			{
-				var request = giveRequests[i];
-				if (oldGrid[request.x, request.y] is ILife wetnessElement)
-				{
-					totalWetnessGiven += Mathf.Min(
-						request.WetnessAmount,
-						wetnessElement.wetness
-					);
-				}
+				if (oldGrid[request.x, request.y] is not ILife givingElement)
+					continue;
+				totalIncoming += Mathf.Min(request.WetnessAmount, givingElement.wetness);
 			}
 
-			float totalWetnessTaken = 0;
-			for (int i = 0; i < takeRequests?.Count; i++)
+			float totalOutgoing = 0f;
+			foreach (var request in takeRequests)
 			{
-				var request = takeRequests[i];
-				if (oldGrid[request.x, request.y] is ILife wetnessElement)
-				{
-					totalWetnessTaken += Mathf.Min(
-						request.WetnessAmount,
-						wetnessElement.maxWetness - wetnessElement.wetness
-					);
-				}
+				if (oldGrid[request.x, request.y] is not ILife takingElement)
+					continue;
+				totalOutgoing += Mathf.Min(request.WetnessAmount, takingElement.maxWetness - takingElement.wetness);
 			}
 
-			float wetnessBalance =
-				targetElement.wetness
-				+ totalWetnessGiven
-				- totalWetnessTaken;
-
-
-			// ------------------------------------------------------------
-			// The target would overflow.
-			// the wetness balance need to be trusted (every take and give request must be able to be truthfully fulfilled) or else, this procedure will delete wetnesss from the world
-			// ------------------------------------------------------------
-			if (wetnessBalance > targetElement.maxWetness)
+			if (totalIncoming >= totalOutgoing)
 			{
-				// Process takes first (it can be entirely fulfilled, since the target is overflowing)
-				if (hasTakeRequests)
-				{
-					foreach (var request in takeRequests)
-					{
-						if (oldGrid[request.x, request.y] is ILife takingElements)
-						{
-							// purposefully not accounting the available wetness in the target element (we know it can be fulfilled and it improves wetness flow)
-							float wetnessToTake = Mathf.Min(
-								request.WetnessAmount,
-								takingElements.maxWetness - takingElements.wetness
-							);
-
-							if (wetnessToTake <= 0)
-								continue;
-
-							takingElements.wetness += wetnessToTake;
-						}
-					}
-				}
-
-				// Then process gives.
-				//
-				// There may still be more GIVE than the target can hold,
-				// so the last requests may only be partially fulfilled.
-				if (hasGiveRequests)
-				{
-					float givenWetness = 0;
-					float wetnessToBeGiven = targetElement.maxWetness - targetElement.wetness + totalWetnessTaken;
-					foreach (var request in giveRequests)
-					{
-						if (oldGrid[request.x, request.y] is ILife givingElement)
-						{
-							if (givenWetness >= wetnessToBeGiven)
-								break;
-							// purposefully not accounting the available wetness in the target element (we know it can be fulfilled and it improves wetness flow)
-							float wetnessToGive = Mathf.Min(
-								request.WetnessAmount,
-								Math.Min(wetnessToBeGiven - givenWetness, givingElement.wetness)
-							);
-
-							if (wetnessToGive <= 0)
-								continue;
-
-							givenWetness += wetnessToGive;
-							givingElement.wetness -= wetnessToGive;
-						}
-					}
-				}
-
-				targetElement.wetness = targetElement.maxWetness; // the target element is overflowing, so we set it to its max
+				ProcessIncomingWetnessRequests(giveRequests, oldGrid, targetElement);
+				ProcessOutgoingWetnessRequests(takeRequests, oldGrid, targetElement);
 			}
-
-
-			// ------------------------------------------------------------
-			// The target would underflow.
-			// ------------------------------------------------------------
-			else if (wetnessBalance < 0)
-			{
-				// Process takes first (it can be entirely fulfilled, since the target is overflowing)
-				if (hasGiveRequests)
-				{
-					foreach (var request in giveRequests)
-					{
-						if (oldGrid[request.x, request.y] is ILife givingElement)
-						{
-							// purposefully not accounting the available wetness in the target element (we know every GIVE can be fulfilled and it improves wetness flow)
-							// the Min is redundant, but just to be sure ...
-							float wetnessToTake = Mathf.Min(
-								request.WetnessAmount,
-								givingElement.wetness
-							);
-
-							if (wetnessToTake <= 0)
-								continue;
-
-							givingElement.wetness -= wetnessToTake;
-						}
-					}
-				}
-
-				// Then process gives.
-				//
-				// There may still be more GIVE than the target can hold,
-				// so the last requests may only be partially fulfilled.
-				if (hasGiveRequests)
-				{
-					float takenWetness = 0;
-					float wetnessToBeTaken = Mathf.Min(targetElement.wetness + totalWetnessGiven, totalWetnessTaken);
-					foreach (var request in giveRequests)
-					{
-						if (oldGrid[request.x, request.y] is ILife takingElement)
-						{
-							if (takenWetness >= wetnessToBeTaken)
-								break;
-
-							// purposefully not accounting the available wetness in the target element (we know it will be 0 at the end)
-							float wetnessToTake = Mathf.Min(
-								request.WetnessAmount,
-								Math.Min(wetnessToBeTaken - takenWetness, takingElement.maxWetness - takingElement.wetness)
-							);
-
-							if (wetnessToTake <= 0)
-								continue;
-
-							takenWetness += wetnessToTake;
-							takingElement.wetness += wetnessToTake;
-						}
-					}
-				}
-
-				// The requested outflow exceeds the available wetness.
-				targetElement.wetness = 0;
-			}
-
-
-			// ------------------------------------------------------------
-			// The requested net change fits within the target. (every GIVE and TAKE can be fulfilled)
-			// 
-			// Either order is safe.
-			// ------------------------------------------------------------
 			else
 			{
-				if (hasTakeRequests)
-				{
-					foreach (var request in takeRequests)
-					{
-						if (oldGrid[request.x, request.y] is ILife takingElements)
-						{
-							// purposefully not accounting the available wetness in the target element (we know it can be fulfilled and it improves wetness flow)
-							float wetnessToTake = Mathf.Min(
-								request.WetnessAmount,
-								takingElements.maxWetness - takingElements.wetness
-							);
-
-							if (wetnessToTake <= 0)
-								continue;
-
-							takingElements.wetness += wetnessToTake;
-						}
-					}
-				}
-
-				if (hasGiveRequests)
-				{
-					foreach (var request in giveRequests)
-					{
-						if (oldGrid[request.x, request.y] is ILife givingElement)
-						{
-							// purposefully not accounting the available wetness in the target element (we know it can be fulfilled and it improves wetness flow)
-							float wetnessToGive = Mathf.Min(
-								request.WetnessAmount,
-								givingElement.wetness
-							);
-
-							if (wetnessToGive <= 0)
-								continue;
-
-							givingElement.wetness -= wetnessToGive;
-						}
-					}
-				}
-
-				targetElement.wetness = wetnessBalance;
+				ProcessOutgoingWetnessRequests(takeRequests, oldGrid, targetElement);
+				ProcessIncomingWetnessRequests(giveRequests, oldGrid, targetElement);
 			}
 		}
 
