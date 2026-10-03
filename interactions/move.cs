@@ -34,7 +34,7 @@ public class MoveRequest
 		}
 		if (target is IGas)
 		{
-			if (element is IGas && element.density < target.density)
+			if (element is IGas && element.density <= target.density)
 			{ // we assume that the gas density is always less than any other element density
 				return false;
 			}
@@ -46,7 +46,7 @@ public class MoveRequest
 			{
 				return false;
 			}
-			if (element is ILiquid && element.density < target.density)
+			if (element is ILiquid && element.density <= target.density)
 			{
 				return false;
 			}
@@ -75,6 +75,8 @@ public sealed class MoveManager
     private List<MoveRequest> requests = new();
     private HashSet<(int, int)> sources = new();
     private HashSet<(int, int)> destinations = new();
+
+	private HashSet<(int, int)> blacklist = new(); // this blacklist is the initial position of moved elements (to prevent another element from moving into the same position in the same update cycle)
 
     private MoveManager() { }
 
@@ -120,21 +122,23 @@ public sealed class MoveManager
             int tx = request.x + request.movementX;
             int ty = request.y + request.movementY;
 
-            // Don't move into an occupied cell, even if it is
-            // expected to move away later in this update.
-            if (currentGrid[tx, ty] != null)
+			if (blacklist.Contains((tx, ty)))
                 continue;
 
             // The source must still contain the expected element.
             if (currentGrid[request.x, request.y] == null)
                 continue;
 
+			Element temp = currentGrid[tx, ty];
             currentGrid[tx, ty] = currentGrid[request.x, request.y];
-            currentGrid[request.x, request.y] = null;
+            currentGrid[request.x, request.y] = temp;
+
+			blacklist.Add((request.x, request.y));
         }
 
         requests.Clear();
         sources.Clear();
         destinations.Clear();
+		blacklist.Clear();
     }
 }

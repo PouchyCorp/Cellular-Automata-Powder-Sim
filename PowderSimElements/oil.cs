@@ -25,7 +25,6 @@ public class Oil : Element, ILiquid, IFlammable
 
 	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
-		GD.Print($"Oil update called at ({x}, {y}) with lifetime {lifetime} and burning {burning}");
 		if (lifetime <= 0
 		&& !burning)
 		{
