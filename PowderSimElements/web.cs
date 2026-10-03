@@ -1,6 +1,6 @@
 using Godot;
 
-public class Web : Element, ILife, IFlammable
+public class Web : Element, IFlammable
 {
 	private int lifetime = 100 * 60; // ticks
 

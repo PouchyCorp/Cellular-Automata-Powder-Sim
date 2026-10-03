@@ -3,9 +3,9 @@ using System;
 
 public class Fruit : Element, ILife, ISolid, IFlammable
 {
-	public float wetness;
+	public float wetness { get; set; }
 	public float maxWetness => 1.0f;
-	public float nutrient;
+	public float nutrient { get; set; }
 	public float maxNutrient => 3.0f;
 
 	public bool burning { get; set; } = false;

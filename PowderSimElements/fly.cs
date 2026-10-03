@@ -13,8 +13,8 @@ public class Fly : Element, ILife, ISolid, IFlammable
 	public int burningLifetime { get; set; }
 
 	public float maxNutrient => BASE_NUTRIENT_COST * 2.0f;
-	public float nutrient = BASE_NUTRIENT_COST;
-	public float wetness = 0.0f;
+	public float nutrient { get; set; } = BASE_NUTRIENT_COST;
+	public float wetness { get; set; } = 0.0f;
 	public float maxWetness => 0.0f;
 
 

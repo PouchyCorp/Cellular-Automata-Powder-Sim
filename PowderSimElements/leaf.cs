@@ -11,9 +11,9 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 	const float BASE_FRUIT_NUTRIENT_COST = 4.0f;
 	const float BASE_FRUIT_WETNESS_COST = 1.0f;
 
-	public float wetness = BASE_LEAF_WETNESS_COST;
+	public float wetness { get; set; } = BASE_LEAF_WETNESS_COST;
 	public float maxWetness => 1.0f;
-	public float nutrient = BASE_LEAF_NUTRIENT_COST;
+	public float nutrient { get; set; } = BASE_LEAF_NUTRIENT_COST;
 	public float maxNutrient => 5.0f;
 
 	public int flammability { get; set; } = 10;

@@ -8,8 +8,8 @@ public class Snail : Element, ILife, ISolid
 	private List<(int, int)> lastPositions = new List<(int, int)>(); // to avoid going back and forth
 
 	public float maxNutrient => 100000000000.0f;
-	public float nutrient = 1.0f;
-	public float wetness = 0.0f;
+	public float nutrient { get; set; }= 1.0f;
+	public float wetness { get; set; } = 0.0f;
 	public float maxWetness => 10000000000.0f;
 
 	// Eating behavior

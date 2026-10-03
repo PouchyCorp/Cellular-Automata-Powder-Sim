@@ -2,8 +2,9 @@ using Godot;
 
 public class Ash : Element, IPowder, ILife
 {
-	public float nutrient { get; set; }
-	public float maxNutrient { get; set; } = 100.0f;
+	public float nutrient { get; set; }= 0;
+	public float maxNutrient => 100.0f;
+	public float wetness { get; set; } = 0f;
 	public Ash(float nutrientAmount = 0.0f)
 	{
 		density = 19;

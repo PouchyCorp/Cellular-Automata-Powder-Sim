@@ -3,6 +3,9 @@ using System;
 using System.Data;
 using System.IO;
 using System.Linq.Expressions;
+using System.IO;
+
+
 public partial class CellularAutomataEngine : Node2D
 {
 
@@ -16,7 +19,7 @@ public partial class CellularAutomataEngine : Node2D
 	private DrawingState _drawingState = DrawingState.None;
 
 	// Elements that should only be placed once per click, not continuously
-	private readonly string[] singleClickElements = {"Seed", "Worm", "Snail"};
+	private readonly string[] singleClickElements = { "Seed", "Worm", "Snail" };
 
 	private ButtonGroup buttonGroup;
 	public string selectedElement; // TODO idk how to do differently
@@ -33,7 +36,7 @@ public partial class CellularAutomataEngine : Node2D
 	// --- Public (exported) element instantiation --- //
 	[ExportCategory("Simulation Size")]
 	[Export]
-	public Vector2 cellSize { get; set; } = new Vector2(2*2, 2*2);
+	public Vector2 cellSize { get; set; } = new Vector2(2 * 2, 2 * 2);
 	[Export]
 	public Vector2 gridSize { get; set; } = new Vector2(288, 162);
 
@@ -83,8 +86,7 @@ public partial class CellularAutomataEngine : Node2D
 
 	public override void _Process(double delta)
 	{
-		GD.Print($"Processing frame at tick {tick}.");
-		tick ++;
+		tick++;
 		base._Process(delta);
 		UiHandler();
 		PlacementHandler();
@@ -96,7 +98,6 @@ public partial class CellularAutomataEngine : Node2D
 		}
 
 		QueueRedraw();
-		GD.Print($"Finished tick {tick}.");
 	}
 
 	//Those inputs may be ignored by filters
@@ -173,7 +174,6 @@ public partial class CellularAutomataEngine : Node2D
 
 	private void PlacementHandler()
 	{
-
 		if (_drawingState != DrawingState.None)
 		{
 			Vector2 pos = GetViewport().GetMousePosition() / cellSize;
@@ -261,7 +261,8 @@ public partial class CellularAutomataEngine : Node2D
 	}
 
 	private void CellUpdateHandler()
-	{
+	{	
+
 		Element[,] oldGrid = (Element[,])elementArray.Clone();
 
 		// Process elements in random order
@@ -270,7 +271,6 @@ public partial class CellularAutomataEngine : Node2D
 			for (int y = 0; y < gridHeight; y++)
 			{
 				if (oldGrid[x, y] == null) continue;
-
 				oldGrid[x, y].update(oldGrid, x, y, gridWidth, gridHeight, tick);
 			}
 		}
@@ -363,30 +363,30 @@ public partial class CellularAutomataEngine : Node2D
 	{
 		Vector2 mousePos = GetViewport().GetMousePosition();
 		Vector2 gridPos = mousePos / cellSize;
-		
+
 		int x = (int)gridPos.X;
 		int y = (int)gridPos.Y;
-		
+
 		// Check if cursor is within grid bounds
 		if (x < 0 || x >= gridWidth || y < 0 || y >= gridHeight)
 		{
 			return "Cursor outside grid bounds";
 		}
-		
+
 		Element cell = elementArray[x, y];
-		
+
 		if (cell == null)
 		{
 			return $"Position ({x}, {y}): Empty cell";
 		}
-		
+
 		// Get the class name
 		string className = cell.GetType().Name;
-		
+
 		// Build attribute string
 		string attributes = $"Position ({x}, {y}): {className}\n";
 		attributes += cell.inspectInfo();
-		
+
 		return attributes.StripEdges();
 	}
 
@@ -433,7 +433,7 @@ public partial class CellularAutomataEngine : Node2D
 			CellUpdateHandler();
 		}
 	}
-	
+
 	private enum DrawingState
 	{
 		None,

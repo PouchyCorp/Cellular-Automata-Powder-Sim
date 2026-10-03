@@ -3,9 +3,9 @@ using Godot;
 
 public class Seed : Element, ILife, ISolid
 {
-	public float wetness;
+	public float wetness { get; set; }
 	public float maxWetness => 1.0f;
-	public float nutrient;
+	public float nutrient { get; set; }
 	public float maxNutrient => 5.0f;
 
 	public float lifetime = 600 * 60; // ticks

@@ -5,9 +5,9 @@ using System;
 public class Biomass : Element, IPowder, ISolid, ILife
 {
 	// biomass can be created from anything, so it can have high wetness and nutrient to not have any loss
-	public float wetness;
+	public float wetness { get; set; }
 	public float maxWetness => 10000.0f; 
-	public float nutrient;
+	public float nutrient { get; set; }
 	public float maxNutrient => 10000.0f;
 	public Biomass(float startingWetness, float startingNutrient)
 	{

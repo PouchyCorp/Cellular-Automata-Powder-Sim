@@ -2,8 +2,8 @@ using Godot;
 
 public class SurfBiomass : Element, IPowder, ILife
 {
-	public float wetness;
-	public float nutrient;
+	public float wetness { get; set; }
+	public float nutrient { get; set; }
 	public float maxNutrient { get; set; } = 10.0f;
 	
 	public SurfBiomass(float startingWetness, float startingNutrient)
