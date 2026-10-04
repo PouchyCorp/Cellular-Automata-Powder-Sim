@@ -83,21 +83,18 @@ public class Worm : Element, ILife, ISolid
 					break;
 				}
 
-				if (y + 1 < maxY && oldGrid[x, y + 1] is Soil)
+				if (y + 1 < maxY && oldGrid[x, y + 1] is Soil) // landed on soil, try to burrow
 				{
-					if (GridManager.Instance.HasSpawnOrDeletionRequestAt(x, y + 1))
-					{
-						// If there's already a spawn or deletion request at the target position, don't attempt to remove the soil
-						break;
-					}
-
-					// landed on solid ground
-					wormState = WormState.Burrowing;
+					
 					Soil soilBelow = oldGrid[x, y + 1] as Soil;
 
-					GridManager.Instance.RequestDeletion(x, y + 1 , maxX, maxY, null); // remove the soil below to make way for the worm
-					inSoil = soilBelow; // store the soil below in the worm's inSoil property
+					if (GridManager.Instance.RequestDeletion(x, y + 1 , maxX, maxY, null)) // remove the soil below to make way for the worm
+					{
+						inSoil = soilBelow; // store the soil below in the worm's inSoil property
+					}
 					MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, 1, maxX, maxY);
+
+					wormState = WormState.Burrowing;
 					break;
 				}
 
@@ -232,14 +229,13 @@ public class Worm : Element, ILife, ISolid
 		if (oldGrid[targetX, targetY] is not (Soil or Biomass))
 			return false;
 
+		
+
 		// Move worm to new position
-		if (GridManager.Instance.HasSpawnOrDeletionRequestAt(targetX, targetY))
+		if (!GridManager.Instance.RequestDeletion(targetX, targetY, maxX, maxY, inSoil)) // put stored soil into the target position (this will replace the soil or biomass that was there)
 		{
-			// If there's already a spawn or deletion request at the target position, don't move
 			return false;
 		}
-
-		GridManager.Instance.RequestDeletion(targetX, targetY, maxX, maxY, inSoil); // put stored soil into the target position (this will replace the soil or biomass that was there)
 
 		// If moving onto a soil, "pick it up"
 		if (oldGrid[targetX, targetY] is Soil soil)

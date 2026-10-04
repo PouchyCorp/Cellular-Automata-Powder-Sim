@@ -1,9 +1,11 @@
 using Godot;
 using System;
 
-public class Steam : Element, IGas
+public class Steam : Element, IGas, ILife
 {
-	public float wetness;
+	public float wetness { get; set; }
+	public float nutrient { get; set; } = 0.0f;
+	public float maxNutrient => 0.0f;
 	public float maxWetness => 1.0f;
 	public bool sleeping = false;
 

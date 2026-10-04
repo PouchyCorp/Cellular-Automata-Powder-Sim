@@ -93,13 +93,13 @@ public sealed class MoveManager
         if (sources.Contains((x, y)))
         	return false;
 
-        if (!MoveRequest.CanMove(oldGrid, x, y, dx, dy, maxX, maxY))
-            return false;
-
-        int tx = x + dx;
+		int tx = x + dx;
         int ty = y + dy;
 
         if (destinations.Contains((tx, ty)))
+            return false;
+
+        if (!MoveRequest.CanMove(oldGrid, x, y, dx, dy, maxX, maxY))
             return false;
 
         requests.Add(new MoveRequest(x, y, dx, dy));

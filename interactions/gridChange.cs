@@ -61,39 +61,34 @@ public class GridManager
         }
     }
 
-    private Dictionary<(int, int), List<DeletionRequest>> DeletionRequests = new Dictionary<(int, int), List<DeletionRequest>>();
-    private Dictionary<(int, int), List<SpawnRequest>> SpawnRequests = new Dictionary<(int, int), List<SpawnRequest>>();
+    private Dictionary<(int, int), DeletionRequest> DeletionRequests = new();
+    private Dictionary<(int, int), SpawnRequest> SpawnRequests =  new();
 
-    private void EnqueueDeletionRequest(DeletionRequest request)
+    private bool EnqueueDeletionRequest(DeletionRequest request)
     {
         if (!DeletionRequests.ContainsKey((request.x, request.y)))
         {
-            DeletionRequests.Add((request.x, request.y), [request]);
+            DeletionRequests.Add((request.x, request.y), request);
+            return true;
         }
-        else
-        {
-            DeletionRequests[(request.x, request.y)].Add(request);
-        }
+        return false;
     }
 
-    private void EnqueueSpawnRequest(SpawnRequest request)
+    private bool EnqueueSpawnRequest(SpawnRequest request)
     {
         if (!SpawnRequests.ContainsKey((request.x, request.y)))
         {
-            SpawnRequests.Add((request.x, request.y), [request]);
+            SpawnRequests.Add((request.x, request.y), request);
+            return true;
         }
-        else
-        {
-            SpawnRequests[(request.x, request.y)].Add(request);
-        }
+        return false;
     }
 
     public bool RequestDeletion(int x, int y, int maxX, int maxY, Element replace = null)
     {
         DeletionRequest request = new DeletionRequest(x, y, replace);
         if (request.IsValid(maxX, maxY)){
-            EnqueueDeletionRequest(request);
-            return true; 
+            return EnqueueDeletionRequest(request);
         }
         return false; 
     }
@@ -103,15 +98,9 @@ public class GridManager
         // this will fail if the place is not empty, use RequestDeletion first if you want to forcefully spawn an element
         SpawnRequest request = new SpawnRequest(x, y, elementToSpawn);
         if (request.IsValid(maxX, maxY)){
-            EnqueueSpawnRequest(request);
-            return true; 
+            return EnqueueSpawnRequest(request);
         }
         return false;   
-    }
-
-    public bool HasSpawnOrDeletionRequestAt(int x, int y)
-    {
-        return DeletionRequests.ContainsKey((x, y)) || SpawnRequests.ContainsKey((x, y));
     }
 
     public double getPriority(Element element)
@@ -125,17 +114,8 @@ public class GridManager
     {
         foreach (var ((x, y), requests) in DeletionRequests)
         {
-            // find highest priority request
-            DeletionRequest highestPriorityRequest = requests[0];
-            foreach (var request in requests)
-            {
-                if (getPriority(request.replace) > getPriority(highestPriorityRequest.replace))
-                {
-                    highestPriorityRequest = request;
-                }
-            }
 
-            elements[x, y] = highestPriorityRequest.replace; // replace with the specified element or null if none specified
+            elements[x, y] = requests.replace; // replace with the specified element or null if none specified
         }
         DeletionRequests.Clear();
     }
@@ -146,16 +126,7 @@ public class GridManager
         {
             if (elements[x, y] != null) continue; // Only spawn if the cell is empty (main difference with deletion)
 
-            SpawnRequest highestPriorityRequest = requests[0];
-            foreach (var request in requests)
-            {
-                if (getPriority(request.elementToSpawn) > getPriority(highestPriorityRequest.elementToSpawn))
-                {
-                    highestPriorityRequest = request;
-                }
-            }
-
-            elements[x, y] = highestPriorityRequest.elementToSpawn; // replace with the specified element or null if none specified
+            elements[x, y] = requests.elementToSpawn; // replace with the specified element or null if none specified
         }
         SpawnRequests.Clear();
     }
