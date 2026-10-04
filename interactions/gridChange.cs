@@ -103,19 +103,14 @@ public class GridManager
         return false;   
     }
 
-    public double getPriority(Element element)
-    {
-        if (element == null) return 0;
-        if (element is ILife) return 100; // Life has the highest priority
-        return element.density; // Higher density means higher priority
-    }
-
     public void ProcessDeletions(Element[,] elements, int maxX, int maxY)
     {
         foreach (var ((x, y), requests) in DeletionRequests)
         {
 
             elements[x, y] = requests.replace; // replace with the specified element or null if none specified
+
+            UpdateManager.Instance.UpdateNearbyCellsNextFrame(x, y, maxX, maxY);
         }
         DeletionRequests.Clear();
     }
@@ -127,6 +122,7 @@ public class GridManager
             if (elements[x, y] != null) continue; // Only spawn if the cell is empty (main difference with deletion)
 
             elements[x, y] = requests.elementToSpawn; // replace with the specified element or null if none specified
+            UpdateManager.Instance.UpdateNearbyCellsNextFrame(x, y, maxX, maxY);
         }
         SpawnRequests.Clear();
     }

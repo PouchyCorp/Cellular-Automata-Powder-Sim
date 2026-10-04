@@ -3,7 +3,7 @@ using System;
 
 public class Smoke : Element, IGas
 {
-	public bool sleeping = false;
+	public bool sleeping { get; set; } = false;
 
 	public Smoke()
 	{
@@ -27,12 +27,6 @@ public class Smoke : Element, IGas
 
 	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
-		if (sleeping)
-		{
-			sleeping = false;
-			return;
-		}
-		sleeping = true;
 
 		GasBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 

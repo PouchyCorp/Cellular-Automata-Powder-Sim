@@ -3,11 +3,21 @@ using System;
 public interface IGas
 {
 	public int cloudLineY => 2;
+	public bool sleeping { get; set; }
 }
 
 public static class GasBehavior
 {
 	public static void update(this IGas self, Element[,] oldGrid, int x, int y, int maxX, int maxY, int T){
+		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // gas elements should always update next frame
+
+		if (self.sleeping)
+		{
+			self.sleeping = false;
+			return;
+		}
+		self.sleeping = true;
+
 		float decision = Random.Shared.NextSingle();
 		int distFromCloudLine = Math.Abs(self.cloudLineY - y) + 1;
 
@@ -52,6 +62,5 @@ public static class GasBehavior
 
 			MoveManager.Instance.AttemptMove(oldGrid, x, y, movementX, movementY, maxX, maxY);
 		}
-			
 	}
 }

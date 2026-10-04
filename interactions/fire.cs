@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 
 public interface IFlammable
 {
@@ -14,6 +13,8 @@ public static class FlammableBehavior
     public static void update(IFlammable self, Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		if (!self.burning) return;
+
+        UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the burning element
 
 		// Ignite neighbors in cardinal directions
 		foreach ((int dx, int dy) in new (int, int)[] { (0, 1), (1, 0), (0, -1), (-1, 0) }) // big ugly loop but I don't care
@@ -106,6 +107,7 @@ public class FireManager
                 {
                     flammableElement.burning = true;
                     flammableElement.burningLifetime = (int)(5000 / flammableElement.flammability); // start counting burning lifetime
+                    UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the newly ignited element
                 }
             }
         }

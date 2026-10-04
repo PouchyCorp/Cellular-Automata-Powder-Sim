@@ -40,6 +40,8 @@ public static class LiquidBehavior
 		else
 		{
 			self.directionX *= -1;
+			// if the other direction is also blocked, go to sleep (this will be done automatically by the update manager, so we don't need to do anything here)
+			MoveManager.Instance.AttemptMove(oldGrid, x, y, self.directionX, 0, maxX, maxY); // this step is important to ensure that it doesn't freeze next frame
 		}
     }
 }

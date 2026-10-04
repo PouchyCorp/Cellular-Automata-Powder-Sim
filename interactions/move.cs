@@ -90,17 +90,18 @@ public sealed class MoveManager
         int dx, int dy,
         int maxX, int maxY)
     {
-        if (sources.Contains((x, y)))
-        	return false;
 
+		if (!MoveRequest.CanMove(oldGrid, x, y, dx, dy, maxX, maxY))
+            return false; // purposefully not requesting an update for the element that failed to move
+		
+        if (sources.Contains((x, y)) || destinations.Contains((x + dx, y + dy)))
+		{
+			UpdateManager.Instance.RequestUpdateNextFrame(x, y); // so it can update again next frame if it was not able to move
+			return false;
+		}
+        	
 		int tx = x + dx;
         int ty = y + dy;
-
-        if (destinations.Contains((tx, ty)))
-            return false;
-
-        if (!MoveRequest.CanMove(oldGrid, x, y, dx, dy, maxX, maxY))
-            return false;
 
         requests.Add(new MoveRequest(x, y, dx, dy));
         sources.Add((x, y));
@@ -126,8 +127,11 @@ public sealed class MoveManager
             int tx = request.x + request.movementX;
             int ty = request.y + request.movementY;
 
-			if (blacklist.Contains((tx, ty)))
-                continue;
+			// if (blacklist.Contains((tx, ty)))
+			// {
+			// 	UpdateManager.Instance.RequestUpdateNextFrame(request.x, request.y); // so it can update again next frame if it was not able to move
+			// 	continue;
+			// }
 
             // The source must still contain the expected element.
             if (currentGrid[request.x, request.y] == null)
@@ -137,12 +141,15 @@ public sealed class MoveManager
             currentGrid[tx, ty] = currentGrid[request.x, request.y];
             currentGrid[request.x, request.y] = temp;
 
-			blacklist.Add((request.x, request.y));
+			UpdateManager.Instance.UpdateNearbyCellsNextFrame(request.x, request.y, maxX, maxY);
+			UpdateManager.Instance.UpdateNearbyCellsNextFrame(tx, ty, maxX, maxY);
+
+			//blacklist.Add((request.x, request.y));
         }
 
         requests.Clear();
         sources.Clear();
         destinations.Clear();
-		blacklist.Clear();
+		//blacklist.Clear();
     }
 }

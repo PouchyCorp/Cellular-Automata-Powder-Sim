@@ -44,10 +44,14 @@ public class Water : Element, ILiquid, ILife
 			return;
 		}
 
-		if (Random.Shared.NextSingle() < evaporationChance && y - 1 > 0 && oldGrid[x, y - 1] == null)
+		if (y - 1 > 0 && oldGrid[x, y - 1] == null)
 		{
-			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, new Steam(wetness));
-			return;
+			UpdateManager.Instance.RequestUpdateNextFrame(x, y); // To not get frozen
+
+			if (Random.Shared.NextSingle() < evaporationChance){
+				GridManager.Instance.RequestDeletion(x, y, maxX, maxY, new Steam(wetness));
+				return;
+			}
 		}
 
 		if (lifetime <= 0)

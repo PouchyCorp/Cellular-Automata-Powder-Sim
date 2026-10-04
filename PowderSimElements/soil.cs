@@ -59,14 +59,6 @@ public class Soil : Element, IPowder, ISolid, ILife
 
 	override public void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
-		if (T - lastActivity < activityInterval) // Skip update if not enough time has passed and no external change has occurred
-		{
-			updateColor(T, x, y);
-			PowderBehavior.Update(this, oldGrid, x, y, maxX, maxY, T); // still needs to update for other base behaviors, but we skip the soil-specific updates
-			return;
-		}
-
-		lastActivity = T;
 		
 		// this is for optimisation purposes, all the indices are valid.
 		((int, int)[] neighborsIndices, int count) = getNeighborsIndices(oldGrid, x, y, maxX, maxY);
@@ -87,6 +79,10 @@ public class Soil : Element, IPowder, ISolid, ILife
 				{
 					// Current soil is richer: give nutrients to the poorer neighbor.
 					NutrientManager.Instance.AddGiveNutrientRequest(new GiveNutrientRequest(x, y, nx, ny, transferAmount), maxX, maxY);
+				} else if (nutriDiff > 0)
+				{
+					// Current soil is poorer: take nutrients from the richer neighbor.
+					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(x, y, nx, ny, transferAmount), maxX, maxY);
 				}
 			}
 
@@ -108,6 +104,11 @@ public class Soil : Element, IPowder, ISolid, ILife
 					{
 						// Current soil is wetter: give wetness to the drier neighbor.
 						NutrientManager.Instance.AddGiveWetnessRequest(new GiveWetnessRequest(x, y, nx, ny, transferAmount), maxX, maxY);
+					}
+					else if (wetnessDiff > 0)
+					{
+						// Current soil is drier: take wetness from the wetter neighbor.
+						NutrientManager.Instance.AddTakeWetnessRequest(new TakeWetnessRequest(x, y, nx, ny, transferAmount), maxX, maxY);
 					}
 				}
 			}

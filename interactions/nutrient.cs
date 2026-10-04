@@ -8,7 +8,6 @@ public interface ILife
 	public float maxNutrient => 10.0f;
 
 	public float wetness { get; set; }
-
 	public float maxWetness => 1.0f;
 }
 
@@ -211,7 +210,7 @@ public class NutrientManager
 	private static void ProcessIncomingNutrientRequests(
 		IReadOnlyList<GiveNutrientRequest> requests,
 		Element[,] currentGrid,
-		ILife targetElement)
+		ILife targetElement, int maxX, int maxY)
 	{
 		float remainingCapacity = targetElement.maxNutrient - targetElement.nutrient;
 		foreach (var request in requests)
@@ -233,13 +232,16 @@ public class NutrientManager
 			givingElement.nutrient -= nutrientToGive;
 			targetElement.nutrient += nutrientToGive;
 			remainingCapacity -= nutrientToGive;
+
+			UpdateManager.Instance.UpdateNearbyCellsNextFrame(request.x, request.y, maxX, maxY);
+			UpdateManager.Instance.UpdateNearbyCellsNextFrame(request.targetX, request.targetY, maxX, maxY);
 		}
 	}
 
 	private static void ProcessOutgoingNutrientRequests(
 		IReadOnlyList<TakeNutrientRequest> requests,
 		Element[,] currentGrid,
-		ILife targetElement)
+		ILife targetElement, int maxX, int maxY)
 	{
 		float remainingNutrient = targetElement.nutrient;
 		foreach (var request in requests)
@@ -261,12 +263,16 @@ public class NutrientManager
 			targetElement.nutrient -= nutrientToTake;
 			takingElement.nutrient += nutrientToTake;
 			remainingNutrient -= nutrientToTake;
+			UpdateManager.Instance.UpdateNearbyCellsNextFrame(request.x, request.y, maxX, maxY);
+			UpdateManager.Instance.UpdateNearbyCellsNextFrame(request.targetX, request.targetY, maxX, maxY);
 		}
 	}
 
 	public void ProcessNutrientRequests(
 	Element[,] oldGrid,
-	Element[,] currentGrid)
+	Element[,] currentGrid,
+	int maxX,
+	int maxY)
 	{
 		
 		foreach (var position in uniqueNutrientTargets.ToList())
@@ -301,13 +307,13 @@ public class NutrientManager
 
 			if (totalIncoming >= totalOutgoing)
 			{
-				ProcessIncomingNutrientRequests(giveRequests, currentGrid, targetElement);
-				ProcessOutgoingNutrientRequests(takeRequests, currentGrid, targetElement);
+				ProcessIncomingNutrientRequests(giveRequests, currentGrid, targetElement, maxX, maxY);
+				ProcessOutgoingNutrientRequests(takeRequests, currentGrid, targetElement, maxX, maxY);
 			}
 			else
 			{
-				ProcessOutgoingNutrientRequests(takeRequests, currentGrid, targetElement);
-				ProcessIncomingNutrientRequests(giveRequests, currentGrid, targetElement);
+				ProcessOutgoingNutrientRequests(takeRequests, currentGrid, targetElement, maxX, maxY);
+				ProcessIncomingNutrientRequests(giveRequests, currentGrid, targetElement, maxX, maxY);
 			}
 		}
 
@@ -318,7 +324,7 @@ public class NutrientManager
 	private static void ProcessIncomingWetnessRequests(
 		IReadOnlyList<GiveWetnessRequest> requests,
 		Element[,] oldGrid,
-		ILife targetElement)
+		ILife targetElement, int maxX, int maxY)
 	{
 		float remainingCapacity = targetElement.maxWetness - targetElement.wetness;
 		foreach (var request in requests)
@@ -341,13 +347,18 @@ public class NutrientManager
 			givingElement.wetness -= wetnessToGive;
 			targetElement.wetness += wetnessToGive;
 			remainingCapacity -= wetnessToGive;
+
+			UpdateManager.Instance.UpdateNearbyCellsNextFrame(request.x, request.y, maxX, maxY);
+			UpdateManager.Instance.UpdateNearbyCellsNextFrame(request.targetX, request.targetY, maxX, maxY);
 		}
 	}
 
 	private static void ProcessOutgoingWetnessRequests(
 		IReadOnlyList<TakeWetnessRequest> requests,
 		Element[,] oldGrid,
-		ILife targetElement)
+		ILife targetElement,
+		int maxX,
+		int maxY)
 	{
 		float remainingWetness = targetElement.wetness;
 		foreach (var request in requests)
@@ -369,12 +380,17 @@ public class NutrientManager
 			targetElement.wetness -= wetnessToTake;
 			takingElement.wetness += wetnessToTake;
 			remainingWetness -= wetnessToTake;
+
+			UpdateManager.Instance.UpdateNearbyCellsNextFrame(request.x, request.y, maxX, maxY);
+			UpdateManager.Instance.UpdateNearbyCellsNextFrame(request.targetX, request.targetY, maxX, maxY);
 		}
 	}
 
 	public void ProcessWetnessRequests(
 	Element[,] oldGrid,
-	Element[,] currentGrid)
+	Element[,] currentGrid,
+	int maxX,
+	int maxY)
 	{
 		foreach (var position in uniqueWetnessTargets.ToList())
 		{
@@ -407,13 +423,13 @@ public class NutrientManager
 
 			if (totalIncoming >= totalOutgoing)
 			{
-				ProcessIncomingWetnessRequests(giveRequests, oldGrid, targetElement);
-				ProcessOutgoingWetnessRequests(takeRequests, oldGrid, targetElement);
+				ProcessIncomingWetnessRequests(giveRequests, oldGrid, targetElement, maxX, maxY);
+				ProcessOutgoingWetnessRequests(takeRequests, oldGrid, targetElement, maxX, maxY);
 			}
 			else
 			{
-				ProcessOutgoingWetnessRequests(takeRequests, oldGrid, targetElement);
-				ProcessIncomingWetnessRequests(giveRequests, oldGrid, targetElement);
+				ProcessOutgoingWetnessRequests(takeRequests, oldGrid, targetElement, maxX, maxY);
+				ProcessIncomingWetnessRequests(giveRequests, oldGrid, targetElement, maxX, maxY);
 			}
 		}
 

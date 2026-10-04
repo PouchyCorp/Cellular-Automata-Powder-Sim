@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Collections.Generic;
 using System.Data;
 using System.IO;
 
@@ -29,6 +30,10 @@ public partial class CellularAutomataEngine : Node2D
 	public int brushSize = 1;
 	float gameSpeedCounter = 0f;
 	public int tick = 0;
+	private int pendingSingleSteps = 0;
+	private bool showNeedUpdateState = false;
+
+	private HashSet<(int, int)> cellsToUpdateHashset = [];
 
 
 	// --- Public (exported) element instantiation --- //
@@ -76,7 +81,10 @@ public partial class CellularAutomataEngine : Node2D
 					// But I am concerned with slight optimisation issues tho
 					// Making a shader could be a better solution
 					cellRect.Position = cellSize * new Vector2(x, y);
-					DrawRect(cellRect, elementArray[x, y].color);
+					Color cellColor = showNeedUpdateState
+						? (cellsToUpdateHashset.Contains((x, y)) ? Colors.Green : Colors.Red)
+						: elementArray[x, y].color;
+					DrawRect(cellRect, cellColor);
 				}
 			}
 		}
@@ -87,11 +95,15 @@ public partial class CellularAutomataEngine : Node2D
 		base._Process(delta);
 		UiHandler();
 		PlacementHandler();
+		while (pendingSingleSteps > 0)
+		{
+			AdvanceSimulationStep();
+			pendingSingleSteps--;
+		}
 		gameSpeedCounter += gameSpeed;
 		while (Math.Floor(gameSpeedCounter) > 0) // game speed just skips steps
 		{
-			CellUpdateHandler();
-			tick++;
+			AdvanceSimulationStep();
 			gameSpeedCounter--;
 		}
 
@@ -126,6 +138,21 @@ public partial class CellularAutomataEngine : Node2D
 	//Those inputs are always called
 	public override void _Input(InputEvent @event)
 	{
+		if (@event is InputEventKey eventKey && eventKey.Pressed && !eventKey.Echo)
+		{
+			if (eventKey.Keycode == Key.Space)
+			{
+				pendingSingleSteps++;
+				return;
+			}
+
+			if (eventKey.Keycode == Key.Shift)
+			{
+				showNeedUpdateState = !showNeedUpdateState;
+				return;
+			}
+		}
+
 		if (@event is InputEventMouseButton { Pressed: false } eventMouseButton)
 		{
 			switch (eventMouseButton.ButtonIndex)
@@ -187,6 +214,7 @@ public partial class CellularAutomataEngine : Node2D
 					if (_drawingState == DrawingState.Erasing)
 					{
 						elementArray[x, y] = null;
+						UpdateManager.Instance.UpdateNearbyCellsNextFrame(x, y, gridWidth, gridHeight); // request an update for the newly deleted element
 						continue;
 					}
 					switch (selectedElement) // ugly but was the only thing on my mind
@@ -196,6 +224,7 @@ public partial class CellularAutomataEngine : Node2D
 							if (elementArray[x, y] is Soil soil)
 							{
 								soil.nutrient = Math.Min(soil.nutrient + 1f, soil.maxNutrient);
+								UpdateManager.Instance.UpdateNearbyCellsNextFrame(x, y, gridWidth, gridHeight); // request an update for the newly added nutrient
 							}
 							break;
 
@@ -246,6 +275,9 @@ public partial class CellularAutomataEngine : Node2D
 			case "Water":
 				elementArray[x, y] = new Water();
 				break;
+			case "Steam":
+				elementArray[x, y] = new Steam(1.0f);
+				break;
 			case "Seed":
 				elementArray[x, y] = new Seed(5,5);
 				break;
@@ -253,38 +285,46 @@ public partial class CellularAutomataEngine : Node2D
 				elementArray[x, y] = (Element)Activator.CreateInstance(Type.GetType(elementType));
 				break;
 		}
+
+		UpdateManager.Instance.UpdateNearbyCellsNextFrame(x, y, gridWidth, gridHeight); // request an update for the newly created element
 	}
 
-	private void createElement(int x, int y, string elementType, string state)
+	private void createElementWithState(int x, int y, string elementType, string state)
 	{
 		elementArray[x, y] = (Element)Activator.CreateInstance(Type.GetType(elementType));
 		elementArray[x, y].setState(state);
+
+		UpdateManager.Instance.UpdateNearbyCellsNextFrame(x, y, gridWidth, gridHeight); // request an update for the newly created element
 	}
 
 	private void CellUpdateHandler()
 	{
-
+		
 		Element[,] oldGrid = (Element[,])elementArray.Clone();
+		(int, int)[] cellsToUpdate = UpdateManager.Instance.GetUpdateRequests();
+		cellsToUpdateHashset = UpdateManager.Instance.getHashSet();
+		UpdateManager.Instance.ClearUpdateRequests();
 
 		// Process elements in random order
-		for (int x = 0; x < gridWidth; x++)
+		foreach ((int x, int y) in cellsToUpdate)
 		{
-			for (int y = 0; y < gridHeight; y++)
-			{
-				if (oldGrid[x, y] == null) continue;
-				oldGrid[x, y].update(oldGrid, x, y, gridWidth, gridHeight, tick);
-			}
+			if (oldGrid[x, y] == null) continue;
+			oldGrid[x, y].update(oldGrid, x, y, gridWidth, gridHeight, tick);
 		}
 
 		GridManager.Instance.ProcessDeletions(elementArray, gridWidth, gridHeight);
 		GridManager.Instance.ProcessSpawns(elementArray, gridWidth, gridHeight);
-		NutrientManager.Instance.ProcessNutrientRequests(oldGrid, elementArray);
-		NutrientManager.Instance.ProcessWetnessRequests(oldGrid, elementArray);
+		NutrientManager.Instance.ProcessNutrientRequests(oldGrid, elementArray, gridWidth, gridHeight);
+		NutrientManager.Instance.ProcessWetnessRequests(oldGrid, elementArray, gridWidth, gridHeight);
 		FireManager.Instance.ProcessIgnitionRequests(elementArray, gridWidth, gridHeight);
 		MoveManager.Instance.ProcessMoveRequests(oldGrid, elementArray, gridWidth, gridHeight);
 	}
 
-
+	private void AdvanceSimulationStep()
+	{
+		CellUpdateHandler();
+		tick++;
+	}
 
 	public void SaveGridToFile(string fileName)
 	{
@@ -351,7 +391,7 @@ public partial class CellularAutomataEngine : Node2D
 						if (line[y].Contains("|"))
 						{
 							string[] storedElement = line[y].Split("|");
-							createElement(x, y, storedElement[0], storedElement[1]);
+							createElementWithState(x, y, storedElement[0], storedElement[1]);
 						}
 						else createElement(x, y, line[y]);
 					}

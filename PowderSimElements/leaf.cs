@@ -174,6 +174,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 			var chosenPos = getBestGrowthPosition(possibleGrowthPositions.ToArray(), maxX, maxY, x, y, parentSeed.Item1, parentSeed.Item2);
 			//var chosenPos = possibleGrowthPositions[rand.Next(possibleGrowthPositions.Count)];
 			if (chosenPos == (-1, -1)) return false; // No valid position found
+			
 			GridManager.Instance.RequestSpawn(chosenPos.Item1, chosenPos.Item2, new Leaf(parentSeed), maxX, maxY);
 			childLeafs.Add(chosenPos);
 			var parent = getParentSeed(oldGrid);

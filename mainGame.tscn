@@ -22,6 +22,8 @@ grow_vertical = 2
 color = Color(0.4686678, 0.6325981, 0.950756, 1)
 
 [node name="CellularAutomataEngine" parent="." unique_id=753324543 instance=ExtResource("2_l7q4m")]
+cellSize = Vector2(2, 2)
+gridSize = Vector2(576, 324)
 
 [node name="Control" type="MarginContainer" parent="." unique_id=2077378141]
 anchors_preset = 15
@@ -184,8 +186,8 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
 min_value = 1.0
-max_value = 10.0
 value = 1.0
+exp_edit = true
 rounded = true
 tick_count = 11
 

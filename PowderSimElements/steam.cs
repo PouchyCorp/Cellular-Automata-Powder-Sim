@@ -7,7 +7,7 @@ public class Steam : Element, IGas, ILife
 	public float nutrient { get; set; } = 0.0f;
 	public float maxNutrient => 0.0f;
 	public float maxWetness => 1.0f;
-	public bool sleeping = false;
+	public bool sleeping { get; set; } = false;
 
 	public Steam(float wetness)
 	{
@@ -37,14 +37,6 @@ public class Steam : Element, IGas, ILife
 				return;
 			}
 		}
-
-		if (sleeping)
-		{
-			sleeping = false;
-			return;
-		}
-		sleeping = true;
-
 		GasBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 
 		updateColor(T, x, y);

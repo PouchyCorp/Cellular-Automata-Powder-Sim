@@ -4,7 +4,6 @@ using Godot;
 public abstract class Element
 {
 	public Color color { get; set; }
-	public bool needUpdate { get; set; } = true;
 	public Color baseColor { get; protected set; }
 	public double density { get; protected set; }
 	
