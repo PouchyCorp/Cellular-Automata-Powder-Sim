@@ -24,8 +24,9 @@ public class Worm : Element, ILife, ISolid
 
 	enum WormState
 	{
-		Moving,
+		Burrowing,
 		Falling,
+		Crawling
 	}
 	private WormState wormState = WormState.Falling;
 
@@ -52,70 +53,114 @@ public class Worm : Element, ILife, ISolid
 		{
 			case WormState.Falling:
 				// check if can fall down
-				if (y + 1 < maxY && (oldGrid[x, y + 1] == null || oldGrid[x, y + 1] is ILiquid))
+				if (y + 1 < maxY && !(oldGrid[x, y + 1] is ISolid or IPowder))
 				{
 					// fall down
 					MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, 1, maxX, maxY);
 					break;
 				}
 
-				if (y + 1 >= maxY || oldGrid[x, y + 1] is Soil)
+				if (y + 1 < maxY && oldGrid[x, y + 1] is Soil)
 				{
 					// landed on solid ground
-					wormState = WormState.Moving;
+					wormState = WormState.Burrowing;
 					break;
 				}
+				else
 				{
-					wormState = WormState.Moving; // landed
+					wormState = WormState.Crawling; // landed
 				}
 
 				break;
 
-			case WormState.Moving:
-
-				// Update timers
-				directionChangeTimer++;
-				if (obstacleHitCooldown > 0)
-					obstacleHitCooldown--;
-
-				// Random direction change
-				if (directionChangeTimer >= directionChangeInterval)
+			case WormState.Crawling:
+				// check if can fall down
+				if (y + 1 < maxY && !(oldGrid[x, y + 1] is ISolid or IPowder))
 				{
-					changeDirection();
-					directionChangeTimer = Random.Shared.Next(0, directionChangeInterval / 2); // reset timer to a random value to avoid synchronized direction changes
+					// fall down
+					MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, 1, maxX, maxY);
+					wormState = WormState.Falling;
+					break;
 				}
 
-				// Try to move in current direction
-				(int, int) nearbyBiomass = findNearbyBiomass(oldGrid, x, y, maxX, maxY);
-				if (nearbyBiomass != (-1, -1))
+				if (y + 1 < maxY && oldGrid[x, y + 1] is Soil)
 				{
-					// Move towards biomass
-					int dx = nearbyBiomass.Item1 - x;
-					int dy = nearbyBiomass.Item2 - y;
-					if (moveInSoil(oldGrid, x, y, maxX, maxY, dx, dy))
+					if (GridManager.Instance.HasSpawnOrDeletionRequestAt(x, y + 1))
 					{
-						// Successfully moved to biomass
+						// If there's already a spawn or deletion request at the target position, don't attempt to remove the soil
 						break;
 					}
-				}
-				
-				if (moveInSoil(oldGrid, x, y, maxX, maxY, currentDirection.Item1, currentDirection.Item2))
-				{
-					// Successfully moved in current direction
+
+					// landed on solid ground
+					wormState = WormState.Burrowing;
+					Soil soilBelow = oldGrid[x, y + 1] as Soil;
+
+					GridManager.Instance.RequestDeletion(x, y + 1 , maxX, maxY, null); // remove the soil below to make way for the worm
+					inSoil = soilBelow; // store the soil below in the worm's inSoil property
+					MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, 1, maxX, maxY);
 					break;
 				}
-				else if (obstacleHitCooldown == 0)
-				{
-					// Hit obstacle, change direction
-					obstacleHitCooldown = 3;
-					changeDirection();
-					directionChangeTimer = 0;
-				}
 
+				// Go sideways in one direction until hitting an obstacle, then change direction
+				if (!MoveManager.Instance.AttemptMove(oldGrid, x, y, currentDirection.Item1, currentDirection.Item2, maxX, maxY))
+				{
+					if (currentDirection == (1, 0))
+					{
+						currentDirection = (-1, 0); // change to left
+					}
+					else
+					{
+						currentDirection = (1, 0); // change to right
+					}
+				}
 				break;
-		}
-		updateColor(T, x, y);
-	}
+
+
+			case WormState.Burrowing:
+
+						// Update timers
+						directionChangeTimer++;
+						if (obstacleHitCooldown > 0)
+							obstacleHitCooldown--;
+
+						// Random direction change
+						if (directionChangeTimer >= directionChangeInterval)
+						{
+							changeDirection();
+							directionChangeTimer = Random.Shared.Next(0, directionChangeInterval / 2); // reset timer to a random value to avoid synchronized direction changes
+						}
+
+						// Try to move in current direction
+						(int, int) nearbyBiomass = findNearbyBiomass(oldGrid, x, y, maxX, maxY);
+						if (nearbyBiomass != (-1, -1))
+						{
+							// Move towards biomass
+							int dx = nearbyBiomass.Item1 - x;
+							int dy = nearbyBiomass.Item2 - y;
+							if (moveInSoil(oldGrid, x, y, maxX, maxY, dx, dy))
+							{
+								// Successfully moved to biomass
+								break;
+							}
+						}
+
+						if (moveInSoil(oldGrid, x, y, maxX, maxY, currentDirection.Item1, currentDirection.Item2))
+						{
+							// Successfully moved in current direction
+							break;
+						}
+						else if (obstacleHitCooldown == 0)
+						{
+							// Hit obstacle, change direction
+							obstacleHitCooldown = 3;
+							changeDirection();
+							directionChangeTimer = 0;
+						}
+
+						break;
+					}
+					updateColor(T, x, y);
+				}
 	private void changeDirection()
 	{
 		// Simple direction change with upward bias
@@ -184,12 +229,17 @@ public class Worm : Element, ILife, ISolid
 			return false;
 
 		// Check if target cell is occupied by something other than a soil
-		Element targetElem = oldGrid[targetX, targetY];
-		if (targetElem != null && targetElem is not Soil)
+		if (oldGrid[targetX, targetY] is not (Soil or Biomass))
 			return false;
 
 		// Move worm to new position
-		GridManager.Instance.RequestDeletion(x, y, maxX, maxY, inSoil); // leave the stored soil behind by replacing the worm
+		if (GridManager.Instance.HasSpawnOrDeletionRequestAt(targetX, targetY))
+		{
+			// If there's already a spawn or deletion request at the target position, don't move
+			return false;
+		}
+
+		GridManager.Instance.RequestDeletion(targetX, targetY, maxX, maxY, inSoil); // put stored soil into the target position (this will replace the soil or biomass that was there)
 
 		// If moving onto a soil, "pick it up"
 		if (oldGrid[targetX, targetY] is Soil soil)
@@ -202,8 +252,8 @@ public class Worm : Element, ILife, ISolid
 			// If moving onto a biomass, convert it to soil, store its nutrient and wetness into the soil, and "pick it up"
 			inSoil = getDirtFromBiomass(oldGrid, targetX, targetY, maxX, maxY);
 		}
-		
-		GridManager.Instance.RequestDeletion(targetX, targetY, maxX, maxY, this); // move the worm to the new position (the soil is stored in inSoil don't worry)
+
+		MoveManager.Instance.AttemptMove(oldGrid, x, y, movementX, movementY, maxX, maxY); // move the worm to the new position (the soil put in front will be swapped place with the worm)
 
 		return true;
 	}

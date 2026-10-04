@@ -52,6 +52,10 @@ public class MoveRequest
 			}
 			return true;
 		}
+		if (element is Worm && target is Soil)
+		{
+			return true;
+		}
 		return false;
 	}
 	public static bool CanMove(Element[,] oldGrid, int x, int y, int movementX, int movementY, int maxX, int maxY)

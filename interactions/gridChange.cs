@@ -64,18 +64,35 @@ public class GridManager
     private Dictionary<(int, int), List<DeletionRequest>> DeletionRequests = new Dictionary<(int, int), List<DeletionRequest>>();
     private Dictionary<(int, int), List<SpawnRequest>> SpawnRequests = new Dictionary<(int, int), List<SpawnRequest>>();
 
+    private void EnqueueDeletionRequest(DeletionRequest request)
+    {
+        if (!DeletionRequests.ContainsKey((request.x, request.y)))
+        {
+            DeletionRequests.Add((request.x, request.y), [request]);
+        }
+        else
+        {
+            DeletionRequests[(request.x, request.y)].Add(request);
+        }
+    }
+
+    private void EnqueueSpawnRequest(SpawnRequest request)
+    {
+        if (!SpawnRequests.ContainsKey((request.x, request.y)))
+        {
+            SpawnRequests.Add((request.x, request.y), [request]);
+        }
+        else
+        {
+            SpawnRequests[(request.x, request.y)].Add(request);
+        }
+    }
+
     public bool RequestDeletion(int x, int y, int maxX, int maxY, Element replace = null)
     {
         DeletionRequest request = new DeletionRequest(x, y, replace);
         if (request.IsValid(maxX, maxY)){
-            if (!DeletionRequests.ContainsKey((x, y)))
-            {
-                DeletionRequests.Add((x, y), [request]);
-            }
-            else
-            {
-                DeletionRequests[(x, y)].Add(request);
-            }
+            EnqueueDeletionRequest(request);
             return true; 
         }
         return false; 
@@ -86,17 +103,15 @@ public class GridManager
         // this will fail if the place is not empty, use RequestDeletion first if you want to forcefully spawn an element
         SpawnRequest request = new SpawnRequest(x, y, elementToSpawn);
         if (request.IsValid(maxX, maxY)){
-            if (!SpawnRequests.ContainsKey((x, y)))
-            {
-                SpawnRequests.Add((x, y), [request]);
-            }
-            else
-            {
-                SpawnRequests[(x, y)].Add(request);
-            }
+            EnqueueSpawnRequest(request);
             return true; 
         }
         return false;   
+    }
+
+    public bool HasSpawnOrDeletionRequestAt(int x, int y)
+    {
+        return DeletionRequests.ContainsKey((x, y)) || SpawnRequests.ContainsKey((x, y));
     }
 
     public double getPriority(Element element)
