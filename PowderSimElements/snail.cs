@@ -1,11 +1,10 @@
 using Godot;
 using System;
 using System.Collections.Generic;
-public class Snail : Element, ILife, ISolid
+public class Snail : Element, ILife
 {
 	private int moveInterval = 30; // ticks
 	private int lastMoveTick = 0;
-	private List<(int, int)> lastPositions = new List<(int, int)>(); // to avoid going back and forth
 
 	public float maxNutrient => 100000000000.0f;
 	public float nutrient { get; set; }= 1.0f;
@@ -23,20 +22,31 @@ public class Snail : Element, ILife, ISolid
 		Idle,
 		Eating
 	}
+
+	enum SnailDirection
+	{
+		UpLeft,
+		UpRight,
+		DownLeft,
+		DownRight
+	}
+
+	SnailDirection currentDirection;
 	private SnailState snailState = SnailState.Falling;
 	public Snail()
 	{
 		density = 60;
 		color = Colors.Beige;
+		currentDirection = (SnailDirection)Random.Shared.Next(0, 4);
 	}
 	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the snail every frame
+		updateColor(T, x, y);
 		// Handle eating cooldown
 		if (eatingCooldown > 0)
 		{
 			eatingCooldown--;
-			updateColor(T, x, y);
 			return;
 		}
 
@@ -45,7 +55,7 @@ public class Snail : Element, ILife, ISolid
 		{
 			snailState = SnailState.Eating;
 			eatingCooldown = EATING_WAIT_TIME;
-			updateColor(T, x, y);
+			
 			return;
 		}
 
@@ -74,8 +84,6 @@ public class Snail : Element, ILife, ISolid
 				snailState = SnailState.Idle;
 				break;
 		}
-
-		updateColor(T, x, y);
 	}
 
 	private bool checkAndEatSurfaceBiomass(Element[,] oldGrid, int x, int y, int maxX, int maxY)
@@ -147,6 +155,16 @@ public class Snail : Element, ILife, ISolid
 		}
 	}
 
+	private SnailDirection getDirectionFromDelta(int dx, int dy)
+	{
+		if (dx <= 0 && dy <= 0) return SnailDirection.UpLeft;
+		if (dx >= 0 && dy <= 0) return SnailDirection.UpRight;
+		if (dx <= 0 && dy >= 1) return SnailDirection.DownLeft;
+		if (dx >= 0 && dy >= 1) return SnailDirection.DownRight;
+
+		return currentDirection; // default to current direction if no match
+	}
+
 	private void handleMovingState(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 
@@ -154,11 +172,13 @@ public class Snail : Element, ILife, ISolid
 		if (Random.Shared.NextSingle() < 0.02f)
 		{
 			snailState = SnailState.Idle;
-			lastPositions.Clear(); // reset history when choosing to stay
 			return;
 		}
 
-
+		if (Random.Shared.NextSingle() < 0.005f)
+		{
+			currentDirection = (SnailDirection)Random.Shared.Next(0, 4);
+		}
 
 		// Get all available cells where snail can move (empty or webs only)
 		var availableCells = new List<(int, int)>();
@@ -172,10 +192,10 @@ public class Snail : Element, ILife, ISolid
 				Element target = oldGrid[nx, ny];
 
 				// Can only move to empty spaces or through webs
-				if (target == null || target is Web || target is ILiquid)
+				if (target == null || target is Web || target is ILiquid || target is IGas)
 				{
-					// CRITICAL: Must have at least one solid neighbor to climb on
-					if (hasAdjacentSolidSurface(nx, ny, oldGrid, maxX, maxY) && !lastPositions.Contains((nx, ny)))
+					// Must have at least one solid neighbor to climb on
+					if (hasAdjacentSolidSurface(nx, ny, oldGrid, maxX, maxY) && currentDirection == getDirectionFromDelta(nx - x, ny - y))
 					{
 						availableCells.Add((nx, ny));
 					}
@@ -185,11 +205,7 @@ public class Snail : Element, ILife, ISolid
 
 		if (availableCells.Count == 0)
 		{
-			// No valid moves available
-			lastPositions.Clear(); // reset history when stuck
-
-
-			snailState = SnailState.Idle; // couldn't move but still on solid surface
+			currentDirection = (SnailDirection)Random.Shared.Next(0, 4); // change direction randomly
 			return;
 		}
 
@@ -209,13 +225,6 @@ public class Snail : Element, ILife, ISolid
 
 
 		MoveManager.Instance.AttemptMove(oldGrid, x, y, newX - x, newY - y, maxX, maxY);
-		lastPositions.Add((x, y));
-
-		// Keep position history manageable
-		if (lastPositions.Count > 5)
-		{
-			lastPositions.RemoveAt(0);
-		}
 
 		snailState = SnailState.Idle;
 	}
