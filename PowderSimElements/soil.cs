@@ -73,7 +73,7 @@ public class Soil : Element, IPowder, ISolid, ILife
 			float nutriDiff = (oldGrid[nx, ny] as Soil).nutrient - nutrient;
 			if (nutriDiff < -0.1f)
 			{
-				float transferAmount = Math.Abs(nutriDiff) * 0.25f;
+				float transferAmount = Math.Abs(nutriDiff) * 0.15f;
 
 				if (nutriDiff < 0)
 				{
@@ -98,7 +98,7 @@ public class Soil : Element, IPowder, ISolid, ILife
 				float wetnessDiff = (oldGrid[nx, ny] as Soil).wetness - wetness;
 				if (wetnessDiff < -0.1f)
 				{
-					float transferAmount = Math.Abs(wetnessDiff) * 0.25f;
+					float transferAmount = Math.Abs(wetnessDiff) * 0.15f;
 
 					if (wetnessDiff < 0)
 					{
