@@ -33,7 +33,16 @@ public partial class CellularAutomataEngine : Node2D
 	private int pendingSingleSteps = 0;
 	private bool showNeedUpdateState = false;
 
-	private HashSet<(int, int)> cellsToUpdateHashset = [];
+	private readonly HashSet<(int, int)> textureDirtyCells = new();
+	private readonly HashSet<(int, int)> stateDirtyCells = new();
+	private HashSet<(int, int)> activeNeedUpdateCells = new();
+
+	private ColorRect gridRenderer;
+	private ShaderMaterial gridShaderMaterial;
+	private Image gridColorImage;
+	private Image gridStateImage;
+	private ImageTexture gridColorTexture;
+	private ImageTexture gridStateTexture;
 
 
 	// --- Public (exported) element instantiation --- //
@@ -59,35 +68,7 @@ public partial class CellularAutomataEngine : Node2D
 		gameSpeedSlider = GetNode<Slider>("%GameSpeed");
 
 		elementArray = new Element[gridWidth, gridHeight];
-	}
-
-
-	public override void _Draw()
-	{
-		base._Draw();
-
-		// Draw outline
-		DrawRect(new Rect2(Vector2.Zero, cellSize * gridSize), Colors.SlateGray, false);
-
-		// Draw every cell
-		Rect2 cellRect = new Rect2(Vector2.Zero, cellSize);
-		for (int x = 0; x < gridWidth; x++)
-		{
-			for (int y = 0; y < gridHeight; y++)
-			{
-				if (elementArray[x, y] != null)
-				{
-					// If you want to override to have a draw method inside the Element Class, you can,
-					// But I am concerned with slight optimisation issues tho
-					// Making a shader could be a better solution
-					cellRect.Position = cellSize * new Vector2(x, y);
-					Color cellColor = showNeedUpdateState
-						? (cellsToUpdateHashset.Contains((x, y)) ? Colors.Green : Colors.Red)
-						: elementArray[x, y].color;
-					DrawRect(cellRect, cellColor);
-				}
-			}
-		}
+		SetupGridRenderer();
 	}
 
 	public override void _Process(double delta)
@@ -107,7 +88,10 @@ public partial class CellularAutomataEngine : Node2D
 			gameSpeedCounter--;
 		}
 
-		QueueRedraw();
+		if (textureDirtyCells.Count > 0 || stateDirtyCells.Count > 0)
+		{
+			RefreshGridTextures();
+		}
 	}
 
 	//Those inputs may be ignored by filters
@@ -149,6 +133,7 @@ public partial class CellularAutomataEngine : Node2D
 			if (eventKey.Keycode == Key.Shift)
 			{
 				showNeedUpdateState = !showNeedUpdateState;
+				gridShaderMaterial?.SetShaderParameter("show_need_update_state", showNeedUpdateState);
 				return;
 			}
 		}
@@ -215,6 +200,8 @@ public partial class CellularAutomataEngine : Node2D
 					{
 						elementArray[x, y] = null;
 						UpdateManager.Instance.UpdateNearbyCellsNextFrame(x, y, gridWidth, gridHeight); // request an update for the newly deleted element
+						MarkCellTextureDirty(x, y);
+						MarkCellStateDirty(x, y);
 						continue;
 					}
 					switch (selectedElement) // ugly but was the only thing on my mind
@@ -225,6 +212,7 @@ public partial class CellularAutomataEngine : Node2D
 							{
 								soil.nutrient = Math.Min(soil.nutrient + 1f, soil.maxNutrient);
 								UpdateManager.Instance.UpdateNearbyCellsNextFrame(x, y, gridWidth, gridHeight); // request an update for the newly added nutrient
+								MarkCellTextureDirty(x, y);
 							}
 							break;
 
@@ -263,6 +251,8 @@ public partial class CellularAutomataEngine : Node2D
 				if (elementArray[x, y] == null)
 				{
 					createElement(x, y, selectedElement);
+					MarkCellTextureDirty(x, y);
+					MarkCellStateDirty(x, y);
 				}
 				break;
 		}
@@ -287,6 +277,8 @@ public partial class CellularAutomataEngine : Node2D
 		}
 
 		UpdateManager.Instance.UpdateNearbyCellsNextFrame(x, y, gridWidth, gridHeight); // request an update for the newly created element
+		MarkCellTextureDirty(x, y);
+		MarkCellStateDirty(x, y);
 	}
 
 	private void createElementWithState(int x, int y, string elementType, string state)
@@ -295,6 +287,8 @@ public partial class CellularAutomataEngine : Node2D
 		elementArray[x, y].setState(state);
 
 		UpdateManager.Instance.UpdateNearbyCellsNextFrame(x, y, gridWidth, gridHeight); // request an update for the newly created element
+		MarkCellTextureDirty(x, y);
+		MarkCellStateDirty(x, y);
 	}
 
 	private void CellUpdateHandler()
@@ -302,8 +296,9 @@ public partial class CellularAutomataEngine : Node2D
 		
 		Element[,] oldGrid = (Element[,])elementArray.Clone();
 		(int, int)[] cellsToUpdate = UpdateManager.Instance.GetUpdateRequests();
-		cellsToUpdateHashset = UpdateManager.Instance.getHashSet();
+		HashSet<(int, int)> previousNeedUpdateCells = activeNeedUpdateCells;
 		UpdateManager.Instance.ClearUpdateRequests();
+		MarkTextureDirty(cellsToUpdate);
 
 		// Process elements in random order
 		foreach ((int x, int y) in cellsToUpdate)
@@ -318,12 +313,136 @@ public partial class CellularAutomataEngine : Node2D
 		NutrientManager.Instance.ProcessWetnessRequests(oldGrid, elementArray, gridWidth, gridHeight);
 		FireManager.Instance.ProcessIgnitionRequests(elementArray, gridWidth, gridHeight);
 		MoveManager.Instance.ProcessMoveRequests(oldGrid, elementArray, gridWidth, gridHeight);
+		HashSet<(int, int)> nextNeedUpdateCells = UpdateManager.Instance.getHashSet();
+		QueueStateRefresh(previousNeedUpdateCells, nextNeedUpdateCells);
+		activeNeedUpdateCells = nextNeedUpdateCells;
+	}
+
+	private void SetupGridRenderer()
+	{
+		if (gridRenderer != null)
+		{
+			gridRenderer.QueueFree();
+			gridRenderer = null;
+		}
+
+		gridColorImage = Image.CreateEmpty(gridWidth, gridHeight, false, Image.Format.Rgba8);
+		gridStateImage = Image.CreateEmpty(gridWidth, gridHeight, false, Image.Format.Rgba8);
+		gridColorTexture = ImageTexture.CreateFromImage(gridColorImage);
+		gridStateTexture = ImageTexture.CreateFromImage(gridStateImage);
+
+		gridShaderMaterial = new ShaderMaterial();
+		gridShaderMaterial.Shader = GD.Load<Shader>("res://CA-engine/grid_renderer.gdshader");
+		gridShaderMaterial.SetShaderParameter("grid_size", gridSize);
+		gridShaderMaterial.SetShaderParameter("cell_size", cellSize);
+		gridShaderMaterial.SetShaderParameter("color_texture", gridColorTexture);
+		gridShaderMaterial.SetShaderParameter("state_texture", gridStateTexture);
+		gridShaderMaterial.SetShaderParameter("show_need_update_state", showNeedUpdateState);
+
+		gridRenderer = new ColorRect
+		{
+			Name = "GridRenderer",
+			Material = gridShaderMaterial,
+			Position = Vector2.Zero,
+			Size = cellSize * gridSize,
+			MouseFilter = Control.MouseFilterEnum.Ignore,
+			FocusMode = Control.FocusModeEnum.None,
+			ZIndex = 1
+		};
+
+		AddChild(gridRenderer);
+		MoveChild(gridRenderer, 0);
+	}
+
+	private void RefreshGridTextures()
+	{
+		if (gridColorImage == null || gridStateImage == null || gridShaderMaterial == null)
+		{
+			return;
+		}
+
+		if (textureDirtyCells.Count > 0)
+		{
+			foreach ((int x, int y) in textureDirtyCells)
+			{
+				Element cell = elementArray[x, y];
+				if (cell == null)
+				{
+					gridColorImage.SetPixel(x, y, new Color(0, 0, 0, 0));
+					continue;
+				}
+
+				Color cellColor = cell.color;
+				cellColor.A = 1f;
+				gridColorImage.SetPixel(x, y, cellColor);
+			}
+			gridColorTexture.Update(gridColorImage);
+			textureDirtyCells.Clear();
+		}
+
+		if (stateDirtyCells.Count > 0)
+		{
+			foreach ((int x, int y) in stateDirtyCells)
+			{
+				Element cell = elementArray[x, y];
+				if (cell == null)
+				{
+					gridStateImage.SetPixel(x, y, new Color(0, 0, 0, 0));
+					continue;
+				}
+
+				gridStateImage.SetPixel(x, y, new Color(0, 0, 0, activeNeedUpdateCells.Contains((x, y)) ? 1f : 0.5f));
+			}
+			gridStateTexture.Update(gridStateImage);
+			stateDirtyCells.Clear();
+		}
+		gridShaderMaterial.SetShaderParameter("show_need_update_state", showNeedUpdateState);
+		gridShaderMaterial.SetShaderParameter("grid_size", gridSize);
+		gridShaderMaterial.SetShaderParameter("cell_size", cellSize);
+		gridRenderer.Size = cellSize * gridSize;
 	}
 
 	private void AdvanceSimulationStep()
 	{
 		CellUpdateHandler();
 		tick++;
+	}
+
+	private void MarkCellTextureDirty(int x, int y)
+	{
+		textureDirtyCells.Add((x, y));
+	}
+
+	private void MarkTextureDirty(IEnumerable<(int, int)> cells)
+	{
+		foreach ((int x, int y) in cells)
+		{
+			textureDirtyCells.Add((x, y));
+		}
+	}
+
+	private void MarkCellStateDirty(int x, int y)
+	{
+		stateDirtyCells.Add((x, y));
+	}
+
+	private void QueueStateRefresh(HashSet<(int, int)> previousNeedUpdateCells, HashSet<(int, int)> nextNeedUpdateCells)
+	{
+		foreach ((int x, int y) in previousNeedUpdateCells)
+		{
+			if (!nextNeedUpdateCells.Contains((x, y)))
+			{
+				stateDirtyCells.Add((x, y));
+			}
+		}
+
+		foreach ((int x, int y) in nextNeedUpdateCells)
+		{
+			if (!previousNeedUpdateCells.Contains((x, y)))
+			{
+				stateDirtyCells.Add((x, y));
+			}
+		}
 	}
 
 	public void SaveGridToFile(string fileName)
@@ -373,6 +492,11 @@ public partial class CellularAutomataEngine : Node2D
 			cellSize = new Vector2(cellWidth, cellHeight);
 
 			elementArray = new Element[gridWidth, gridHeight];
+			SetupGridRenderer();
+			textureDirtyCells.Clear();
+			stateDirtyCells.Clear();
+			activeNeedUpdateCells.Clear();
+			UpdateManager.Instance.ClearUpdateRequests();
 
 			// Read rest of file
 			if (lines.Length < gridWidth) throw new DataException("The file doesn't have the correct amount of rows");
@@ -397,6 +521,8 @@ public partial class CellularAutomataEngine : Node2D
 					}
 				}
 			}
+
+			RefreshGridTextures();
 		}
 	}
 
@@ -481,6 +607,7 @@ public partial class CellularAutomataEngine : Node2D
 		{
 			CellUpdateHandler();
 		}
+		RefreshGridTextures();
 	}
 
 	private enum DrawingState
