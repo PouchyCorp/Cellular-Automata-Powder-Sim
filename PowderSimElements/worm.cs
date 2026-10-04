@@ -38,6 +38,7 @@ public class Worm : Element, ILife, ISolid
 
 	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
+		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the snail every frame
 		if (T - lastActivity < activityInterval)
 		{
 			// Not time to act yet

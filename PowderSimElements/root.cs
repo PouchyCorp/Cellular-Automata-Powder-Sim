@@ -100,6 +100,7 @@ public class Root : Element, ILife, ISolid
 
 	public bool growRoot(Element[,] oldGrid, Element[,] currentGrid, int x, int y, int maxX, int maxY)
 	{
+		
 		if (nutrient < 1) return false;
 		if (wetness < 0.2f) return false;
 		if (y + 1 >= maxY) return false;
@@ -138,6 +139,7 @@ public class Root : Element, ILife, ISolid
 
 	override public void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
+		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the snail every frame
 		// if parent seed no longer exists, turn into soil with same nutrient and wetness to not lose resources
 		Seed parent = getParentSeed(oldGrid, maxX, maxY);
 		if (parent == null || parent.plantState == Seed.PlantState.Dying)

@@ -225,6 +225,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 	}
 	override public void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
+		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the snail every frame
 		Seed seed = getParentSeed(oldGrid);
 		if (seed == null || seed?.plantState == Seed.PlantState.Dying) // if parent seed is gone or dying, start dying
 		{

@@ -38,6 +38,7 @@ public class Fly : Element, ILife, ISolid, IFlammable
 
 	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
+		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the snail every frame
 		lifetime--;
 		if (lifetime <= 0)
 		{

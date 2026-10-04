@@ -605,7 +605,7 @@ public partial class CellularAutomataEngine : Node2D
 	{
 		for (int i = 0; i < 10000; i++)
 		{
-			CellUpdateHandler();
+			AdvanceSimulationStep();
 		}
 		RefreshGridTextures();
 	}

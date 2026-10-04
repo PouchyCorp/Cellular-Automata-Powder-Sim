@@ -25,13 +25,6 @@ public class Oil : Element, ILiquid, IFlammable
 
 	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
-		if (lifetime <= 0
-		&& !burning)
-		{
-			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, null);
-			return;
-		}
-
 		LiquidBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 
 		FlammableBehavior.update(this, oldGrid, x, y, maxX, maxY, T);

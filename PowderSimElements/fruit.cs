@@ -32,6 +32,7 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 
 	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
+		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the snail every frame
 		if (y + 1 >= maxY) return; // out of bounds below
 
 		if (oldGrid[x, y + 1] is not Leaf)
