@@ -100,6 +100,16 @@ public class Snail : Element, ILife
 					// Eat the surface biomass
 					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(x, y, x, y, surfBiomass.nutrient), maxX, maxY);
 					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(x, y, x, y, surfBiomass.nutrient), maxX, maxY);
+					MoveManager.Instance.AttemptMove(oldGrid, x, y, nx, ny, maxX, maxY); // Remove to the biomass
+					return true;
+				}
+
+				if (oldGrid[nx, ny] is Ash ash)
+				{
+					// Eat the soil nutrients
+					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(x, y, nx, ny, ash.nutrient), maxX, maxY);
+					NutrientManager.Instance.AddTakeWetnessRequest(new TakeWetnessRequest(x, y, nx, ny, ash.wetness), maxX, maxY);
+					MoveManager.Instance.AttemptMove(oldGrid, x, y, nx, ny, maxX, maxY); // Remove to the ash
 					return true;
 				}
 			}

@@ -48,7 +48,7 @@ public static class FlammableBehavior
             if (self is ILife nutrientElement)
             {
                 
-                GridManager.Instance.RequestDeletion(x, y, maxX, maxY ,new Ash(nutrientElement.nutrient)); // element is consumed by fire and turned to ash
+                GridManager.Instance.RequestDeletion(x, y, maxX, maxY ,new Ash(nutrientElement.nutrient, nutrientElement.wetness)); // element is consumed by fire and turned to ash
             }
             else
             {
