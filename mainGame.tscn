@@ -149,7 +149,7 @@ metadata/element = "Snail"
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
-text = "Mouche"
+text = "Abeille"
 metadata/element = "Fly"
 
 [node name="Worm" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=453543730]

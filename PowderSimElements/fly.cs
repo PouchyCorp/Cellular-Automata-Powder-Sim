@@ -32,7 +32,7 @@ public class Fly : Element, ILife, ISolid, IFlammable
 	public Fly()
 	{
 		density = 30;
-		color = Colors.Black;
+		color = Colors.Yellow;
 	}
 
 

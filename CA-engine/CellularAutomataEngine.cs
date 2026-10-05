@@ -15,6 +15,12 @@ public partial class CellularAutomataEngine : Node2D
 	private int gridWidth;
 	private int gridHeight;
 
+	private float zoomFactor = 1.0f;
+	private Vector2 baseCellSize = new Vector2(4, 4);
+	private (int, int) zoomedWindowOrigin = (0, 0);
+	private int zoomedWindowWidth;
+	private int zoomedWindowHeight;
+
 	private DrawingState _drawingState = DrawingState.None;
 
 	// Elements that should only be placed once per click, not continuously
@@ -31,18 +37,14 @@ public partial class CellularAutomataEngine : Node2D
 	float gameSpeedCounter = 0f;
 	public int tick = 0;
 	private int pendingSingleSteps = 0;
-	private bool showNeedUpdateState = false;
 
 	private readonly HashSet<(int, int)> textureDirtyCells = new();
-	private readonly HashSet<(int, int)> stateDirtyCells = new();
 	private HashSet<(int, int)> activeNeedUpdateCells = new();
 
 	private ColorRect gridRenderer;
 	private ShaderMaterial gridShaderMaterial;
 	private Image gridColorImage;
-	private Image gridStateImage;
 	private ImageTexture gridColorTexture;
-	private ImageTexture gridStateTexture;
 
 
 	// --- Public (exported) element instantiation --- //
@@ -58,8 +60,12 @@ public partial class CellularAutomataEngine : Node2D
 		base._EnterTree();
 		cellWidth = (int)cellSize.X;
 		cellHeight = (int)cellSize.Y;
+		baseCellSize = cellSize;
 		gridWidth = (int)gridSize.X;
 		gridHeight = (int)gridSize.Y;
+
+		zoomedWindowWidth = (int)gridSize.X;
+		zoomedWindowHeight = (int)gridSize.Y;
 
 		Button firstButton = GetNode<Button>("%Sand");
 		buttonGroup = firstButton.ButtonGroup;
@@ -88,9 +94,9 @@ public partial class CellularAutomataEngine : Node2D
 			gameSpeedCounter--;
 		}
 
-		if (textureDirtyCells.Count > 0 || stateDirtyCells.Count > 0)
+		if (textureDirtyCells.Count > 0)
 		{
-			RefreshGridTextures();
+			LazyRefreshGridTextures();
 		}
 	}
 
@@ -115,8 +121,108 @@ public partial class CellularAutomataEngine : Node2D
 				case MouseButton.Right:
 					_drawingState = DrawingState.Erasing;
 					break;
+				case MouseButton.Middle:
+					{
+						Vector2 mousePos = GetViewport().GetMousePosition();
+						Vector2 viewportSize = GetViewportRect().Size;
+						if (viewportSize.X > 0 && viewportSize.Y > 0)
+						{
+							Vector2 relativeMouse = mousePos / viewportSize;
+							int targetCellX = (int)Math.Clamp(relativeMouse.X * zoomedWindowWidth + zoomedWindowOrigin.Item1, 0, gridWidth - 1);
+							int targetCellY = (int)Math.Clamp(relativeMouse.Y * zoomedWindowHeight + zoomedWindowOrigin.Item2, 0, gridHeight - 1);
+							zoomedWindowOrigin = (
+								Math.Clamp(targetCellX - zoomedWindowWidth / 2, 0, Math.Max(0, gridWidth - zoomedWindowWidth)),
+								Math.Clamp(targetCellY - zoomedWindowHeight / 2, 0, Math.Max(0, gridHeight - zoomedWindowHeight))
+							);
+							LazyRefreshGridTextures();
+						}
+					}
+					break;
+				case MouseButton.WheelUp:
+					zoomIn(GetViewport().GetMousePosition());
+					break;
+				case MouseButton.WheelDown:
+					zoomOut(GetViewport().GetMousePosition());
+					break;
 			}
 		}
+	}
+	private void updateZoom(){
+		(int, int) mouseGridPos = GetGridPositionFromMouse();
+
+		Vector2 viewportSize = GetViewportRect().Size;
+		zoomedWindowWidth = Math.Max(1, (int)MathF.Ceiling(viewportSize.X / cellSize.X));
+		zoomedWindowHeight = Math.Max(1, (int)MathF.Ceiling(viewportSize.Y / cellSize.Y));
+
+		int desiredOriginX = mouseGridPos.Item1 - zoomedWindowWidth / 2;
+		int desiredOriginY = mouseGridPos.Item2 - zoomedWindowHeight / 2;
+
+		zoomedWindowOrigin = (
+			Math.Clamp(desiredOriginX, 0, Math.Max(0, gridWidth - zoomedWindowWidth)),
+			Math.Clamp(desiredOriginY, 0, Math.Max(0, gridHeight - zoomedWindowHeight))
+		);
+
+		if (gridShaderMaterial != null)
+		{
+			gridShaderMaterial.SetShaderParameter("grid_size", gridSize);
+			gridShaderMaterial.SetShaderParameter("cell_size", cellSize);
+			gridShaderMaterial.SetShaderParameter("zoomed_window_origin", new Vector2(zoomedWindowOrigin.Item1, zoomedWindowOrigin.Item2));
+			gridShaderMaterial.SetShaderParameter("zoomed_window_size", new Vector2(zoomedWindowWidth, zoomedWindowHeight));
+		}
+
+		if (gridRenderer != null)
+		{
+			gridRenderer.Size = GetViewportRect().Size;
+		}
+
+		GD.Print($"Zoom Factor: {zoomFactor}, Zoomed Window Origin: {zoomedWindowOrigin}, Zoomed Window Size: ({zoomedWindowWidth}, {zoomedWindowHeight})");
+	}
+	private void zoomIn(Vector2? mousePosition = null){
+		Vector2 anchor = mousePosition ?? GetViewport().GetMousePosition();
+		Vector2 viewportSize = GetViewportRect().Size;
+		Vector2 relativeMouse = viewportSize.X > 0 && viewportSize.Y > 0 ? anchor / viewportSize : Vector2.Zero;
+		int mouseCellX = (int)Math.Clamp(relativeMouse.X * zoomedWindowWidth + zoomedWindowOrigin.Item1, 0, gridWidth - 1);
+		int mouseCellY = (int)Math.Clamp(relativeMouse.Y * zoomedWindowHeight + zoomedWindowOrigin.Item2, 0, gridHeight - 1);
+
+		float nextZoomFactor = Math.Clamp(zoomFactor * 1.2f, 1.0f, 10.0f);
+		zoomFactor = nextZoomFactor;
+		cellSize = new Vector2(
+			Math.Clamp(baseCellSize.X * zoomFactor, 1f, 100f),
+			Math.Clamp(baseCellSize.Y * zoomFactor, 1f, 100f)
+		);
+		updateZoom();
+
+		int desiredOriginX = mouseCellX - (int)(relativeMouse.X * zoomedWindowWidth);
+		int desiredOriginY = mouseCellY - (int)(relativeMouse.Y * zoomedWindowHeight);
+		zoomedWindowOrigin = (
+			Math.Clamp(desiredOriginX, 0, Math.Max(0, gridWidth - zoomedWindowWidth)),
+			Math.Clamp(desiredOriginY, 0, Math.Max(0, gridHeight - zoomedWindowHeight))
+		);
+		LazyRefreshGridTextures();
+	}
+
+	private void zoomOut(Vector2? mousePosition = null){
+		Vector2 anchor = mousePosition ?? GetViewport().GetMousePosition();
+		Vector2 viewportSize = GetViewportRect().Size;
+		Vector2 relativeMouse = viewportSize.X > 0 && viewportSize.Y > 0 ? anchor / viewportSize : Vector2.Zero;
+		int mouseCellX = (int)Math.Clamp(relativeMouse.X * zoomedWindowWidth + zoomedWindowOrigin.Item1, 0, gridWidth - 1);
+		int mouseCellY = (int)Math.Clamp(relativeMouse.Y * zoomedWindowHeight + zoomedWindowOrigin.Item2, 0, gridHeight - 1);
+
+		float nextZoomFactor = Math.Clamp(zoomFactor / 1.2f, 1.0f, 10.0f);
+		zoomFactor = nextZoomFactor;
+		cellSize = new Vector2(
+			Math.Clamp(baseCellSize.X * zoomFactor, 1f, 100f),
+			Math.Clamp(baseCellSize.Y * zoomFactor, 1f, 100f)
+		);
+		updateZoom();
+
+		int desiredOriginX = mouseCellX - (int)(relativeMouse.X * zoomedWindowWidth);
+		int desiredOriginY = mouseCellY - (int)(relativeMouse.Y * zoomedWindowHeight);
+		zoomedWindowOrigin = (
+			Math.Clamp(desiredOriginX, 0, Math.Max(0, gridWidth - zoomedWindowWidth)),
+			Math.Clamp(desiredOriginY, 0, Math.Max(0, gridHeight - zoomedWindowHeight))
+		);
+		LazyRefreshGridTextures();
 	}
 
 	//Those inputs are always called
@@ -130,10 +236,15 @@ public partial class CellularAutomataEngine : Node2D
 				return;
 			}
 
-			if (eventKey.Keycode == Key.Shift)
+			if (eventKey.Keycode == Key.KpAdd || eventKey.Keycode == Key.Equal || eventKey.Keycode == Key.Plus)
 			{
-				showNeedUpdateState = !showNeedUpdateState;
-				gridShaderMaterial?.SetShaderParameter("show_need_update_state", showNeedUpdateState);
+				zoomIn();
+				return;
+			}
+
+			if (eventKey.Keycode == Key.KpSubtract || eventKey.Keycode == Key.Minus)
+			{
+				zoomOut();
 				return;
 			}
 		}
@@ -186,7 +297,7 @@ public partial class CellularAutomataEngine : Node2D
 	{
 		if (_drawingState != DrawingState.None)
 		{
-			Vector2 pos = GetViewport().GetMousePosition() / cellSize;
+			Vector2 pos = GetLocalGridMousePosition();
 			int xStart = Math.Clamp((int)pos.X - brushSize / 2, 0, gridWidth);
 			int xStop = Math.Clamp((int)pos.X + brushSize / 2 + brushSize % 2, 0, gridWidth);
 			int yStart = Math.Clamp((int)pos.Y - brushSize / 2, 0, gridWidth);
@@ -201,7 +312,6 @@ public partial class CellularAutomataEngine : Node2D
 						elementArray[x, y] = null;
 						UpdateManager.Instance.UpdateNearbyCellsNextFrame(x, y, gridWidth, gridHeight); // request an update for the newly deleted element
 						MarkCellTextureDirty(x, y);
-						MarkCellStateDirty(x, y);
 						continue;
 					}
 					switch (selectedElement) // ugly but was the only thing on my mind
@@ -239,7 +349,7 @@ public partial class CellularAutomataEngine : Node2D
 
 	private void PlaceSingleElement()
 	{
-		Vector2 pos = GetViewport().GetMousePosition() / cellSize;
+		Vector2 pos = GetLocalGridMousePosition();
 		int x = Math.Clamp((int)pos.X, 0, gridWidth - 1);
 		int y = Math.Clamp((int)pos.Y, 0, gridHeight - 1);
 
@@ -252,7 +362,6 @@ public partial class CellularAutomataEngine : Node2D
 				{
 					createElement(x, y, selectedElement);
 					MarkCellTextureDirty(x, y);
-					MarkCellStateDirty(x, y);
 				}
 				break;
 		}
@@ -278,7 +387,6 @@ public partial class CellularAutomataEngine : Node2D
 
 		UpdateManager.Instance.UpdateNearbyCellsNextFrame(x, y, gridWidth, gridHeight); // request an update for the newly created element
 		MarkCellTextureDirty(x, y);
-		MarkCellStateDirty(x, y);
 	}
 
 	private void createElementWithState(int x, int y, string elementType, string state)
@@ -288,7 +396,6 @@ public partial class CellularAutomataEngine : Node2D
 
 		UpdateManager.Instance.UpdateNearbyCellsNextFrame(x, y, gridWidth, gridHeight); // request an update for the newly created element
 		MarkCellTextureDirty(x, y);
-		MarkCellStateDirty(x, y);
 	}
 
 	private void CellUpdateHandler()
@@ -314,7 +421,6 @@ public partial class CellularAutomataEngine : Node2D
 		FireManager.Instance.ProcessIgnitionRequests(elementArray, gridWidth, gridHeight);
 		MoveManager.Instance.ProcessMoveRequests(oldGrid, elementArray, gridWidth, gridHeight);
 		HashSet<(int, int)> nextNeedUpdateCells = UpdateManager.Instance.getHashSet();
-		QueueStateRefresh(previousNeedUpdateCells, nextNeedUpdateCells);
 		activeNeedUpdateCells = nextNeedUpdateCells;
 	}
 
@@ -327,36 +433,34 @@ public partial class CellularAutomataEngine : Node2D
 		}
 
 		gridColorImage = Image.CreateEmpty(gridWidth, gridHeight, false, Image.Format.Rgba8);
-		gridStateImage = Image.CreateEmpty(gridWidth, gridHeight, false, Image.Format.Rgba8);
 		gridColorTexture = ImageTexture.CreateFromImage(gridColorImage);
-		gridStateTexture = ImageTexture.CreateFromImage(gridStateImage);
 
 		gridShaderMaterial = new ShaderMaterial();
 		gridShaderMaterial.Shader = GD.Load<Shader>("res://CA-engine/grid_renderer.gdshader");
 		gridShaderMaterial.SetShaderParameter("grid_size", gridSize);
 		gridShaderMaterial.SetShaderParameter("cell_size", cellSize);
 		gridShaderMaterial.SetShaderParameter("color_texture", gridColorTexture);
-		gridShaderMaterial.SetShaderParameter("state_texture", gridStateTexture);
-		gridShaderMaterial.SetShaderParameter("show_need_update_state", showNeedUpdateState);
+		gridShaderMaterial.SetShaderParameter("zoomed_window_origin", new Vector2(zoomedWindowOrigin.Item1, zoomedWindowOrigin.Item2));
+		gridShaderMaterial.SetShaderParameter("zoomed_window_size", new Vector2(zoomedWindowWidth, zoomedWindowHeight));
 
 		gridRenderer = new ColorRect
 		{
 			Name = "GridRenderer",
 			Material = gridShaderMaterial,
 			Position = Vector2.Zero,
-			Size = cellSize * gridSize,
+			Size = GetViewportRect().Size,
 			MouseFilter = Control.MouseFilterEnum.Ignore,
 			FocusMode = Control.FocusModeEnum.None,
-			ZIndex = 1
+			ZIndex = 1 // if the shader is not rendering, make sure this is above the UI elements
 		};
 
 		AddChild(gridRenderer);
 		MoveChild(gridRenderer, 0);
 	}
 
-	private void RefreshGridTextures()
+	private void LazyRefreshGridTextures()
 	{
-		if (gridColorImage == null || gridStateImage == null || gridShaderMaterial == null)
+		if (gridColorImage == null || gridShaderMaterial == null)
 		{
 			return;
 		}
@@ -373,33 +477,17 @@ public partial class CellularAutomataEngine : Node2D
 				}
 
 				Color cellColor = cell.color;
-				cellColor.A = 1f;
 				gridColorImage.SetPixel(x, y, cellColor);
 			}
 			gridColorTexture.Update(gridColorImage);
 			textureDirtyCells.Clear();
 		}
 
-		if (stateDirtyCells.Count > 0)
-		{
-			foreach ((int x, int y) in stateDirtyCells)
-			{
-				Element cell = elementArray[x, y];
-				if (cell == null)
-				{
-					gridStateImage.SetPixel(x, y, new Color(0, 0, 0, 0));
-					continue;
-				}
-
-				gridStateImage.SetPixel(x, y, new Color(0, 0, 0, activeNeedUpdateCells.Contains((x, y)) ? 1f : 0.5f));
-			}
-			gridStateTexture.Update(gridStateImage);
-			stateDirtyCells.Clear();
-		}
-		gridShaderMaterial.SetShaderParameter("show_need_update_state", showNeedUpdateState);
 		gridShaderMaterial.SetShaderParameter("grid_size", gridSize);
 		gridShaderMaterial.SetShaderParameter("cell_size", cellSize);
-		gridRenderer.Size = cellSize * gridSize;
+		gridShaderMaterial.SetShaderParameter("zoomed_window_origin", new Vector2(zoomedWindowOrigin.Item1, zoomedWindowOrigin.Item2));
+		gridShaderMaterial.SetShaderParameter("zoomed_window_size", new Vector2(zoomedWindowWidth, zoomedWindowHeight));
+		gridRenderer.Size = GetViewportRect().Size;
 	}
 
 	private void AdvanceSimulationStep()
@@ -418,30 +506,6 @@ public partial class CellularAutomataEngine : Node2D
 		foreach ((int x, int y) in cells)
 		{
 			textureDirtyCells.Add((x, y));
-		}
-	}
-
-	private void MarkCellStateDirty(int x, int y)
-	{
-		stateDirtyCells.Add((x, y));
-	}
-
-	private void QueueStateRefresh(HashSet<(int, int)> previousNeedUpdateCells, HashSet<(int, int)> nextNeedUpdateCells)
-	{
-		foreach ((int x, int y) in previousNeedUpdateCells)
-		{
-			if (!nextNeedUpdateCells.Contains((x, y)))
-			{
-				stateDirtyCells.Add((x, y));
-			}
-		}
-
-		foreach ((int x, int y) in nextNeedUpdateCells)
-		{
-			if (!previousNeedUpdateCells.Contains((x, y)))
-			{
-				stateDirtyCells.Add((x, y));
-			}
 		}
 	}
 
@@ -494,7 +558,6 @@ public partial class CellularAutomataEngine : Node2D
 			elementArray = new Element[gridWidth, gridHeight];
 			SetupGridRenderer();
 			textureDirtyCells.Clear();
-			stateDirtyCells.Clear();
 			activeNeedUpdateCells.Clear();
 			UpdateManager.Instance.ClearUpdateRequests();
 
@@ -522,18 +585,42 @@ public partial class CellularAutomataEngine : Node2D
 				}
 			}
 
-			RefreshGridTextures();
+			LazyRefreshGridTextures();
 		}
 	}
 
-	public string GetCellInfoAtCursor()
+	private Vector2 GetLocalGridMousePosition()
 	{
-		Vector2 mousePos = GetViewport().GetMousePosition();
-		Vector2 gridPos = mousePos / cellSize;
+		Vector2 viewportSize = GetViewportRect().Size;
+		Vector2 viewportMouse = GetViewport().GetMousePosition();
+		Vector2 visibleCellSize = new Vector2(
+			Math.Max(1f, viewportSize.X / Math.Max(1f, zoomedWindowWidth)),
+			Math.Max(1f, viewportSize.Y / Math.Max(1f, zoomedWindowHeight))
+		);
+
+		Vector2 relativeMouse = viewportMouse / viewportSize;
+		return new Vector2(
+			(relativeMouse.X * zoomedWindowWidth) + zoomedWindowOrigin.Item1,
+			(relativeMouse.Y * zoomedWindowHeight) + zoomedWindowOrigin.Item2
+		);
+	}
+
+	private (int, int) GetGridPositionFromMouse()
+	{
+		Vector2 gridPos = GetLocalGridMousePosition();
 
 		int x = (int)gridPos.X;
 		int y = (int)gridPos.Y;
 
+		x = Math.Clamp(x, 0, gridWidth - 1);
+		y = Math.Clamp(y, 0, gridHeight - 1);
+
+		return (x, y);
+	}
+
+	public string GetCellInfoAtCursor()
+	{
+		(int x, int y) = GetGridPositionFromMouse();
 		// Check if cursor is within grid bounds
 		if (x < 0 || x >= gridWidth || y < 0 || y >= gridHeight)
 		{
@@ -607,7 +694,7 @@ public partial class CellularAutomataEngine : Node2D
 		{
 			AdvanceSimulationStep();
 		}
-		RefreshGridTextures();
+		LazyRefreshGridTextures();
 	}
 
 	private enum DrawingState

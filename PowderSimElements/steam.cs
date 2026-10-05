@@ -12,7 +12,7 @@ public class Steam : Element, IGas, ILife
 	public Steam(float wetness)
 	{
 		density = 1;
-		color = new Color(Colors.WhiteSmoke.R, Colors.WhiteSmoke.G, Colors.WhiteSmoke.B, 0.05f);
+		color = new Color(Colors.WhiteSmoke.R, Colors.WhiteSmoke.G, Colors.WhiteSmoke.B, 0.3f);
 		this.wetness = wetness;
 	}
 	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
