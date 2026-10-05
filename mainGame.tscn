@@ -79,92 +79,84 @@ layout_mode = 2
 toggle_mode = true
 button_pressed = true
 button_group = SubResource("ButtonGroup_0xm2m")
-text = "SAND"
+text = "Sable"
 metadata/element = "Sand"
 
 [node name="Soil" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=2053724908]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
-text = "SOIL"
+text = "Terre"
 metadata/element = "Soil"
 
 [node name="Seed" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=1521522973]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
-text = "SEED"
+text = "Graine"
 metadata/element = "Seed"
 
 [node name="Wood" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=2043567667]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
-text = "WOOD"
+text = "Bois"
 metadata/element = "Wood"
 
 [node name="Fire" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=240481742]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
-text = "FIRE"
+text = "Feux"
 metadata/element = "Fire"
 
 [node name="Nutrient" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=1444031877]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
-text = "NUTRIENT"
+text = "Nutriment"
 metadata/element = "Nutrient"
 
 [node name="Water" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=963697563]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
-text = "WATER
-"
+text = "Eau"
 metadata/element = "Water"
 
 [node name="Oil" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=1496632579]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
-text = "OIL"
+text = "Huile"
 metadata/element = "Oil"
 
 [node name="Steam" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=740720925]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
-text = "STEAM"
+text = "Vapeur"
 metadata/element = "Steam"
-
-[node name="Spider" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=1026836380]
-layout_mode = 2
-toggle_mode = true
-button_group = SubResource("ButtonGroup_0xm2m")
-text = "SPIDER"
-metadata/element = "Spider"
 
 [node name="Snail" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=748418157]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
-text = "SNAIL"
+text = "Limace"
 metadata/element = "Snail"
 
 [node name="Fly" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=1025795931]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
-text = "FLY"
+text = "Mouche"
 metadata/element = "Fly"
 
 [node name="Worm" type="Button" parent="Control/VBoxContainer/HBoxContainer/ElementContainer" unique_id=453543730]
 layout_mode = 2
 toggle_mode = true
 button_group = SubResource("ButtonGroup_0xm2m")
-text = "WORM"
+text = "Ver"
 metadata/element = "Worm"
 
 [node name="Sliders" type="VBoxContainer" parent="Control/VBoxContainer/HBoxContainer" unique_id=1746935899]
@@ -178,7 +170,7 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 1
-text = "Brush size : 1"
+text = "Taille de la brosse : 1"
 
 [node name="BrushSize" type="HSlider" parent="Control/VBoxContainer/HBoxContainer/Sliders" unique_id=547322332]
 unique_name_in_owner = true
@@ -194,13 +186,13 @@ tick_count = 11
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
-text = "Game Speed : 1.0"
+text = "Vitesse du jeu : 1.0"
 
 [node name="GameSpeed" type="HSlider" parent="Control/VBoxContainer/HBoxContainer/Sliders" unique_id=1644942546]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(100, 0)
 layout_mode = 2
-max_value = 2.0
+max_value = 10.0
 step = 0.2
 value = 1.0
 tick_count = 10

@@ -24,8 +24,8 @@ func save_file():
 
 
 func _on_brush_size_value_changed(value: float) -> void:
-	%BrushSizeLabel.text = "Brush Size : " + str(%BrushSize.value)
+	%BrushSizeLabel.text = "Taille de la brosse : " + str(%BrushSize.value)
 
 
 func _on_game_speed_value_changed(value: float) -> void:
-	%GameSpeedLabel.text = "Game Speed : " + str(%GameSpeed.value)
+	%GameSpeedLabel.text = "Vitesse du jeu : " + str(%GameSpeed.value)
