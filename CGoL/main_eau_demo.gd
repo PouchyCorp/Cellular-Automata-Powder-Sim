@@ -106,6 +106,23 @@ func _process(delta: float) -> void:
 			grid[int(mouse_pos.x)][int(mouse_pos.y)] = false
 			queue_redraw()
 
+	if Input.is_action_just_pressed("ToggleAutoProcess"):
+		set_auto_process()
+	
+	if Input.is_action_just_pressed("ClearGrid"):
+		initiate_grid()
+		queue_redraw()
+
+	if Input.is_action_just_pressed("RandomizeGrid"):
+		for x in cell_amount.x:
+			for y in cell_amount.y:
+				grid[x][y] = randf() > 0.5
+		queue_redraw()
+
+	if Input.is_action_just_pressed("UpdateGrid"):
+		update_grid()
+
+
 func update_grid() -> void:
 	var old_grid = grid.duplicate_deep(2)
 	
@@ -218,7 +235,7 @@ func update_grid() -> void:
 	queue_redraw()
 
 func set_auto_process():
-	auto_process = true
+	auto_process = !auto_process
 
 func set_no_auto_process():
 	auto_process = false

@@ -1,25 +1,21 @@
-[gd_scene load_steps=8 format=3 uid="uid://c7kbkdrjlnhqv"]
+[gd_scene format=3 uid="uid://c7kbkdrjlnhqv"]
 
-[ext_resource type="FontFile" uid="uid://g8k63a0bt0t2" path="res://assets/JetBrains_Mono/static/JetBrainsMono-Bold.ttf" id="1_r3ngw"]
+[ext_resource type="Texture2D" uid="uid://bfc58t7x8swis" path="res://assets/transition_grid_horizontal.png" id="1_4a0fn"]
 [ext_resource type="FontFile" uid="uid://ca2vruqos2mvv" path="res://assets/JetBrains_Mono/static/JetBrainsMono-Regular.ttf" id="2_alms2"]
 [ext_resource type="PackedScene" uid="uid://ce8kb7bg7yma0" path="res://CGoL/main_CGoL.tscn" id="3_r3ngw"]
+[ext_resource type="Texture2D" uid="uid://6y10n04oft5p" path="res://assets/cross.png" id="4_alms2"]
 
-[sub_resource type="LabelSettings" id="LabelSettings_jeugd"]
-font = ExtResource("1_r3ngw")
-font_size = 50
-font_color = Color(1, 1, 1, 0.5882353)
+[sub_resource type="LabelSettings" id="LabelSettings_xm45u"]
+font_size = 38
 
-[sub_resource type="StyleBoxLine" id="StyleBoxLine_7uiwc"]
-color = Color(1, 1, 1, 0.39215687)
-
-[sub_resource type="LabelSettings" id="LabelSettings_n18vl"]
+[sub_resource type="LabelSettings" id="LabelSettings_r3ngw"]
 font = ExtResource("2_alms2")
-font_size = 30
+font_size = 27
 font_color = Color(1, 1, 1, 0.78431374)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_r3ngw"]
 
-[node name="Slide 2 - CGoL" type="Control"]
+[node name="Slide 2 - CGoL" type="Control" unique_id=670089635]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -27,7 +23,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1654947011]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -36,11 +32,13 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.078431375, 0.078431375, 0.13725491, 1)
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1194581813]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = -18.0
+offset_bottom = 18.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 20
@@ -48,62 +46,227 @@ theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+[node name="HBox" type="HBoxContainer" parent="MarginContainer" unique_id=1438948344]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
 
-[node name="Title" type="Label" parent="MarginContainer/VBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/HBox" unique_id=1643676996]
 layout_mode = 2
-text = "Automates Cellulaire"
-label_settings = SubResource("LabelSettings_jeugd")
+
+[node name="Title" type="Label" parent="MarginContainer/HBox/VBoxContainer" unique_id=747334318]
+layout_mode = 2
+text = "Jeux de la vie de Conway"
+label_settings = SubResource("LabelSettings_xm45u")
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+[node name="Title2" type="Label" parent="MarginContainer/HBox/VBoxContainer" unique_id=538251723]
 layout_mode = 2
-theme_override_constants/separation = 30
-theme_override_styles/separator = SubResource("StyleBoxLine_7uiwc")
-
-[node name="Title2" type="Label" parent="MarginContainer/VBoxContainer"]
-layout_mode = 2
-text = "Exemple : Connaway's Game of Life"
-label_settings = SubResource("LabelSettings_n18vl")
+offset_transform_enabled = true
+offset_transform_scale = Vector2(0.925, 0.925)
+text = "Isolation (<= 1 voisin)"
+label_settings = SubResource("LabelSettings_r3ngw")
 horizontal_alignment = 1
 
-[node name="HSeparator2" type="HSeparator" parent="MarginContainer/VBoxContainer"]
-layout_mode = 2
-theme_override_constants/separation = 25
-theme_override_styles/separator = SubResource("StyleBoxEmpty_r3ngw")
-
-[node name="MainCGoL" parent="MarginContainer/VBoxContainer" instance=ExtResource("3_r3ngw")]
+[node name="TextureRect" type="TextureRect" parent="MarginContainer/HBox/VBoxContainer" unique_id=1003134848]
 modulate = Color(1, 1, 1, 0.78431374)
-custom_minimum_size = Vector2(400, 400)
+texture_filter = 1
+custom_minimum_size = Vector2(300, 150)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-cell_size = Vector2(40, 40)
+texture = ExtResource("1_4a0fn")
 
-[node name="HSeparator3" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect" unique_id=460022251]
+layout_mode = 0
+offset_left = 45.0
+offset_top = 50.0
+offset_right = 88.0
+offset_bottom = 99.0
+
+[node name="Title3" type="Label" parent="MarginContainer/HBox/VBoxContainer" unique_id=1097378876]
+layout_mode = 2
+offset_transform_enabled = true
+offset_transform_scale = Vector2(0.925, 0.925)
+text = "Surpopulation (>= 4 voisins)"
+label_settings = SubResource("LabelSettings_r3ngw")
+horizontal_alignment = 1
+
+[node name="TextureRect2" type="TextureRect" parent="MarginContainer/HBox/VBoxContainer" unique_id=138484878]
+modulate = Color(1, 1, 1, 0.78431374)
+texture_filter = 1
+custom_minimum_size = Vector2(300, 150)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("1_4a0fn")
+
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect2" unique_id=2021587392]
+layout_mode = 0
+offset_left = 45.0
+offset_top = 50.0
+offset_right = 88.0
+offset_bottom = 99.0
+
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect2/ColorRect" unique_id=301981549]
+layout_mode = 0
+offset_top = 49.0
+offset_right = 43.0
+offset_bottom = 98.0
+
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect2/ColorRect/ColorRect" unique_id=342813679]
+layout_mode = 0
+offset_left = 44.0
+offset_top = -49.0
+offset_right = 87.0
+
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect2/ColorRect/ColorRect/ColorRect" unique_id=1228702616]
+layout_mode = 0
+offset_left = -44.0
+offset_top = -49.0
+offset_right = -1.0
+
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect2/ColorRect/ColorRect/ColorRect/ColorRect" unique_id=1251674359]
+layout_mode = 0
+offset_left = -43.0
+offset_top = 50.0
+offset_bottom = 99.0
+
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect2/ColorRect/ColorRect/ColorRect/ColorRect/ColorRect" unique_id=2134491889]
+layout_mode = 0
+offset_left = 210.0
+offset_top = 49.0
+offset_right = 253.0
+offset_bottom = 98.0
+
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect2/ColorRect/ColorRect/ColorRect/ColorRect/ColorRect/ColorRect" unique_id=1723556647]
+layout_mode = 0
+offset_left = 44.0
+offset_top = -50.0
+offset_right = 87.0
+offset_bottom = -1.0
+
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect2/ColorRect/ColorRect/ColorRect/ColorRect/ColorRect/ColorRect/ColorRect" unique_id=1775014716]
+layout_mode = 0
+offset_left = -89.0
+offset_top = 1.0
+offset_right = -46.0
+offset_bottom = 50.0
+
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect2/ColorRect/ColorRect/ColorRect/ColorRect/ColorRect/ColorRect/ColorRect/ColorRect" unique_id=727958517]
+layout_mode = 0
+offset_left = 44.0
+offset_top = -50.0
+offset_right = 87.0
+offset_bottom = -1.0
+
+[node name="Title4" type="Label" parent="MarginContainer/HBox/VBoxContainer" unique_id=1465134968]
+layout_mode = 2
+offset_transform_enabled = true
+offset_transform_scale = Vector2(0.925, 0.925)
+text = "Reproduction (3 voisins)"
+label_settings = SubResource("LabelSettings_r3ngw")
+horizontal_alignment = 1
+
+[node name="TextureRect3" type="TextureRect" parent="MarginContainer/HBox/VBoxContainer" unique_id=270350631]
+modulate = Color(1, 1, 1, 0.78431374)
+texture_filter = 1
+custom_minimum_size = Vector2(300, 150)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+texture = ExtResource("1_4a0fn")
+
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect3" unique_id=1227354366]
+layout_mode = 0
+offset_left = 2.0
+offset_top = 50.0
+offset_right = 45.0
+offset_bottom = 99.0
+
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect3/ColorRect" unique_id=1361175012]
+layout_mode = 0
+offset_left = 43.0
+offset_top = -49.0
+offset_right = 86.0
+
+[node name="ColorRect2" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect3" unique_id=2019005462]
+layout_mode = 0
+offset_left = 212.0
+offset_top = 3.0
+offset_right = 255.0
+offset_bottom = 52.0
+
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect3/ColorRect2" unique_id=699558653]
+layout_mode = 0
+offset_left = -1.0
+offset_top = 48.0
+offset_right = 42.0
+offset_bottom = 97.0
+
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect3/ColorRect2/ColorRect" unique_id=1361665224]
+layout_mode = 0
+offset_left = -43.0
+offset_top = -48.0
+offset_bottom = 1.0
+
+[node name="ColorRect3" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect3" unique_id=1159156753]
+layout_mode = 0
+offset_left = 2.0
+offset_top = 2.0
+offset_right = 45.0
+offset_bottom = 51.0
+
+[node name="ColorRect4" type="ColorRect" parent="MarginContainer/HBox/VBoxContainer/TextureRect3" unique_id=1796392591]
+layout_mode = 0
+offset_left = 168.0
+offset_top = 50.0
+offset_right = 211.0
+offset_bottom = 99.0
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="MarginContainer/HBox" unique_id=181407427]
+layout_mode = 2
+
+[node name="MainCGoL" parent="MarginContainer/HBox/VBoxContainer2" unique_id=1897088467 instance=ExtResource("3_r3ngw")]
+modulate = Color(1, 1, 1, 0.78431374)
+custom_minimum_size = Vector2(600, 600)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+cell_size = Vector2(30, 30)
+
+[node name="HSeparator3" type="HSeparator" parent="MarginContainer/HBox/VBoxContainer2" unique_id=1923622886]
 layout_mode = 2
 theme_override_constants/separation = 5
 theme_override_styles/separator = SubResource("StyleBoxEmpty_r3ngw")
 
-[node name="Buttons" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+[node name="Buttons" type="HBoxContainer" parent="MarginContainer/HBox/VBoxContainer2" unique_id=267481915]
 layout_mode = 2
 size_flags_horizontal = 4
 
-[node name="Next" type="Button" parent="MarginContainer/VBoxContainer/Buttons"]
+[node name="Next" type="Button" parent="MarginContainer/HBox/VBoxContainer2/Buttons" unique_id=1379594334]
 layout_mode = 2
 text = "Next"
 
-[node name="Play" type="Button" parent="MarginContainer/VBoxContainer/Buttons"]
+[node name="Play" type="Button" parent="MarginContainer/HBox/VBoxContainer2/Buttons" unique_id=1174501113]
 layout_mode = 2
+toggle_mode = true
 text = "Play"
 
-[node name="Pause" type="Button" parent="MarginContainer/VBoxContainer/Buttons"]
+[node name="Pause" type="Button" parent="MarginContainer/HBox/VBoxContainer2/Buttons" unique_id=954762153]
 layout_mode = 2
 text = "Pause"
 
-[connection signal="pressed" from="MarginContainer/VBoxContainer/Buttons/Next" to="MarginContainer/VBoxContainer/MainCGoL" method="update_grid"]
-[connection signal="pressed" from="MarginContainer/VBoxContainer/Buttons/Play" to="MarginContainer/VBoxContainer/MainCGoL" method="set_auto_process"]
-[connection signal="pressed" from="MarginContainer/VBoxContainer/Buttons/Pause" to="MarginContainer/VBoxContainer/MainCGoL" method="set_no_auto_process"]
+[node name="Cross" type="Sprite2D" parent="." unique_id=1692236237]
+position = Vector2(358.00003, 175)
+scale = Vector2(0.23138285, 0.30952376)
+texture = ExtResource("4_alms2")
+
+[node name="Cross2" type="Sprite2D" parent="." unique_id=1646956983]
+position = Vector2(357, 370)
+scale = Vector2(0.23138285, 0.30952376)
+texture = ExtResource("4_alms2")
+
+[connection signal="pressed" from="MarginContainer/HBox/VBoxContainer2/Buttons/Next" to="MarginContainer/HBox/VBoxContainer2/MainCGoL" method="update_grid"]
+[connection signal="pressed" from="MarginContainer/HBox/VBoxContainer2/Buttons/Play" to="MarginContainer/HBox/VBoxContainer2/MainCGoL" method="set_auto_process"]
+[connection signal="pressed" from="MarginContainer/HBox/VBoxContainer2/Buttons/Pause" to="MarginContainer/HBox/VBoxContainer2/MainCGoL" method="set_no_auto_process"]

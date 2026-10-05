@@ -18,7 +18,6 @@ var auto_process:bool = false
 var last_tick = 0
 
 func _ready() -> void:
-	print(size)
 	cell_amount = size / cell_size
 	cell_amount.x = int(cell_amount.x)
 	cell_amount.y = int(cell_amount.y)
@@ -52,35 +51,50 @@ func _process(delta: float) -> void:
 		if mouse_pos.x < cell_amount.x && mouse_pos.y < cell_amount.y:
 			grid[int(mouse_pos.x)][int(mouse_pos.y)] = false
 			queue_redraw()
+	
+	if Input.is_action_just_pressed("ToggleAutoProcess"):
+		set_auto_process()
+	
+	if Input.is_action_just_pressed("ClearGrid"):
+		initiate_grid()
+		queue_redraw()
+
+	if Input.is_action_just_pressed("RandomizeGrid"):
+		for x in cell_amount.x:
+			for y in cell_amount.y:
+				grid[x][y] = randf() > 0.5
+		queue_redraw()
+
+	if Input.is_action_just_pressed("UpdateGrid"):
+		update_grid()
 
 func update_grid() -> void:
 	var old_grid = grid.duplicate_deep(2)
+	var new_grid = old_grid.duplicate_deep(2)
 	
 	for x in cell_amount.x:
 		for y in cell_amount.y:
-			var alive_neighbours = get_alive_neighbour_count(Vector2(x,y))
+			var alive_neighbours = get_alive_neighbour_count(Vector2(x,y), old_grid)
 			# Rules
 			if old_grid[x][y]: # if was alive
-				if alive_neighbours < 2 || alive_neighbours > 3: grid[x][y] = false
+				if (alive_neighbours < 2 || alive_neighbours > 3): new_grid[x][y] = false # underpopulation or overpopulation
 			else:
-				if alive_neighbours == 3: grid[x][y] = true
-	
+				if alive_neighbours == 3: new_grid[x][y] = true # reproduction
+	grid = new_grid
+	 
 	queue_redraw()
 
-func get_alive_neighbour_count(pos:Vector2) -> int:
+func get_alive_neighbour_count(pos:Vector2, source_grid:Array[Array]) -> int:
 	var result:int = 0
 	
 	for neighbour in neighbours:
 		var npos = neighbour + pos
 		if 0 <= npos.x && npos.x < cell_amount.x && \
 			0 <= npos.y && npos.y < cell_amount.y && \
-			grid[npos.x][npos.y]:
+			source_grid[npos.x][npos.y]:
 				result += 1
 	
 	return result
 
 func set_auto_process():
-	auto_process = true
-
-func set_no_auto_process():
-	auto_process = false
+	auto_process = !auto_process

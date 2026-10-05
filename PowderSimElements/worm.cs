@@ -192,7 +192,7 @@ public class Worm : Element, ILife, ISolid
 					int ny = y + dy;
 					if (nx >= 0 && nx < maxX && ny >= 0 && ny < maxY)
 					{
-						if (oldGrid[nx, ny] is Soil or Biomass)
+						if (oldGrid[nx, ny] is Soil or Biomass or WormBody) // there is maybe a risk of floating worm eating itelf infinitely (the dreaded ouroboros)
 						{
 							// Found soil or biomass nearby, stay in burrowing state
 							return;

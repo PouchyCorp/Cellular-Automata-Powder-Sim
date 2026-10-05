@@ -52,9 +52,12 @@ public class MoveRequest
 			}
 			return true;
 		}
-		if (element is Worm && target is Soil)
+		if (element is Worm)
 		{
-			return true;
+			if (target is WormBody or Soil or Biomass)
+			{
+				return true;
+			}
 		}
 		return false;
 	}
