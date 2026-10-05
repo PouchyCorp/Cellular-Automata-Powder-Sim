@@ -211,10 +211,10 @@ public class Worm : Element, ILife, ISolid
 		// Simple direction change with upward bias
 		float rand = Random.Shared.NextSingle();
 
-		// 40% chance to go up, 20% each for other directions
-		if (rand < 0.4f)
+		// 30% chance to go up, 20% each for other directions
+		if (rand < 0.3f)
 			currentDirection = (0, -1); // up
-		else if (rand < 0.6f)
+		else if (rand < 0.55f)
 			currentDirection = (-1, 0); // left
 		else if (rand < 0.8f)
 			currentDirection = (1, 0); // right
