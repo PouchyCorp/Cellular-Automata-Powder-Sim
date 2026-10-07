@@ -56,7 +56,7 @@ layout_mode = 2
 
 [node name="Title" type="Label" parent="MarginContainer/HBox/VBoxContainer" unique_id=747334318]
 layout_mode = 2
-text = "Jeux de la vie de Conway"
+text = "Jeu de la vie de Conway"
 label_settings = SubResource("LabelSettings_xm45u")
 horizontal_alignment = 1
 
