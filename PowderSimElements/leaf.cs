@@ -22,7 +22,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 	public int burningLifetime { get; set; }
 
 	private int lastGrowthTick = 0;
-	private int growthInterval = 3 * 60; // ticks
+	private int growthInterval; // ticks
 	public LeafState leafState = LeafState.Growing;
 	private List<(int, int)> childLeafs = [];
 	private bool sleeping = false;
@@ -30,7 +30,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 	{
 		Growing = 0,
 		Flowering = 1,
-		ProducedSeed = 2,
+		ProducedFruit = 2,
 		Dying = 3
 		
 	}
@@ -46,6 +46,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 		this.leafCount = leafCount;
 		density = 15;
 		color = Colors.Green;
+		growthInterval = Random.Shared.Next(30, 60); // random growth interval between 30 and 60 ticks
 		modulateColor(); // idk why it there
 	}
 
@@ -57,10 +58,14 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 
 	}
 
-	private bool isValidLeafGrowthPosition(Element[,] oldGrid, int x, int y, int maxX, int maxY)
+	private bool isValidLeafGrowthPosition(Element[,] oldGrid, int callingLeafX, int callingLeafY, int x, int y, int maxX, int maxY)
 	{
 		if (x < 0 || x >= maxX || y < 0 || y >= maxY) return false; // out of bounds
 		if (oldGrid[x, y] != null) return false; // must be empty
+
+		int vectorX = x - callingLeafX; // these are to ignore the row on the opposit of the parent leaf (the stick of the parentleaf)
+		int vectorY = y - callingLeafY;
+		
 		int adjacentLeaves = 0;
 
 		for (int nx = x - 1; nx <= x + 1; nx++)
@@ -68,17 +73,19 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 			for (int ny = y - 1; ny <= y + 1; ny++)
 			{
 				if ((nx, ny) == (x, y)) continue;
+				if ((x - nx) == vectorX || (y - ny) == vectorY) continue; // ignore the row on the opposite side of the parent leaf
+
 				if (nx >= 0 && nx < maxX && ny >= 0 && ny < maxY)
 				{
-
-					if (oldGrid[nx, ny] is Leaf)
+					
+					if (oldGrid[nx, ny] is Leaf or Root)
 					{
 						adjacentLeaves++;
 					}
 				}
 			}
 		}
-		adjacentLeaves = Math.Max(adjacentLeaves - 1, 0); // subtract the parent leaf from the count
+
 		if (adjacentLeaves > 0) return false; // prevent too dense leaf growth
 		return true;
 	}
@@ -96,7 +103,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 		{
 			int nx = x + dx;
 			int ny = y + dy;
-			if (isValidLeafGrowthPosition(oldGrid, nx, ny, maxX, maxY))
+			if (isValidLeafGrowthPosition(oldGrid, x, y, nx, ny, maxX, maxY))
 			{
 				possibleGrowthPositions.Add((nx, ny));
 			}
@@ -108,14 +115,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 			var chosenPos = possibleGrowthPositions[Random.Shared.Next(possibleGrowthPositions.Count)];
 			if (chosenPos == (-1, -1)) return false; // No valid position found
 
-			int decrement = 2;
-			if (chosenPos == (x, y - 1)) // If above, decrement less
-			{
-				decrement = 1;
-			} else if (chosenPos == (x, y+1)) // If below, decrement more
-			{
-				decrement = 2;
-			}
+			int decrement = Random.Shared.Next(0, Math.Min(leafCount, 3)); // decrement between 0 and 3 (or leafCount if it's less than 3)
 
 			if (GridManager.Instance.RequestSpawn(chosenPos.Item1, chosenPos.Item2, new Leaf((x, y), leafCount - decrement), maxX, maxY))
 			{
@@ -167,18 +167,6 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 			NutrientManager.Instance.AddGiveWetnessRequest(new GiveWetnessRequest(x, y, childX, childY, transferAmountPerChildWetness), maxX, maxY); // transfer half the amount of wetness compared to nutrient
 		}
 	}
-
-	private void passSignalToFruit(Element[,] oldGrid, int x, int y, int maxY)
-	{
-		if (y + 1 >= maxY) return; // out of bounds
-		if (oldGrid[x, y + 1] is Fruit fruit)
-		{
-			if (leafState is LeafState.Dying or LeafState.ProducedSeed)
-			{
-				fruit.sterile = true; // if the leaf is dying or another fruit was already pollinated, the fruit will not grow a seed
-			}
-		}
-	}
 	override public void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the snail every frame
@@ -195,7 +183,8 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 				{
 					nutrient -= Fruit.BASE_FRUIT_NUTRIENT_COST;
 					wetness -= Fruit.BASE_FRUIT_WETNESS_COST;
-					
+					leafState = LeafState.ProducedFruit; // change the state to ProducedFruit
+					transferNutrientsToChildLeafs(oldGrid, x, y, maxX, maxY);
 					return;
 				}
 			}
@@ -222,7 +211,6 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 		}
 
 		transferNutrientsToChildLeafs(oldGrid, x, y, maxX, maxY);
-		passSignalToFruit(oldGrid, x, y, maxY);
 
 		FlammableBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 		updateColor(T, x, y);

@@ -5,7 +5,7 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 {
 	public const float BASE_FRUIT_NUTRIENT_COST = 4.0f;
 	public const float BASE_FRUIT_WETNESS_COST = 1.0f;
-	
+
 	public float wetness { get; set; } = BASE_FRUIT_WETNESS_COST;
 	public float minWetness => BASE_FRUIT_WETNESS_COST;
 	public float maxWetness => BASE_FRUIT_WETNESS_COST;
@@ -105,7 +105,7 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 
 		if (pollinated && y + 1 < maxY && oldGrid[x, y + 1] is Leaf leaf) // if pollinated and on a leaf, change the leaf's state (it will propagate to the entire plant)
 		{
-			leaf.leafState = Leaf.LeafState.ProducedSeed;
+			leaf.leafState = Leaf.LeafState.ProducedFruit;
 		}
 
 		FlammableBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
@@ -114,7 +114,7 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 
 	public override string inspectInfo()
 	{
-		return base.inspectInfo() + $"Pollinated: {pollinated}\nLifetime on soil: {lifetimeOnSoil / 60} seconds\n";
+		return base.inspectInfo() + $"Pollinated: {pollinated}\n Sterile: {sterile}\n Lifetime on soil: {lifetimeOnSoil / 60} seconds\n";
 	}
 
 	override public string getState()

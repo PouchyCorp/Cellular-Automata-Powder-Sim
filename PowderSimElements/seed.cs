@@ -91,7 +91,9 @@ public class Seed : Element, ILife, ISolid
 		if (nutrient < 1) return;
 		if (y - 1 < 0) return;
 
-		if (GridManager.Instance.RequestSpawn(x, y - 1, new Leaf((-1, -1), 10), maxX, maxY)) // there is a redundant check in the RequestSpawn method, but it's fine to have it here as well
+		int leafCount = Random.Shared.Next(5, 15); // random leaf count between 5 and 15
+
+		if (GridManager.Instance.RequestSpawn(x, y - 1, new Leaf((-1, -1), leafCount), maxX, maxY)) // there is a redundant check in the RequestSpawn method, but it's fine to have it here as well
 		{
 			startingLeaf = (x, y - 1);
 			nutrient -= Leaf.BASE_LEAF_NUTRIENT_COST;
@@ -192,7 +194,7 @@ public class Seed : Element, ILife, ISolid
 							firstLeaf.leafState = Leaf.LeafState.Flowering;
 						}
 
-						if (firstLeaf.leafState == Leaf.LeafState.ProducedSeed)
+						if (firstLeaf.leafState == Leaf.LeafState.ProducedFruit)
 						{
 							// 1% chance to enter the dying state each tick if a seed has been produced
 							if (Random.Shared.NextSingle() < 0.01f)
