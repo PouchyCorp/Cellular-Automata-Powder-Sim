@@ -3,12 +3,10 @@ using System.Collections.Generic;
 using Godot;
 public class Root : Element, ILife, ISolid
 {
-	public float nutrient { get; set; } = 1f;
+	public float nutrient { get; set; } = 0f;
 	public float maxNutrient => 10f;
-	public float minNutrient => 1f;
-	public float wetness { get; set; } = 0.2f;
+	public float wetness { get; set; } = 0f;
 	public float maxWetness => 1f;
-	public float minWetness => 0.2f;
 	
 	private (int, int) parent;
 	private bool firstRoot;
@@ -28,7 +26,7 @@ public class Root : Element, ILife, ISolid
 	{
 		this.parent = parent;
 		this.distance = distance;
-		this.firstRoot = isFirst; // Premi\ufffdre racine (connect\ufffde \ufffd la graine)
+		this.firstRoot = isFirst; // Premi�re racine (connect�e � la graine)
 		density = 21;
 		color = Colors.SandyBrown;
 		modulateColor();
@@ -82,7 +80,10 @@ public class Root : Element, ILife, ISolid
 		{
 			if (seed.nutrient >= seed.maxNutrient && seed.wetness >= 1f) return; // parent seed full
 
-			float transferableNutrients = seed.maxNutrient - seed.nutrient; // don't overfill seed
+			float transferableNutrients = Math.Max(nutrient - 1, 0); // keep at least 1 nutrient in root
+			transferableNutrients = Math.Min(transferableNutrients, seed.maxNutrient - seed.nutrient); // don't overfill seed
+			float transferableWetness = Math.Max(wetness - 0.2f, 0); // keep at least 0.2 wetness in root
+			transferableWetness = Math.Min(transferableWetness, 1f - seed.wetness); // don't overfill seed
 			/* seed.nutrient += transferableNutrients;
 			nutrient -= transferableNutrients;
 			seed.wetness += transferableWetness;
@@ -102,7 +103,10 @@ public class Root : Element, ILife, ISolid
 		{
 			if (root.nutrient >= root.maxNutrient && root.wetness >= 1f) return; // parent root full
 
-			float transferableNutrients = root.maxNutrient - root.nutrient; // don't overfill root
+			float transferableNutrients = Math.Max(nutrient - 1, 0); // keep at least 1 nutrient in root
+			transferableNutrients = Math.Min(transferableNutrients, root.maxNutrient - root.nutrient); // don't overfill root
+			float transferableWetness = Math.Max(wetness - 0.2f, 0); // keep at least 0.2 wetness in root
+			transferableWetness = Math.Min(transferableWetness, 1f - root.wetness); // don't overfill root
 			/* root.nutrient += transferableNutrients;
 			nutrient -= transferableNutrients;
 			root.wetness += transferableWetness;
@@ -179,8 +183,8 @@ public class Root : Element, ILife, ISolid
 	}
 
 	private bool shouldDie(Seed parentSeed, Root parentRoot) {
-		// return false;
-		return (firstRoot && (parentSeed == null || parentSeed.plantState == Seed.PlantState.Dying)) || (!firstRoot && (parentRoot == null || parentRoot.rootState == Root.RootState.Dying));
+		return false;
+		// return (firstRoot && (parentSeed == null || parentSeed.plantState == Seed.PlantState.Dying)) || (!firstRoot && (parentRoot == null || parentRoot.rootState == Root.RootState.Dying));
 	}
 	override public void update(Element[,] currentGrid, int x, int y, int maxX, int maxY, int T)
 	{
