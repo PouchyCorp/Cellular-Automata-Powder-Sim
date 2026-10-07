@@ -3,22 +3,25 @@ using System;
 
 public class Fruit : Element, ILife, ISolid, IFlammable
 {
-	public float wetness { get; set; }
-	public float maxWetness => 1.0f;
-	public float nutrient { get; set; }
-	public float maxNutrient => 3.0f;
+	public const float BASE_FRUIT_NUTRIENT_COST = 4.0f;
+	public const float BASE_FRUIT_WETNESS_COST = 1.0f;
+	public float wetness { get; set; } = BASE_FRUIT_WETNESS_COST;
+	public float maxWetness => BASE_FRUIT_WETNESS_COST;
+	public float nutrient { get; set; } = BASE_FRUIT_NUTRIENT_COST;
+	public float maxNutrient => BASE_FRUIT_NUTRIENT_COST * 2;
 
 	public bool burning { get; set; } = false;
 	public int burningLifetime { get; set; }
 	public int flammability { get; set; } = 2;
 	public bool pollinated = false;
 	private int lifetimeOnSoil = 300 * 60; // ticks
-	public Fruit(float nutrient, float wetness)
+
+	public bool sterile = false; // if true, the fruit will not grow a seed when pollinated and on soil
+	public Fruit()
 	{
-		this.nutrient = nutrient;
-		this.wetness = wetness;
 		density = 40;
-		color = Colors.Red;
+		color = Colors.LightPink;
+		modulateColor();
 	}
 
     public override void updateColor(int T, int x, int y)
@@ -29,6 +32,16 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 		}
         base.updateColor(T, x, y);
     }
+
+	public bool pollinate()
+	{
+		if (!pollinated && !sterile)
+		{
+			pollinated = true;
+			return true;
+		}
+		return false;
+	}
 
 	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
@@ -75,7 +88,7 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 		}
 
 		// if polliated and on soil, try to grow a seed
-		if (pollinated && oldGrid[x, y + 1] is Soil)
+		if (pollinated && !sterile && oldGrid[x, y + 1] is Soil)
 		{
 			// 2% chance each tick to grow a seed
 			if (Random.Shared.NextSingle() < 0.02f)
@@ -84,6 +97,11 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 				GridManager.Instance.RequestDeletion(x, y, maxX, maxY, new Seed(wetness, nutrient));
 				return;
 			}
+		}
+
+		if (pollinated && y + 1 < maxY && oldGrid[x, y + 1] is Leaf leaf) // if pollinated and on a leaf, change the leaf's state (it will propagate to the entire plant)
+		{
+			leaf.leafState = Leaf.LeafState.Fertilized;
 		}
 
 		FlammableBehavior.update(this, oldGrid, x, y, maxX, maxY, T);

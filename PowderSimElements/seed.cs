@@ -29,6 +29,9 @@ public class Seed : Element, ILife, ISolid
 	public int fruitCount = 0;
 
 	private (int, int) startingLeaf = (-1, -1);
+
+	private float nutrientTransfered = 0f;
+	private float maxNutrientTransfer;
 	public PlantState plantState = PlantState.Falling;
 
 	public enum PlantState
@@ -46,6 +49,7 @@ public class Seed : Element, ILife, ISolid
 		maxLeafCount = Random.Shared.Next(30, 50);
 		maxRootCount = Random.Shared.Next(10, 20);
 		maxFruitCount = Random.Shared.Next(1, 2);
+		maxNutrientTransfer = maxLeafCount * Leaf.BASE_LEAF_NUTRIENT_COST;
 		density = 15;
 		color = Colors.Burlywood;
 		setPlantColor();
@@ -103,7 +107,7 @@ public class Seed : Element, ILife, ISolid
 		// Try to grow leaves upwards if there's space
 		if (oldGrid[x, y - 1] == null)
 		{
-			GridManager.Instance.RequestSpawn(x, y - 1, new Leaf((x, y)), maxX, maxY); // there is a redundant check in the RequestSpawn method, but it's fine to have it here as well
+			GridManager.Instance.RequestSpawn(x, y - 1, new Leaf((-1,-1), 10), maxX, maxY); // there is a redundant check in the RequestSpawn method, but it's fine to have it here as well
 			startingLeaf = (x, y - 1);
 			nutrient -= 1f;
 			leafCount++;
@@ -143,7 +147,13 @@ public class Seed : Element, ILife, ISolid
 	}
 	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
-		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the snail every frame
+		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the seed every frame
+
+		// debug
+		nutrient = maxNutrient; // seeds always have max nutrient
+		wetness = maxWetness; // seeds always have max wetness
+
+
 		if (y == maxY - 1 || y == 0){
 			plantState = PlantState.Dying;
 		}
@@ -170,7 +180,7 @@ public class Seed : Element, ILife, ISolid
 		{
 			lastGrowthTick = T;
 			// Try to grow roots first
-			if (y + 1 < maxY && oldGrid[x, y + 1] is not Soil && oldGrid[x, y + 1] is not Root)
+			if (y + 1 < maxY && oldGrid[x, y + 1] is not Soil)
 			{
 				plantState = PlantState.Dying; // no soil below, die. Poor thing :(
 				return;
@@ -188,7 +198,7 @@ public class Seed : Element, ILife, ISolid
 		{
 			transferNutrientsUpwards(oldGrid, x, y, maxX, maxY);
 		}
-		if (plantState == PlantState.Growing && leafCount >= maxLeafCount)
+		if (plantState == PlantState.Growing && nutrientTransfered >= maxNutrientTransfer)
 		{
 			plantState = PlantState.Mature;
 			maturityTime = T;

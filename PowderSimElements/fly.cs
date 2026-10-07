@@ -95,7 +95,7 @@ public class Fly : Element, ILife, ISolid, IFlammable
 				{
 					if (oldGrid[nx, ny] is Fruit fruit)
 					{
-						if (pollinateFruit(fruit))
+						if (fruit.pollinate())
 						{
 							TakeNutrientRequest request = new TakeNutrientRequest(x, y, nx, ny, BASE_NUTRIENT_COST);
 							NutrientManager.Instance.AddTakeNutrientRequest(request, maxX, maxY); // Transfer nutrient to the fruit
@@ -180,16 +180,6 @@ public class Fly : Element, ILife, ISolid, IFlammable
 				}
 			}
 		}
-	}
-
-	public bool pollinateFruit(Fruit fruit)
-	{
-		if (!fruit.pollinated)
-		{
-			fruit.pollinated = true;
-			return true;
-		}
-		return false;
 	}
 
 	override public string getState()
