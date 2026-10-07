@@ -27,7 +27,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 	{
 		Growing = 0,
 		Flowering = 1,
-		Fertilized = 2,
+		ProducedSeed = 2,
 		Dying = 3
 		
 	}
@@ -165,7 +165,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 		if (y + 1 >= maxY) return; // out of bounds
 		if (oldGrid[x, y + 1] is Fruit fruit)
 		{
-			if (leafState is LeafState.Dying or LeafState.Fertilized)
+			if (leafState is LeafState.Dying or LeafState.ProducedSeed)
 			{
 				fruit.sterile = true; // if the leaf is dying or another fruit was already pollinated, the fruit will not grow a seed
 			}

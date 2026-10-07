@@ -101,7 +101,7 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 
 		if (pollinated && y + 1 < maxY && oldGrid[x, y + 1] is Leaf leaf) // if pollinated and on a leaf, change the leaf's state (it will propagate to the entire plant)
 		{
-			leaf.leafState = Leaf.LeafState.Fertilized;
+			leaf.leafState = Leaf.LeafState.ProducedSeed;
 		}
 
 		FlammableBehavior.update(this, oldGrid, x, y, maxX, maxY, T);

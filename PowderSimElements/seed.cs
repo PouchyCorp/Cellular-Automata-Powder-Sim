@@ -12,26 +12,19 @@ public class Seed : Element, ILife, ISolid
 	private int lastGrowthTick = 0;
 	private int growthInterval = 1 * 60; // ticks
 
-	public int matureLifetime = 120 * 60; // ticks
-	private int maturityTime;
+	public int floweringLifetime = 120 * 60; // ticks
+	private int floweringTime;
+
+	public int growthDuration = 60 * 60; // ticks
+	private int growingTime;
 
 	public Color plantColor = Colors.Green;
 	public Color basePlantColor = Colors.Green;
 	public Color darkerPlantColor = Colors.DarkGreen;
-
-	public int maxLeafCount;
-	public int leafCount = 0;
-	
-	public int maxRootCount;
-	public int rootCount = 0;
-
 	public int maxFruitCount;
 	public int fruitCount = 0;
 
 	private (int, int) startingLeaf = (-1, -1);
-
-	private float nutrientTransfered = 0f;
-	private float maxNutrientTransfer;
 	public PlantState plantState = PlantState.Falling;
 
 	public enum PlantState
@@ -39,17 +32,13 @@ public class Seed : Element, ILife, ISolid
 		Falling,
 		Seed,
 		Growing,
-		Mature,
+		Flowering,
 		Dying
 	}
 	public Seed(float startingWetness, float startingNutrients)
 	{
 		wetness = startingWetness;
 		nutrient = startingNutrients;
-		maxLeafCount = Random.Shared.Next(30, 50);
-		maxRootCount = Random.Shared.Next(10, 20);
-		maxFruitCount = Random.Shared.Next(1, 2);
-		maxNutrientTransfer = maxLeafCount * Leaf.BASE_LEAF_NUTRIENT_COST;
 		density = 15;
 		color = Colors.Burlywood;
 		setPlantColor();
@@ -60,10 +49,11 @@ public class Seed : Element, ILife, ISolid
 		// Try to grow root downwards if there's space
 		if (y + 1 < maxY && currentGrid[x, y + 1] is Soil)
 		{
-			GridManager.Instance.RequestDeletion(x, y + 1, maxX, maxY, new Root((x, y)));
-			rootCount++;
-			nutrient -= 1f;
-			return true;
+			if (GridManager.Instance.RequestDeletion(x, y + 1, maxX, maxY, new Root((x, y))))
+			{
+				nutrient -= 1f;
+				return true;
+			}
 		}
 		return false;
 	}
@@ -87,11 +77,6 @@ public class Seed : Element, ILife, ISolid
 	}
 	private void updatePlantColor()
 	{
-		if (leafCount == 0) return;
-		// Update plant color based on number of leaves (more leaves = lighter green)
-		float t = Math.Min((float)leafCount / (maxLeafCount - 20), 1f);
-		plantColor = darkerPlantColor.Lerp(basePlantColor, t);
-
 		if (plantState == PlantState.Dying)
 		{
 			// slowly turn brown when dying (currently not implemented)
@@ -104,13 +89,12 @@ public class Seed : Element, ILife, ISolid
 		if (nutrient < 1) return (-1, -1); // not enough nutrient to grow
 		if (y - 1 < 0) return (-1, -1); // no space above
 
-		// Try to grow leaves upwards if there's space
-		if (oldGrid[x, y - 1] == null)
+		if (GridManager.Instance.RequestSpawn(x, y - 1, new Leaf((-1,-1), 10), maxX, maxY)) // there is a redundant check in the RequestSpawn method, but it's fine to have it here as well
 		{
-			GridManager.Instance.RequestSpawn(x, y - 1, new Leaf((-1,-1), 10), maxX, maxY); // there is a redundant check in the RequestSpawn method, but it's fine to have it here as well
 			startingLeaf = (x, y - 1);
-			nutrient -= 1f;
-			leafCount++;
+			nutrient -= Leaf.BASE_LEAF_NUTRIENT_COST;
+			wetness -= Leaf.BASE_LEAF_WETNESS_COST;
+			plantState = PlantState.Growing;
 			return (x, y - 1);
 		}
 
@@ -122,23 +106,8 @@ public class Seed : Element, ILife, ISolid
 		if (y - 1 < 0) return; // no space above
 		if (oldGrid[x, y-1] is Leaf firstLeaf)
 		{
-			if (firstLeaf.nutrient < 5f)
-			{
-				float transferAmount = Math.Min(nutrient, 0.5f); // transfer up to 0.5 nutrient per tick
-				transferAmount = Math.Min(transferAmount, firstLeaf.maxNutrient - firstLeaf.nutrient); // don't overfill leaf
-				nutrient -= transferAmount;
-				firstLeaf.nutrient += transferAmount;
-			}
-
-			// same thing with wetness
-			if (firstLeaf.wetness < 1f)
-			{
-				float wetnessTransfer = Math.Min(wetness, 0.5f); // transfer up to 0.5 wetness per tick
-				wetnessTransfer = Math.Min(wetnessTransfer, 1f - firstLeaf.wetness); // don't overfill leaf
-				wetness -= wetnessTransfer;
-				firstLeaf.wetness += wetnessTransfer;
-			}
-
+			NutrientManager.Instance.AddGiveNutrientRequest(new GiveNutrientRequest(x, y, x, y-1, 0.1f), maxX, maxY); // transfer 0.1 nutrient per tick
+			NutrientManager.Instance.AddGiveWetnessRequest(new GiveWetnessRequest(x, y, x, y-1, 0.1f), maxX, maxY); // transfer 0.1 wetness per tick
 		}
 		else
 		{
@@ -171,6 +140,11 @@ public class Seed : Element, ILife, ISolid
 		{
 			if (!MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, 1, maxX, maxY)) // if cannot fall further
 			{
+				if (y + 1 < maxY && oldGrid[x, y + 1] is not Soil)
+				{
+					plantState = PlantState.Dying; // no soil below, die. Poor thing :(
+					return;
+				}
 				plantState = PlantState.Seed; // become a seed
 			}
 		}
@@ -180,16 +154,15 @@ public class Seed : Element, ILife, ISolid
 		{
 			lastGrowthTick = T;
 			// Try to grow roots first
-			if (y + 1 < maxY && oldGrid[x, y + 1] is not Soil)
-			{
-				plantState = PlantState.Dying; // no soil below, die. Poor thing :(
-				return;
-			}
 			
-			if (!growStartingRoot(oldGrid, x, y, maxX, maxY))
+			growStartingRoot(oldGrid, x, y, maxX, maxY);
+			// try to grow leaves
+			growStartingLeaf(oldGrid, x, y, maxX, maxY);
+
+			if (startingLeaf != (-1, -1) && y + 1 < maxY && oldGrid[x, y + 1] is Root) // if we have a leaf and a root, we can start growing
 			{
-				// try to grow leaves
-				growStartingLeaf(oldGrid, x, y, maxX, maxY);
+				growingTime = T;
+				plantState = PlantState.Growing;
 			}
 		}
 
@@ -198,18 +171,33 @@ public class Seed : Element, ILife, ISolid
 		{
 			transferNutrientsUpwards(oldGrid, x, y, maxX, maxY);
 		}
-		if (plantState == PlantState.Growing && nutrientTransfered >= maxNutrientTransfer)
+		if (plantState == PlantState.Growing && T - growingTime >= growthDuration)
 		{
-			plantState = PlantState.Mature;
-			maturityTime = T;
+			plantState = PlantState.Flowering;
+			floweringTime = T;
 		}
 		
 		// -- Mature state --
-		if (plantState == PlantState.Mature) // stopping transfer of nutrients will stop the growth of leaves
+		if (plantState == PlantState.Flowering)
 		{
-			// fruit logic incoming 
+			if (oldGrid[x, y-1] is Leaf firstLeaf)
+			{
+				if (firstLeaf.leafState < Leaf.LeafState.Flowering){
+					firstLeaf.leafState = Leaf.LeafState.Flowering;
+				}
+
+				if (firstLeaf.leafState == Leaf.LeafState.ProducedSeed){
+					// 1% chance to enter the dying state each tick if a seed has been produced
+					if (Random.Shared.NextSingle() < 0.01f)
+					{
+						plantState = PlantState.Dying;
+					}
+				}
+			}
+			transferNutrientsUpwards(oldGrid, x, y, maxX, maxY); // continue transferring nutrients while for the flower
+
 		}
-		if (plantState == PlantState.Mature && T - maturityTime >= matureLifetime)
+		if (plantState == PlantState.Flowering && T - floweringTime >= floweringLifetime)
 		{
 			plantState = PlantState.Dying;
 		}
@@ -230,9 +218,8 @@ public class Seed : Element, ILife, ISolid
 			+ ";" + wetness
 			+ ";" + nutrient
 			+ ";" + lastGrowthTick
-			+ ";" + maturityTime
-			+ ";" + leafCount
-			+ ";" + rootCount
+			+ ";" + floweringTime
+			+ ";" + growingTime
 			+ ";" + startingLeaf.Item1
 			+ ";" + startingLeaf.Item2
 			+ ";" + (int) plantState;
@@ -245,9 +232,7 @@ public class Seed : Element, ILife, ISolid
 		wetness = stateArgs[i++].ToFloat();
 		nutrient = stateArgs[i++].ToFloat();
 		lastGrowthTick = stateArgs[i++].ToInt();
-		maturityTime = stateArgs[i++].ToInt();
-		leafCount = stateArgs[i++].ToInt();
-		rootCount = stateArgs[i++].ToInt();
+		floweringTime = stateArgs[i++].ToInt();
 		startingLeaf.Item1 = stateArgs[i++].ToInt();
 		startingLeaf.Item2 = stateArgs[i++].ToInt();
 		plantState = (PlantState)stateArgs[i++].ToInt();
