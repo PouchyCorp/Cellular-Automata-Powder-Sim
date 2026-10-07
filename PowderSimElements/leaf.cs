@@ -10,8 +10,11 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 	public const float BASE_LEAF_NUTRIENT_COST = 1.0f;
 
 	public float wetness { get; set; } = BASE_LEAF_WETNESS_COST;
+	public float minWetness => BASE_LEAF_WETNESS_COST;
 	public float maxWetness => 1.0f;
+
 	public float nutrient { get; set; } = BASE_LEAF_NUTRIENT_COST;
+	public float minNutrient => BASE_LEAF_NUTRIENT_COST;
 	public float maxNutrient => 5.0f;
 
 	public int flammability { get; set; } = 10;
@@ -50,7 +53,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 	{
 		base.updateColor(T, x, y);
 
-		color = baseColor.Lerp(Colors.DarkGreen, Math.Min(nutrient, 0)); // more nutrient = darker color
+		color = baseColor.Lerp(Colors.DarkGreen, Math.Min(nutrient, 1.0f)); // more nutrient = darker color
 
 	}
 
@@ -82,8 +85,8 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 
 	public bool growLeaf(Element[,] oldGrid, int x, int y, int maxX, int maxY)
 	{
-		if (nutrient < BASE_LEAF_NUTRIENT_COST) return false;
-		if (wetness < BASE_LEAF_WETNESS_COST) return false;
+		if (nutrient - minNutrient < BASE_LEAF_NUTRIENT_COST) return false;
+		if (wetness - minWetness < BASE_LEAF_WETNESS_COST) return false;
 		if (y - 1 < 0) return false;
 
 		List<(int, int)> possibleGrowthPositions = [];
@@ -93,7 +96,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 		{
 			int nx = x + dx;
 			int ny = y + dy;
-			if (isValidLeafGrowthPosition(oldGrid, nx, ny, maxX, maxY)) // ------------------------------------------ 
+			if (isValidLeafGrowthPosition(oldGrid, nx, ny, maxX, maxY))
 			{
 				possibleGrowthPositions.Add((nx, ny));
 			}
@@ -265,6 +268,6 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 
 	override public string inspectInfo()
 	{
-		return $"  Leaf State: {leafState}\n  Child Leafs: {childLeafs.Count}\n Wetness: {wetness:F3}\n  Nutrient: {nutrient:F3}\n ";
+		return $"  Leaf State: {leafState}\n  Child Leafs: {childLeafs.Count}\n Wetness: {wetness:F3}\n  Nutrient: {nutrient:F3}\n LeafCount: {leafCount}\n Last Growth Tick: {lastGrowthTick}\n";
 	}
 }

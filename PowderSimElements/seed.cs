@@ -4,7 +4,7 @@ using Godot;
 public class Seed : Element, ILife, ISolid
 {
 	public float wetness { get; set; }
-	public float maxWetness => 1.0f;
+	public float maxWetness => 2.0f;
 	public float nutrient { get; set; }
 	public float maxNutrient => 5.0f;
 

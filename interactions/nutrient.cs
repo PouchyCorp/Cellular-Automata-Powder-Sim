@@ -6,9 +6,11 @@ public interface ILife
 {
 	public float nutrient { get; set; }
 	public float maxNutrient => 10.0f;
+	public float minNutrient => 0.0f;
 
 	public float wetness { get; set; }
 	public float maxWetness => 1.0f;
+	public float minWetness => 0.0f;
 }
 
 public class GiveNutrientRequest
@@ -132,6 +134,26 @@ public class GiveWetnessRequest
 // Not a thread safe implementation of the singleton
 public class NutrientManager
 {
+	private static float GetAvailableNutrientToGive(ILife lifeElement)
+	{
+		return Mathf.Max(0f, lifeElement.nutrient - lifeElement.minNutrient);
+	}
+
+	private static float GetAvailableWetnessToGive(ILife lifeElement)
+	{
+		return Mathf.Max(0f, lifeElement.wetness - lifeElement.minWetness);
+	}
+
+	private static float GetRemainingNutrientCapacity(ILife lifeElement)
+	{
+		return Mathf.Max(0f, lifeElement.maxNutrient - lifeElement.nutrient);
+	}
+
+	private static float GetRemainingWetnessCapacity(ILife lifeElement)
+	{
+		return Mathf.Max(0f, lifeElement.maxWetness - lifeElement.wetness);
+	}
+
 	private HashSet<(int, int)> uniqueNutrientTargets = new HashSet<(int, int)>();
 	private HashSet<(int, int)> uniqueWetnessTargets = new HashSet<(int, int)>();
 	private Dictionary<(int, int), List<TakeNutrientRequest>> takeNutrientRequests = new Dictionary<(int, int), List<TakeNutrientRequest>>();
@@ -212,7 +234,7 @@ public class NutrientManager
 		Element[,] currentGrid,
 		ILife targetElement, int maxX, int maxY)
 	{
-		float remainingCapacity = targetElement.maxNutrient - targetElement.nutrient;
+		float remainingCapacity = GetRemainingNutrientCapacity(targetElement);
 		foreach (var request in requests)
 		{
 			if (remainingCapacity <= 0)
@@ -223,7 +245,7 @@ public class NutrientManager
 
 			float nutrientToGive = Mathf.Min(
 				request.NutrientAmount,
-				Mathf.Min(remainingCapacity, givingElement.nutrient)
+				Mathf.Min(remainingCapacity, GetAvailableNutrientToGive(givingElement))
 			);
 
 			if (nutrientToGive <= 0)
@@ -243,7 +265,7 @@ public class NutrientManager
 		Element[,] currentGrid,
 		ILife targetElement, int maxX, int maxY)
 	{
-		float remainingNutrient = targetElement.nutrient;
+		float remainingNutrient = GetAvailableNutrientToGive(targetElement);
 		foreach (var request in requests)
 		{
 			if (remainingNutrient <= 0)
@@ -254,7 +276,7 @@ public class NutrientManager
 
 			float nutrientToTake = Mathf.Min(
 				request.NutrientAmount,
-				Mathf.Min(remainingNutrient, takingElement.maxNutrient - takingElement.nutrient)
+				Mathf.Min(remainingNutrient, GetRemainingNutrientCapacity(takingElement))
 			);
 
 			if (nutrientToTake <= 0)
@@ -294,7 +316,7 @@ public class NutrientManager
 			{
 				if (currentGrid[request.x, request.y] is not ILife givingElement)
 					continue;
-				totalIncoming += Mathf.Min(request.NutrientAmount, givingElement.nutrient);
+				totalIncoming += Mathf.Min(request.NutrientAmount, GetAvailableNutrientToGive(givingElement));
 			}
 
 			float totalOutgoing = 0f;
@@ -302,7 +324,7 @@ public class NutrientManager
 			{
 				if (currentGrid[request.x, request.y] is not ILife takingElement)
 					continue;
-				totalOutgoing += Mathf.Min(request.NutrientAmount, takingElement.maxNutrient - takingElement.nutrient);
+				totalOutgoing += Mathf.Min(request.NutrientAmount, GetAvailableNutrientToGive(takingElement));
 			}
 
 			if (totalIncoming >= totalOutgoing)
@@ -326,7 +348,7 @@ public class NutrientManager
 		Element[,] oldGrid,
 		ILife targetElement, int maxX, int maxY)
 	{
-		float remainingCapacity = targetElement.maxWetness - targetElement.wetness;
+		float remainingCapacity = GetRemainingWetnessCapacity(targetElement);
 		foreach (var request in requests)
 		{
 			if (remainingCapacity <= 0)
@@ -337,7 +359,7 @@ public class NutrientManager
 
 			float wetnessToGive = Mathf.Min(
 				request.WetnessAmount,
-				Mathf.Min(remainingCapacity, givingElement.wetness)
+				Mathf.Min(remainingCapacity, GetAvailableWetnessToGive(givingElement))
 			);
 
 			if (wetnessToGive <= 0)
@@ -361,6 +383,7 @@ public class NutrientManager
 		int maxY)
 	{
 		float remainingWetness = targetElement.wetness;
+		remainingWetness = GetAvailableWetnessToGive(targetElement);
 		foreach (var request in requests)
 		{
 			if (remainingWetness <= 0)
@@ -371,7 +394,7 @@ public class NutrientManager
 
 			float wetnessToTake = Mathf.Min(
 				request.WetnessAmount,
-				Mathf.Min(remainingWetness, takingElement.maxWetness - takingElement.wetness)
+				Mathf.Min(remainingWetness, GetRemainingWetnessCapacity(takingElement))
 			);
 
 			if (wetnessToTake <= 0)
@@ -410,7 +433,7 @@ public class NutrientManager
 			{
 				if (oldGrid[request.x, request.y] is not ILife givingElement)
 					continue;
-				totalIncoming += Mathf.Min(request.WetnessAmount, givingElement.wetness);
+				totalIncoming += Mathf.Min(request.WetnessAmount, GetAvailableWetnessToGive(givingElement));
 			}
 
 			float totalOutgoing = 0f;
@@ -418,7 +441,7 @@ public class NutrientManager
 			{
 				if (oldGrid[request.x, request.y] is not ILife takingElement)
 					continue;
-				totalOutgoing += Mathf.Min(request.WetnessAmount, takingElement.maxWetness - takingElement.wetness);
+				totalOutgoing += Mathf.Min(request.WetnessAmount, GetAvailableWetnessToGive(takingElement));
 			}
 
 			if (totalIncoming >= totalOutgoing)

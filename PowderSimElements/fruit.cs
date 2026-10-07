@@ -5,9 +5,13 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 {
 	public const float BASE_FRUIT_NUTRIENT_COST = 4.0f;
 	public const float BASE_FRUIT_WETNESS_COST = 1.0f;
+	
 	public float wetness { get; set; } = BASE_FRUIT_WETNESS_COST;
+	public float minWetness => BASE_FRUIT_WETNESS_COST;
 	public float maxWetness => BASE_FRUIT_WETNESS_COST;
+
 	public float nutrient { get; set; } = BASE_FRUIT_NUTRIENT_COST;
+	public float minNutrient => BASE_FRUIT_NUTRIENT_COST;
 	public float maxNutrient => BASE_FRUIT_NUTRIENT_COST * 2;
 
 	public bool burning { get; set; } = false;
