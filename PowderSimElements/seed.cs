@@ -49,7 +49,7 @@ public class Seed : Element, ILife, ISolid
 		// Try to grow root downwards if there's space
 		if (y + 1 < maxY && currentGrid[x, y + 1] is Soil)
 		{
-			if (GridManager.Instance.RequestDeletion(x, y + 1, maxX, maxY, new Root((x, y))))
+			if (GridManager.Instance.RequestDeletion(x, y + 1, maxX, maxY, new Root((x, y), 0, true)))
 			{
 				nutrient -= 1f;
 				return true;

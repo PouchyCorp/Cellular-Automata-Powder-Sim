@@ -8,17 +8,25 @@ public class Root : Element, ILife, ISolid
 	public float wetness { get; set; } = 0f;
 	public float maxWetness => 1f;
 	
-	private (int, int) parentSeed;
+	private (int, int) parent;
+	private bool firstRoot;
+	private int distance; // Decreasing starting from the seed
 	private int lastActivity = 0;
 	private int activityInterval = 30;
 	private int lastGrowthTick = 0;
+	public enum RootState {
+		Alive,
+		Dying
+	}
+	public RootState rootState = RootState.Alive;
 
 	public Root() {} // DO NOT USE EXCEPT IF YOU'RE GONNA SET A STATE RIGHT AFTER
 
-	public Root((int, int) parentSeed)
+	public Root((int, int) parent, int distance, bool isFirst)
 	{
-		this.parentSeed = parentSeed;
-		
+		this.parent = parent;
+		this.distance = distance;
+		this.firstRoot = isFirst; // Premi�re racine (connect�e � la graine)
 		density = 21;
 		color = Colors.SandyBrown;
 		modulateColor();
@@ -29,9 +37,17 @@ public class Root : Element, ILife, ISolid
 	/// </summary>
 	public Seed getParentSeed(Element[,] currentGrid, int maxX, int maxY)
 	{
-		if (currentGrid[parentSeed.Item1, parentSeed.Item2] is Seed seed)
+		if (currentGrid[parent.Item1, parent.Item2] is Seed seed)
 		{
 			return seed;
+		}
+		return null;
+	}
+
+	public Root getParentRoot(Element[,] currentGrid, int maxX, int maxY) {
+		if (currentGrid[parent.Item1, parent.Item2] is Root root)
+		{
+			return root;
 		}
 		return null;
 	}
@@ -56,7 +72,7 @@ public class Root : Element, ILife, ISolid
 		}
 	}
 
-	private void transferNutrientsUpwards(Element[,] currentGrid, int x, int y, int maxX, int maxY)
+	private void transferNutrientsToParentSeed(Element[,] currentGrid, int x, int y, int maxX, int maxY)
 	{
 		// transfer nutrients to parent seed if it exists
 		Seed seed = getParentSeed(currentGrid, maxX, maxY);
@@ -68,10 +84,37 @@ public class Root : Element, ILife, ISolid
 			transferableNutrients = Math.Min(transferableNutrients, seed.maxNutrient - seed.nutrient); // don't overfill seed
 			float transferableWetness = Math.Max(wetness - 0.2f, 0); // keep at least 0.2 wetness in root
 			transferableWetness = Math.Min(transferableWetness, 1f - seed.wetness); // don't overfill seed
-			seed.nutrient += transferableNutrients;
+			/* seed.nutrient += transferableNutrients;
 			nutrient -= transferableNutrients;
 			seed.wetness += transferableWetness;
-			wetness -= transferableWetness;
+			wetness -= transferableWetness; */
+
+			NutrientManager.Instance.AddGiveNutrientRequest(new GiveNutrientRequest(x, y, parent.Item1, parent.Item2, transferableNutrients), maxX, maxY);
+			NutrientManager.Instance.AddGiveWetnessRequest(new GiveWetnessRequest(x, y, parent.Item1, parent.Item2, transferableWetness), maxX, maxY);
+			
+		}
+	}
+
+	private void transferNutrientsToParentRoot(Element[,] currentGrid, int x, int y, int maxX, int maxY)
+	{
+		// transfer nutrients to parent root if it exists
+		Root root = getParentRoot(currentGrid, maxX, maxY);
+		if (root != null)
+		{
+			if (root.nutrient >= root.maxNutrient && root.wetness >= 1f) return; // parent root full
+
+			float transferableNutrients = Math.Max(nutrient - 1, 0); // keep at least 1 nutrient in root
+			transferableNutrients = Math.Min(transferableNutrients, root.maxNutrient - root.nutrient); // don't overfill root
+			float transferableWetness = Math.Max(wetness - 0.2f, 0); // keep at least 0.2 wetness in root
+			transferableWetness = Math.Min(transferableWetness, 1f - root.wetness); // don't overfill root
+			/* root.nutrient += transferableNutrients;
+			nutrient -= transferableNutrients;
+			root.wetness += transferableWetness;
+			wetness -= transferableWetness; */
+
+			NutrientManager.Instance.AddGiveNutrientRequest(new GiveNutrientRequest(x, y, parent.Item1, parent.Item2, transferableNutrients), maxX, maxY);
+			NutrientManager.Instance.AddGiveWetnessRequest(new GiveWetnessRequest(x, y, parent.Item1, parent.Item2, transferableWetness), maxX, maxY);
+			
 		}
 	}
 
@@ -98,24 +141,22 @@ public class Root : Element, ILife, ISolid
 		return true;
 	}
 
-	public bool growRoot(Element[,] oldGrid, Element[,] currentGrid, int x, int y, int maxX, int maxY)
+	public bool growRoot(Element[,] currentGrid, int x, int y, int maxX, int maxY)
 	{
 		
 		if (nutrient < 1) return false;
 		if (wetness < 0.2f) return false;
 		if (y + 1 >= maxY) return false;
 
-		Seed parent = getParentSeed(currentGrid, maxX, maxY);
-		if (parent == null) return false;
-		if (parent?.rootCount >= parent?.maxRootCount) return false;
+		if (distance < 0) return false;
 
 		List<(int, int)> possibleGrowthPositions = [];
 
-		for (int nx = x - 1; nx <= x + 1; nx++)
+		for (int nx = x - 1; nx <= x + 1; nx	++)
 		{
-			for (int ny = y; ny <= y + 1; ny++)
+			for (int ny = y; ny <= y + 1; ny++) // Only down
 			{
-				if (isValidRootGrowthPosition(oldGrid, nx, ny, maxX, maxY))
+				if (isValidRootGrowthPosition(currentGrid, nx, ny, maxX, maxY))
 				{
 					possibleGrowthPositions.Add((nx, ny));
 				}
@@ -125,11 +166,15 @@ public class Root : Element, ILife, ISolid
 		{
 			var rand = new Random();
 			var chosenPos = possibleGrowthPositions[rand.Next(possibleGrowthPositions.Count)]; // found this online
-			currentGrid[chosenPos.Item1, chosenPos.Item2] = new Root(parentSeed);
-			parent.rootCount++;
-			nutrient -= 1f;
-			wetness -= 0.2f;
-			return true;
+			// currentGrid[chosenPos.Item1, chosenPos.Item2] = new Root(parentSeed);
+			if (GridManager.Instance.RequestDeletion(chosenPos.Item1, chosenPos.Item2, maxX, maxY, new Root((x, y), distance - 1, false))) {
+				nutrient -= 1f;
+				wetness -= 0.2f;
+				return true;
+			} else {
+				return false;
+			}
+	
 		}
 		else
 		{
@@ -137,13 +182,19 @@ public class Root : Element, ILife, ISolid
 		}
 	}
 
-	override public void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
+	private bool shouldDie(Seed parentSeed, Root parentRoot) {
+		return false;
+		// return (firstRoot && (parentSeed == null || parentSeed.plantState == Seed.PlantState.Dying)) || (!firstRoot && (parentRoot == null || parentRoot.rootState == Root.RootState.Dying));
+	}
+	override public void update(Element[,] currentGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the snail every frame
 		// if parent seed no longer exists, turn into soil with same nutrient and wetness to not lose resources
-		Seed parent = getParentSeed(oldGrid, maxX, maxY);
-		if (parent == null || parent.plantState == Seed.PlantState.Dying)
-		{
+		Seed parentSeed = getParentSeed(currentGrid, maxX, maxY);
+		Root parentRoot = getParentRoot(currentGrid, maxX, maxY);
+
+		if (shouldDie(parentSeed, parentRoot)) {
+			this.rootState = RootState.Dying;
 			if (Random.Shared.NextSingle() > 0.01f) return; // 99% chance to delay transformation to biomass
 			Biomass biomass = new Biomass(wetness, nutrient);
 			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, biomass);
@@ -154,29 +205,30 @@ public class Root : Element, ILife, ISolid
 		if (T - lastActivity >= activityInterval)
 		{
 			lastActivity = T;
-			absorbNutrientsAndWetness(oldGrid, x, y, maxX, maxY);
-			transferNutrientsUpwards(oldGrid, x, y, maxX, maxY);
-			growRoot(oldGrid, oldGrid, x, y, maxX, maxY);
+			absorbNutrientsAndWetness(currentGrid, x, y, maxX, maxY);
+			transferNutrientsToParentRoot(currentGrid, x, y, maxX, maxY); // Fait rien si pas firstRoot
+			transferNutrientsToParentSeed(currentGrid, x, y, maxX, maxY);
+			growRoot(currentGrid, x, y, maxX, maxY);
 		}
 
 		updateColor(T, x, y);
 	}
 
 	public override string getState()
-    {
+	{
 		return base.getState() + ";"
-			+ ";" + parentSeed.Item1
-			+ ";" + parentSeed.Item2
+			+ ";" + parent.Item1
+			+ ";" + parent.Item2
 			+ ";" + lastActivity
 			+ ";" + lastGrowthTick;
-    }
+	}
 
 	override public int setState(string state)
 	{
 		int i = base.setState(state);;
 		string[] stateArgs = state.Split(";", false);
-		parentSeed.Item1 = stateArgs[i++].ToInt();
-		parentSeed.Item2 = stateArgs[i++].ToInt();
+		parent.Item1 = stateArgs[i++].ToInt();
+		parent.Item2 = stateArgs[i++].ToInt();
 		lastActivity = stateArgs[i++].ToInt();
 		lastGrowthTick = stateArgs[i++].ToInt();
 		return i;
@@ -184,6 +236,6 @@ public class Root : Element, ILife, ISolid
 	
 	override public string inspectInfo()
 	{
-		return $"  Wetness: {wetness:F3}\n  Nutrient: {nutrient:F3}\n  Parent Seed: ({parentSeed.Item1}, {parentSeed.Item2})\n";
+		return $"  Wetness: {wetness:F3}\n  Nutrient: {nutrient:F3}\n  Parent: ({parent.Item1}, {parent.Item2})\n";
 	}
 } 
