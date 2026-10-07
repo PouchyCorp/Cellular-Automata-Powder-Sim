@@ -23,7 +23,7 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 		color = Colors.LightPink;
 		modulateColor();
 	}
-
+	
     public override void updateColor(int T, int x, int y)
     {
 		if (pollinated)

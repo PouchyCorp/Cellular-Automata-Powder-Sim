@@ -135,9 +135,12 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 		if (childLeafs.Count == 0) return;
 
 		const float maxTransferPerChild = 0.2f; // limit the transfer to 0.2 nutrient per child leaf
-		float availableNutrientsToTransfer = nutrient - BASE_LEAF_NUTRIENT_COST;
-		float transferAmountPerChild = Math.Min(maxTransferPerChild, availableNutrientsToTransfer / childLeafs.Count);
+		float availableNutrientsToTransfer = Math.Max(0, nutrient - BASE_LEAF_NUTRIENT_COST);
+		float availableWetnessToTransfer = Math.Max(0, wetness - BASE_LEAF_WETNESS_COST);
 
+		float transferAmountPerChildNutrient = Math.Min(maxTransferPerChild, availableNutrientsToTransfer / childLeafs.Count);
+
+		float transferAmountPerChildWetness = Math.Min(maxTransferPerChild, availableWetnessToTransfer / childLeafs.Count);
 
 		foreach ((int childX, int childY) in childLeafs)
 		{
@@ -156,7 +159,9 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 
 			if (childLeaf.nutrient >= nutrient) continue; // skip if the child leaf is already full
 
-			NutrientManager.Instance.AddGiveNutrientRequest(new GiveNutrientRequest(x, y, childX, childY, transferAmountPerChild), maxX, maxY);
+			NutrientManager.Instance.AddGiveNutrientRequest(new GiveNutrientRequest(x, y, childX, childY, transferAmountPerChildNutrient), maxX, maxY);
+
+			NutrientManager.Instance.AddGiveWetnessRequest(new GiveWetnessRequest(x, y, childX, childY, transferAmountPerChildWetness), maxX, maxY); // transfer half the amount of wetness compared to nutrient
 		}
 	}
 
@@ -206,7 +211,7 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 			return;
 		}
 		// Try to grow leaves if possible
-		if (!sleeping && leafState == LeafState.Growing && T - lastGrowthTick >= growthInterval && leafCount > 0)
+		if (leafState == LeafState.Growing && T - lastGrowthTick >= growthInterval && leafCount > 0)
 		{
 			lastGrowthTick = T;
 			growLeaf(oldGrid, x, y, maxX, maxY);
@@ -260,6 +265,6 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 
 	override public string inspectInfo()
 	{
-		return $"  Leaf State: {leafState}\n  Child Leafs: {childLeafs.Count}\n";
+		return $"  Leaf State: {leafState}\n  Child Leafs: {childLeafs.Count}\n Wetness: {wetness:F3}\n  Nutrient: {nutrient:F3}\n ";
 	}
 }

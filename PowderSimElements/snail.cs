@@ -99,7 +99,7 @@ public class Snail : Element, ILife
 				{
 					// Eat the surface biomass
 					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(x, y, x, y, surfBiomass.nutrient), maxX, maxY);
-					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(x, y, x, y, surfBiomass.nutrient), maxX, maxY);
+					NutrientManager.Instance.AddTakeWetnessRequest(new TakeWetnessRequest(x, y, x, y, surfBiomass.wetness), maxX, maxY);
 					MoveManager.Instance.AttemptMove(oldGrid, x, y, nx, ny, maxX, maxY); // Remove to the biomass
 					return true;
 				}
