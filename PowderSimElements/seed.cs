@@ -15,7 +15,7 @@ public class Seed : Element, ILife, ISolid
 	public int floweringLifetime = 120 * 60; // ticks
 	private int floweringTime;
 
-	public int growthDuration = 60 * 60; // ticks
+	public int growthDuration = 60 * 60 * 2 ; // ticks
 	private int growingTime;
 
 	public Color plantColor = Colors.Green;
@@ -52,7 +52,8 @@ public class Seed : Element, ILife, ISolid
 		{
 			if (GridManager.Instance.RequestDeletion(x, y + 1, maxX, maxY, new Root((x, y), 10, true))) // la distance décroit jusqu'a 0 en bout de racine (oui c'est pas logique)
 			{
-				nutrient -= 1f;
+				nutrient -= Root.BASE_ROOT_NUTRIENT_COST;
+				wetness -= Root.BASE_ROOT_WETNESS_COST;
 				startingRoot = (x, y + 1);
 				return true;
 			}
@@ -91,7 +92,7 @@ public class Seed : Element, ILife, ISolid
 		if (nutrient < 1) return;
 		if (y - 1 < 0) return;
 
-		int leafCount = Random.Shared.Next(5, 15); // random leaf count between 5 and 15
+		int leafCount = Random.Shared.Next(10, 20); // random leaf count
 
 		if (GridManager.Instance.RequestSpawn(x, y - 1, new Leaf((-1, -1), leafCount), maxX, maxY)) // there is a redundant check in the RequestSpawn method, but it's fine to have it here as well
 		{
@@ -121,11 +122,6 @@ public class Seed : Element, ILife, ISolid
 	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the seed every frame
-
-		// debug
-		nutrient = maxNutrient; // seeds always have max nutrient
-		wetness = maxWetness; // seeds always have max wetness
-
 
 		if (y == maxY - 1 || y == 0)
 		{
@@ -192,16 +188,6 @@ public class Seed : Element, ILife, ISolid
 						if (firstLeaf.leafState < Leaf.LeafState.Flowering)
 						{
 							firstLeaf.leafState = Leaf.LeafState.Flowering;
-						}
-
-						if (firstLeaf.leafState == Leaf.LeafState.ProducedFruit)
-						{
-							// 1% chance to enter the dying state each tick if a seed has been produced
-							if (Random.Shared.NextSingle() < 0.01f)
-							{
-								plantState = PlantState.Dying;
-								GD.Print("Seed: Flowering time expired, plant is dying.");
-							}
 						}
 					} else
 					{

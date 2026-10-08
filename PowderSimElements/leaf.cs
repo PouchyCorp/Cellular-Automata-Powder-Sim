@@ -115,7 +115,19 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 			var chosenPos = possibleGrowthPositions[Random.Shared.Next(possibleGrowthPositions.Count)];
 			if (chosenPos == (-1, -1)) return false; // No valid position found
 
-			int decrement = Random.Shared.Next(0, Math.Min(leafCount, 3)); // decrement between 0 and 3 (or leafCount if it's less than 3)
+			int decrement = Random.Shared.Next(1, Math.Min(leafCount, 3)); // decrement between 1 and 3 (or leafCount if it's less than 3)
+			
+
+			// if growing up, decrement the decrement
+			if (chosenPos == (x, y - 1) && Random.Shared.Next(0, 2) == 0)
+			{
+				decrement = Math.Max(0, decrement - 1);
+			}
+			// if growing sideways
+			if (chosenPos == (x - 1, y) || chosenPos == (x + 1, y))
+			{
+				decrement++;
+			}
 
 			if (GridManager.Instance.RequestSpawn(chosenPos.Item1, chosenPos.Item2, new Leaf((x, y), leafCount - decrement), maxX, maxY))
 			{
@@ -171,25 +183,6 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 	{
 		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the snail every frame
 
-		if (leafState == LeafState.Flowering
-		&& nutrient >= Fruit.BASE_FRUIT_NUTRIENT_COST
-		&& wetness >= Fruit.BASE_FRUIT_WETNESS_COST
-		)
-		{
-			if (y - 2 >= 0 && oldGrid[x, y - 1] == null && y + 1 < maxY && oldGrid[x, y + 1] is Leaf) // 1% chance each tick to grow fruit
-			{
-				// grow fruit
-				if (GridManager.Instance.RequestSpawn(x, y - 1, new Fruit(), maxX, maxY))
-				{
-					nutrient -= Fruit.BASE_FRUIT_NUTRIENT_COST;
-					wetness -= Fruit.BASE_FRUIT_WETNESS_COST;
-					leafState = LeafState.ProducedFruit; // change the state to ProducedFruit
-					transferNutrientsToChildLeafs(oldGrid, x, y, maxX, maxY);
-					return;
-				}
-			}
-		}
-
 		if (parentLeaf != (-1, -1) && oldGrid[parentLeaf.Item1, parentLeaf.Item2] is not Leaf parentLeafElement)
 		{
 			leafState = LeafState.Dying; // if the parent leaf is gone, this leaf will die
@@ -208,6 +201,26 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 			lastGrowthTick = T;
 			growLeaf(oldGrid, x, y, maxX, maxY);
 
+		}
+		
+		if (leafState == LeafState.Flowering
+		&& nutrient >= Fruit.BASE_FRUIT_NUTRIENT_COST
+		&& wetness >= Fruit.BASE_FRUIT_WETNESS_COST
+		&& Random.Shared.Next(0,10) == 0
+		)
+		{
+			if (y - 2 >= 0 && oldGrid[x, y - 1] == null && y + 1 < maxY && oldGrid[x, y + 1] is Leaf) // 1% chance each tick to grow fruit
+			{
+				// grow fruit
+				if (GridManager.Instance.RequestSpawn(x, y - 1, new Fruit(), maxX, maxY))
+				{
+					nutrient -= Fruit.BASE_FRUIT_NUTRIENT_COST;
+					wetness -= Fruit.BASE_FRUIT_WETNESS_COST;
+					leafState = LeafState.ProducedFruit; // change the state to ProducedFruit
+					transferNutrientsToChildLeafs(oldGrid, x, y, maxX, maxY);
+					return;
+				}
+			}
 		}
 
 		transferNutrientsToChildLeafs(oldGrid, x, y, maxX, maxY);

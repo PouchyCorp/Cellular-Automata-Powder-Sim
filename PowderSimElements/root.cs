@@ -3,12 +3,17 @@ using System.Collections.Generic;
 using Godot;
 public class Root : Element, ILife, ISolid
 {
-	public float nutrient { get; set; } = 1f;
+
+	public const float BASE_ROOT_NUTRIENT_COST = 0.1f;
+	public const float BASE_ROOT_WETNESS_COST = 0.1f;
+
+	public float nutrient { get; set; } = BASE_ROOT_NUTRIENT_COST;
 	public float maxNutrient => 10f;
-	public float minNutrient => 1f;
-	public float wetness { get; set; } = 0.2f;
+	public float minNutrient => BASE_ROOT_NUTRIENT_COST;
+
+	public float wetness { get; set; } = BASE_ROOT_WETNESS_COST;
 	public float maxWetness => 1f;
-	public float minWetness => 0.2f;
+	public float minWetness => BASE_ROOT_WETNESS_COST;
 	
 	private (int, int) parent;
 	private bool firstRoot;
@@ -144,8 +149,8 @@ public class Root : Element, ILife, ISolid
 	public bool growRoot(Element[,] currentGrid, int x, int y, int maxX, int maxY)
 	{
 		
-		if (nutrient < 1) return false;
-		if (wetness < 0.2f) return false;
+		if (nutrient - minNutrient < BASE_ROOT_NUTRIENT_COST) return false;
+		if (wetness - minNutrient < BASE_ROOT_WETNESS_COST) return false;
 		if (y + 1 >= maxY) return false;
 
 		if (distance < 0) return false;
@@ -168,23 +173,21 @@ public class Root : Element, ILife, ISolid
 			var chosenPos = possibleGrowthPositions[rand.Next(possibleGrowthPositions.Count)]; // found this online
 			// currentGrid[chosenPos.Item1, chosenPos.Item2] = new Root(parentSeed);
 			if (GridManager.Instance.RequestDeletion(chosenPos.Item1, chosenPos.Item2, maxX, maxY, new Root((x, y), distance - 1, false))) {
-				nutrient -= 1f;
-				wetness -= 0.2f;
+				nutrient -= BASE_ROOT_NUTRIENT_COST;
+				wetness -= BASE_ROOT_WETNESS_COST;
 				return true;
-			} else {
-				return false;
 			}
-	
 		}
-		else
-		{
-			return false;
-		}
+
+		return false;
 	}
 
 	private bool shouldDie(Seed parentSeed, Root parentRoot) {
-		// return false;
-		return (firstRoot && (parentSeed == null || parentSeed.plantState == Seed.PlantState.Dying)) || (!firstRoot && (parentRoot == null || parentRoot.rootState == Root.RootState.Dying));
+		if (firstRoot) {
+			return parentSeed == null || parentSeed.plantState == Seed.PlantState.Dying;
+		} else {
+			return parentRoot == null || parentRoot.rootState == Root.RootState.Dying;
+		}
 	}
 	override public void update(Element[,] currentGrid, int x, int y, int maxX, int maxY, int T)
 	{
@@ -205,10 +208,10 @@ public class Root : Element, ILife, ISolid
 		if (T - lastActivity >= activityInterval)
 		{
 			lastActivity = T;
-			absorbNutrientsAndWetness(currentGrid, x, y, maxX, maxY);
-			transferNutrientsToParentRoot(currentGrid, x, y, maxX, maxY); // Fait rien si pas firstRoot
-			transferNutrientsToParentSeed(currentGrid, x, y, maxX, maxY);
 			growRoot(currentGrid, x, y, maxX, maxY);
+			absorbNutrientsAndWetness(currentGrid, x, y, maxX, maxY);
+			transferNutrientsToParentRoot(currentGrid, x, y, maxX, maxY); 
+			transferNutrientsToParentSeed(currentGrid, x, y, maxX, maxY); // Fait rien si pas firstRoot
 		}
 
 		updateColor(T, x, y);

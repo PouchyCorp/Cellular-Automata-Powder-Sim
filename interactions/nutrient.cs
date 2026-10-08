@@ -274,6 +274,8 @@ public class NutrientManager
 			if (currentGrid[request.x, request.y] is not ILife takingElement)
 				continue;
 
+			
+
 			float nutrientToTake = Mathf.Min(
 				request.NutrientAmount,
 				Mathf.Min(remainingNutrient, GetRemainingNutrientCapacity(takingElement))
@@ -285,6 +287,7 @@ public class NutrientManager
 			targetElement.nutrient -= nutrientToTake;
 			takingElement.nutrient += nutrientToTake;
 			remainingNutrient -= nutrientToTake;
+
 			UpdateManager.Instance.UpdateNearbyCellsNextFrame(request.x, request.y, maxX, maxY);
 			UpdateManager.Instance.UpdateNearbyCellsNextFrame(request.targetX, request.targetY, maxX, maxY);
 		}

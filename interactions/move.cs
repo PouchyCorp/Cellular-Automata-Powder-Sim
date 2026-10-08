@@ -59,6 +59,13 @@ public class MoveRequest
 				return true;
 			}
 		}
+		if (element is Snail)
+		{
+			if (target is SurfBiomass or Ash)
+			{
+				return true;
+			}
+		}
 		return false;
 	}
 	public static bool CanMove(Element[,] oldGrid, int x, int y, int movementX, int movementY, int maxX, int maxY)

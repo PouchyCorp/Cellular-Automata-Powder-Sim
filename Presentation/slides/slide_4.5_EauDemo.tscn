@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://chkwg6r603tyu"]
+[gd_scene format=3 uid="uid://chkwg6r603tyu"]
 
 [ext_resource type="FontFile" uid="uid://ca2vruqos2mvv" path="res://assets/JetBrains_Mono/static/JetBrainsMono-Regular.ttf" id="1_eo03b"]
 [ext_resource type="PackedScene" uid="uid://ce8kb7bg7yma0" path="res://CGoL/main_CGoL.tscn" id="2_gh1c8"]
@@ -11,7 +11,7 @@ font_color = Color(1, 1, 1, 0.78431374)
 
 [sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_r3ngw"]
 
-[node name="Demo-Sable" type="Control"]
+[node name="Demo-Sable" type="Control" unique_id=1098238922]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -19,7 +19,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1815108362]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -28,11 +28,17 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.078431375, 0.078431375, 0.13725491, 1)
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1119751679]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -270.0
+offset_top = -328.5
+offset_right = 270.0
+offset_bottom = 328.5
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 20
@@ -40,23 +46,23 @@ theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1981500564]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
 
-[node name="Title2" type="Label" parent="MarginContainer/VBoxContainer"]
+[node name="Title2" type="Label" parent="MarginContainer/VBoxContainer" unique_id=1459682416]
 layout_mode = 2
 text = "L'eau en action !"
 label_settings = SubResource("LabelSettings_n18vl")
 horizontal_alignment = 1
 
-[node name="HSeparator2" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+[node name="HSeparator2" type="HSeparator" parent="MarginContainer/VBoxContainer" unique_id=1447321547]
 layout_mode = 2
 theme_override_constants/separation = 25
 theme_override_styles/separator = SubResource("StyleBoxEmpty_r3ngw")
 
-[node name="DemoEau" parent="MarginContainer/VBoxContainer" instance=ExtResource("2_gh1c8")]
+[node name="DemoEau" parent="MarginContainer/VBoxContainer" unique_id=571384399 instance=ExtResource("2_gh1c8")]
 modulate = Color(1, 1, 1, 0.78431374)
 custom_minimum_size = Vector2(500, 500)
 layout_mode = 2
@@ -65,24 +71,24 @@ size_flags_vertical = 4
 script = ExtResource("3_eo03b")
 cell_size = Vector2(20, 20)
 
-[node name="HSeparator3" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+[node name="HSeparator3" type="HSeparator" parent="MarginContainer/VBoxContainer" unique_id=1078797301]
 layout_mode = 2
 theme_override_constants/separation = 5
 theme_override_styles/separator = SubResource("StyleBoxEmpty_r3ngw")
 
-[node name="Buttons" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+[node name="Buttons" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=723829680]
 layout_mode = 2
 size_flags_horizontal = 4
 
-[node name="Next" type="Button" parent="MarginContainer/VBoxContainer/Buttons"]
+[node name="Next" type="Button" parent="MarginContainer/VBoxContainer/Buttons" unique_id=683073949]
 layout_mode = 2
 text = "Next"
 
-[node name="Play" type="Button" parent="MarginContainer/VBoxContainer/Buttons"]
+[node name="Play" type="Button" parent="MarginContainer/VBoxContainer/Buttons" unique_id=1345994941]
 layout_mode = 2
 text = "Play"
 
-[node name="Pause" type="Button" parent="MarginContainer/VBoxContainer/Buttons"]
+[node name="Pause" type="Button" parent="MarginContainer/VBoxContainer/Buttons" unique_id=112081391]
 layout_mode = 2
 text = "Pause"
 

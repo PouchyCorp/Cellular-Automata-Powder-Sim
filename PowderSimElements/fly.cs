@@ -6,7 +6,7 @@ using System.Collections.Generic;
 public class Fly : Element, ILife, ISolid, IFlammable
 {
 
-	const float BASE_NUTRIENT_COST = 1.0f;
+	const float BASE_NUTRIENT_COST = 0.0f;
 	int lastActivity = 0;
 	public int flammability { get; set; } = 3;
 	public bool burning { get; set; } = false;
@@ -95,21 +95,23 @@ public class Fly : Element, ILife, ISolid, IFlammable
 				{
 					if (oldGrid[nx, ny] is Fruit fruit)
 					{
-						if (fruit.pollinate())
-						{
-							TakeNutrientRequest request = new TakeNutrientRequest(x, y, nx, ny, BASE_NUTRIENT_COST);
-							NutrientManager.Instance.AddTakeNutrientRequest(request, maxX, maxY); // Transfer nutrient to the fruit
+						if (!fruit.pollinated)
+						{	
+							fruit.pollinate();
+							//TakeNutrientRequest request = new TakeNutrientRequest(x, y, nx, ny, BASE_NUTRIENT_COST);
+							//NutrientManager.Instance.AddTakeNutrientRequest(request, maxX, maxY); // Transfer nutrient to the fruit
+							reproduce(oldGrid, x, y, maxX, maxY);
 						}
 					}
 				}
 			}
 		}
 
-		if (nutrient == maxNutrient)
-		{
-			reproduce(oldGrid, x, y, maxX, maxY);
-			nutrient = 1.0f; // Reset nutrient after reproduction
-		}
+		// if (nutrient == maxNutrient)
+		// {
+		// 	reproduce(oldGrid, x, y, maxX, maxY);
+		// 	nutrient = 1.0f; // Reset nutrient after reproduction
+		// }
 
 
 

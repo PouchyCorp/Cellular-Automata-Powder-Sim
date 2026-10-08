@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://cjlusc1g334mf"]
+[gd_scene format=3 uid="uid://cjlusc1g334mf"]
 
 [ext_resource type="FontFile" uid="uid://g8k63a0bt0t2" path="res://assets/JetBrains_Mono/static/JetBrainsMono-Bold.ttf" id="1_vr2ki"]
 [ext_resource type="FontFile" uid="uid://ca2vruqos2mvv" path="res://assets/JetBrains_Mono/static/JetBrainsMono-Regular.ttf" id="2_ooulq"]
@@ -18,7 +18,7 @@ font = ExtResource("2_ooulq")
 font_size = 35
 font_color = Color(1, 1, 1, 0.78431374)
 
-[node name="Slide 4 - Eau" type="Control"]
+[node name="Slide 4 - Eau" type="Control" unique_id=1627724202]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -26,7 +26,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ColorRect" type="ColorRect" parent="."]
+[node name="ColorRect" type="ColorRect" parent="." unique_id=1146742360]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -35,11 +35,17 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.078431375, 0.078431375, 0.13725491, 1)
 
-[node name="MarginContainer" type="MarginContainer" parent="."]
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=2077980962]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -484.0
+offset_top = -331.0
+offset_right = 484.0
+offset_bottom = 331.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 20
@@ -47,39 +53,39 @@ theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1766654067]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
 theme_override_constants/separation = -6
 
-[node name="Title" type="Label" parent="MarginContainer/VBoxContainer"]
+[node name="Title" type="Label" parent="MarginContainer/VBoxContainer" unique_id=730459428]
 layout_mode = 2
 text = "Faire de l'eau avec du sable !"
 label_settings = SubResource("LabelSettings_dx7je")
 horizontal_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer" unique_id=451308848]
 layout_mode = 2
 theme_override_constants/separation = 30
 theme_override_styles/separator = SubResource("StyleBoxLine_67df5")
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=265072630]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 6
 theme_override_constants/separation = 89
 
-[node name="TomberVbox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="TomberVbox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=796761410]
 layout_mode = 2
 
-[node name="Title2" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/TomberVbox"]
+[node name="Title2" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/TomberVbox" unique_id=1439952686]
 layout_mode = 2
 text = "Tomber"
 label_settings = SubResource("LabelSettings_g6i5l")
 horizontal_alignment = 1
 
-[node name="TextureRect" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/TomberVbox"]
+[node name="TextureRect" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/TomberVbox" unique_id=1244929009]
 modulate = Color(1, 1, 1, 0.78431374)
 texture_filter = 1
 custom_minimum_size = Vector2(250, 500)
@@ -89,7 +95,7 @@ size_flags_vertical = 4
 texture = ExtResource("3_ooulq")
 expand_mode = 1
 
-[node name="ColorRect" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/TomberVbox/TextureRect"]
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/TomberVbox/TextureRect" unique_id=266591461]
 layout_mode = 0
 offset_left = 87.0
 offset_top = 77.0
@@ -97,7 +103,7 @@ offset_right = 163.205
 offset_bottom = 145.435
 color = Color(0, 0.39215687, 0.9411765, 1)
 
-[node name="ColorRect2" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/TomberVbox/TextureRect"]
+[node name="ColorRect2" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/TomberVbox/TextureRect" unique_id=1099791763]
 layout_mode = 0
 offset_left = 87.0
 offset_top = 427.0
@@ -105,7 +111,7 @@ offset_right = 163.205
 offset_bottom = 495.435
 color = Color(0, 0.39215687, 0.9411765, 1)
 
-[node name="TextureRect2" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/TomberVbox/TextureRect"]
+[node name="TextureRect2" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/TomberVbox/TextureRect" unique_id=1328547160]
 layout_mode = 0
 offset_left = 100.0
 offset_top = 129.0
@@ -115,16 +121,16 @@ rotation = 0.0009908518
 scale = Vector2(0.125, 0.125)
 texture = ExtResource("4_uc5r6")
 
-[node name="GlisserVbox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="GlisserVbox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=514069647]
 layout_mode = 2
 
-[node name="Title2" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox"]
+[node name="Title2" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox" unique_id=1223325175]
 layout_mode = 2
 text = "Glisser"
 label_settings = SubResource("LabelSettings_g6i5l")
 horizontal_alignment = 1
 
-[node name="TextureRect" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox"]
+[node name="TextureRect" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox" unique_id=181937327]
 modulate = Color(1, 1, 1, 0.78431374)
 texture_filter = 1
 custom_minimum_size = Vector2(250, 500)
@@ -134,7 +140,7 @@ size_flags_vertical = 4
 texture = ExtResource("3_ooulq")
 expand_mode = 1
 
-[node name="ColorRect3" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox/TextureRect"]
+[node name="ColorRect3" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox/TextureRect" unique_id=257098711]
 layout_mode = 0
 offset_left = 87.0
 offset_top = 150.0
@@ -142,7 +148,7 @@ offset_right = 163.205
 offset_bottom = 218.435
 color = Color(0, 0.39215687, 0.9411765, 1)
 
-[node name="ColorRect" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox/TextureRect"]
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox/TextureRect" unique_id=740757199]
 layout_mode = 0
 offset_left = 87.0
 offset_top = 77.0
@@ -150,7 +156,7 @@ offset_right = 163.205
 offset_bottom = 145.435
 color = Color(0, 0.39215687, 0.9411765, 1)
 
-[node name="ColorRect2" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox/TextureRect"]
+[node name="ColorRect2" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox/TextureRect" unique_id=201119651]
 layout_mode = 0
 offset_left = 87.0
 offset_top = 427.0
@@ -158,7 +164,7 @@ offset_right = 163.205
 offset_bottom = 495.435
 color = Color(0, 0.39215687, 0.9411765, 1)
 
-[node name="ColorRect4" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox/TextureRect"]
+[node name="ColorRect4" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox/TextureRect" unique_id=547382664]
 layout_mode = 0
 offset_left = 168.0
 offset_top = 427.0
@@ -166,7 +172,7 @@ offset_right = 244.83499
 offset_bottom = 495.435
 color = Color(0, 0.39215687, 0.9411765, 1)
 
-[node name="TextureRect2" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox/TextureRect"]
+[node name="TextureRect2" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox/TextureRect" unique_id=502605643]
 layout_mode = 0
 offset_left = 132.0
 offset_top = 150.0
@@ -176,7 +182,7 @@ rotation = -0.7869547
 scale = Vector2(0.125, 0.125)
 texture = ExtResource("4_uc5r6")
 
-[node name="TextureRect3" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox/TextureRect"]
+[node name="TextureRect3" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/GlisserVbox/TextureRect" unique_id=1961818350]
 layout_mode = 0
 offset_left = 82.0
 offset_top = 114.0
@@ -186,16 +192,16 @@ rotation = 0.7966059
 scale = Vector2(0.125, 0.125)
 texture = ExtResource("4_uc5r6")
 
-[node name="CoulerVbox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="CoulerVbox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=701537355]
 layout_mode = 2
 
-[node name="Title2" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox"]
+[node name="Title2" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox" unique_id=606892601]
 layout_mode = 2
 text = "Couler"
 label_settings = SubResource("LabelSettings_g6i5l")
 horizontal_alignment = 1
 
-[node name="TextureRect" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox"]
+[node name="TextureRect" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox" unique_id=665780513]
 modulate = Color(1, 1, 1, 0.78431374)
 texture_filter = 1
 custom_minimum_size = Vector2(250, 500)
@@ -205,7 +211,7 @@ size_flags_vertical = 4
 texture = ExtResource("3_ooulq")
 expand_mode = 1
 
-[node name="ColorRect3" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect"]
+[node name="ColorRect3" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect" unique_id=957191910]
 layout_mode = 0
 offset_left = 87.0
 offset_top = 150.0
@@ -213,7 +219,7 @@ offset_right = 163.205
 offset_bottom = 218.435
 color = Color(0, 0.39215687, 0.9411765, 1)
 
-[node name="ColorRect" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect"]
+[node name="ColorRect" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect" unique_id=568302789]
 layout_mode = 0
 offset_left = 87.0
 offset_top = 77.0
@@ -221,7 +227,7 @@ offset_right = 163.205
 offset_bottom = 145.435
 color = Color(0, 0.39215687, 0.9411765, 1)
 
-[node name="ColorRect2" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect"]
+[node name="ColorRect2" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect" unique_id=2023928253]
 layout_mode = 0
 offset_left = 87.0
 offset_top = 427.0
@@ -229,7 +235,7 @@ offset_right = 163.205
 offset_bottom = 495.435
 color = Color(0, 0.39215687, 0.9411765, 1)
 
-[node name="ColorRect4" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect"]
+[node name="ColorRect4" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect" unique_id=2089213837]
 layout_mode = 0
 offset_left = 168.0
 offset_top = 427.0
@@ -237,7 +243,7 @@ offset_right = 244.83499
 offset_bottom = 495.435
 color = Color(0, 0.39215687, 0.9411765, 1)
 
-[node name="ColorRect5" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect"]
+[node name="ColorRect5" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect" unique_id=1094885]
 layout_mode = 0
 offset_left = 168.0
 offset_top = 149.0
@@ -245,7 +251,7 @@ offset_right = 244.98001
 offset_bottom = 218.20999
 color = Color(0, 0.39215687, 0.9411765, 1)
 
-[node name="ColorRect7" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect"]
+[node name="ColorRect7" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect" unique_id=932355180]
 layout_mode = 0
 offset_left = 169.0
 offset_top = 354.0
@@ -253,7 +259,7 @@ offset_right = 245.68
 offset_bottom = 422.435
 color = Color(0, 0.39215687, 0.9411765, 1)
 
-[node name="ColorRect6" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect"]
+[node name="ColorRect6" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect" unique_id=1193289634]
 layout_mode = 0
 offset_left = 5.0
 offset_top = 150.0
@@ -261,7 +267,7 @@ offset_right = 81.68
 offset_bottom = 218.435
 color = Color(0, 0.39215687, 0.9411765, 1)
 
-[node name="ColorRect8" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect"]
+[node name="ColorRect8" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect" unique_id=1230639759]
 layout_mode = 0
 offset_left = 5.0
 offset_top = 427.0
@@ -269,7 +275,7 @@ offset_right = 81.68
 offset_bottom = 495.435
 color = Color(0, 0.39215687, 0.9411765, 1)
 
-[node name="TextureRect2" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect"]
+[node name="TextureRect2" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect" unique_id=557395975]
 layout_mode = 0
 offset_left = 147.0
 offset_top = 137.0
@@ -279,7 +285,7 @@ rotation = -1.5707964
 scale = Vector2(0.125, 0.125)
 texture = ExtResource("4_uc5r6")
 
-[node name="TextureRect3" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect"]
+[node name="TextureRect3" type="TextureRect" parent="MarginContainer/VBoxContainer/HBoxContainer/CoulerVbox/TextureRect" unique_id=1287316927]
 layout_mode = 0
 offset_left = 101.0
 offset_top = 85.0

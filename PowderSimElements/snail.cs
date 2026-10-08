@@ -7,7 +7,7 @@ public class Snail : Element, ILife
 	private int lastMoveTick = 0;
 
 	public float maxNutrient => 100000000000.0f;
-	public float nutrient { get; set; }= 1.0f;
+	public float nutrient { get; set; }= 0.0f;
 	public float wetness { get; set; } = 0.0f;
 	public float maxWetness => 10000000000.0f;
 
@@ -95,23 +95,22 @@ public class Snail : Element, ILife
 			{
 				if (nx == x && ny == y) continue;
 
-				if (oldGrid[nx, ny] is SurfBiomass surfBiomass)
+				if (oldGrid[nx, ny] is SurfBiomass or Ash)
 				{
 					// Eat the surface biomass
-					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(x, y, x, y, surfBiomass.nutrient), maxX, maxY);
-					NutrientManager.Instance.AddTakeWetnessRequest(new TakeWetnessRequest(x, y, x, y, surfBiomass.wetness), maxX, maxY);
-					MoveManager.Instance.AttemptMove(oldGrid, x, y, nx, ny, maxX, maxY); // Remove to the biomass
+					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(x, y, nx, ny, 10000f), maxX, maxY);
+					NutrientManager.Instance.AddTakeWetnessRequest(new TakeWetnessRequest(x, y, nx, ny, 10000f), maxX, maxY);
 					return true;
 				}
 
-				if (oldGrid[nx, ny] is Ash ash)
-				{
-					// Eat the soil nutrients
-					NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(x, y, nx, ny, ash.nutrient), maxX, maxY);
-					NutrientManager.Instance.AddTakeWetnessRequest(new TakeWetnessRequest(x, y, nx, ny, ash.wetness), maxX, maxY);
-					MoveManager.Instance.AttemptMove(oldGrid, x, y, nx, ny, maxX, maxY); // Remove to the ash
-					return true;
-				}
+				// if (oldGrid[nx, ny] is Ash)
+				// {
+				// 	// Eat the soil nutrients
+				// 	NutrientManager.Instance.AddTakeNutrientRequest(new TakeNutrientRequest(x, y, nx, ny, 10000f), maxX, maxY);
+				// 	NutrientManager.Instance.AddTakeWetnessRequest(new TakeWetnessRequest(x, y, nx, ny, 10000f), maxX, maxY);
+					
+				// 	return true;
+				// }
 			}
 		}
 		return false;
@@ -286,6 +285,7 @@ public class Snail : Element, ILife
 		nutrient = stateArgs[i++].ToFloat();
 		wetness = stateArgs[i++].ToFloat();
 		eatingCooldown = stateArgs[i++].ToInt();
+		lastMoveTick = i < stateArgs.Length ? stateArgs[i++].ToInt() : 0;
 		return i;
 	}
 
