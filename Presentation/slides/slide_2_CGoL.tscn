@@ -34,11 +34,15 @@ color = Color(0.078431375, 0.078431375, 0.13725491, 1)
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=1194581813]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_top = -18.0
-offset_bottom = 18.0
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -549.0
+offset_top = -342.0
+offset_right = 549.0
+offset_bottom = 342.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 20
@@ -62,8 +66,6 @@ horizontal_alignment = 1
 
 [node name="Title2" type="Label" parent="MarginContainer/HBox/VBoxContainer" unique_id=538251723]
 layout_mode = 2
-offset_transform_enabled = true
-offset_transform_scale = Vector2(0.925, 0.925)
 text = "Isolation (<= 1 voisin)"
 label_settings = SubResource("LabelSettings_r3ngw")
 horizontal_alignment = 1
@@ -86,8 +88,6 @@ offset_bottom = 99.0
 
 [node name="Title3" type="Label" parent="MarginContainer/HBox/VBoxContainer" unique_id=1097378876]
 layout_mode = 2
-offset_transform_enabled = true
-offset_transform_scale = Vector2(0.925, 0.925)
 text = "Surpopulation (>= 4 voisins)"
 label_settings = SubResource("LabelSettings_r3ngw")
 horizontal_alignment = 1
@@ -162,8 +162,6 @@ offset_bottom = -1.0
 
 [node name="Title4" type="Label" parent="MarginContainer/HBox/VBoxContainer" unique_id=1465134968]
 layout_mode = 2
-offset_transform_enabled = true
-offset_transform_scale = Vector2(0.925, 0.925)
 text = "Reproduction (3 voisins)"
 label_settings = SubResource("LabelSettings_r3ngw")
 horizontal_alignment = 1
@@ -258,12 +256,12 @@ layout_mode = 2
 text = "Pause"
 
 [node name="Cross" type="Sprite2D" parent="." unique_id=1692236237]
-position = Vector2(358.00003, 175)
+position = Vector2(740, 392)
 scale = Vector2(0.23138285, 0.30952376)
 texture = ExtResource("4_alms2")
 
 [node name="Cross2" type="Sprite2D" parent="." unique_id=1646956983]
-position = Vector2(357, 370)
+position = Vector2(744, 587)
 scale = Vector2(0.23138285, 0.30952376)
 texture = ExtResource("4_alms2")
 
