@@ -6,19 +6,19 @@ using System.Collections.Generic;
 public class Fly : Element, ILife, ISolid, IFlammable
 {
 
-	const float BASE_NUTRIENT_COST = 0.0f;
+	const float BASE_NUTRIENT_COST = 1.0f;
 	int lastActivity = 0;
 	public int flammability { get; set; } = 3;
 	public bool burning { get; set; } = false;
 	public int burningLifetime { get; set; }
 
-	public float maxNutrient => BASE_NUTRIENT_COST * 2.0f;
+	public float maxNutrient => BASE_NUTRIENT_COST * 3.0f;
 	public float nutrient { get; set; } = BASE_NUTRIENT_COST;
-	public float wetness { get; set; } = 0.0f;
 	public float maxWetness => 0.0f;
+	public float wetness { get; set; } = 0.0f;
 
 
-	int lifetime = 300 * 60; // ticks
+	int lifetime = 300 * 60 * 2; // ticks
 	int activityInterval = 5;
 
 	// Direction and movement properties
@@ -39,12 +39,12 @@ public class Fly : Element, ILife, ISolid, IFlammable
 	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the snail every frame
-		// lifetime--;
-		// if (lifetime <= 0)
-		// {
-		// 	GridManager.Instance.RequestDeletion(x, y, maxX, maxY);
-		// 	return;
-		// }
+		lifetime--;
+		if (lifetime <= 0)
+		{
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, new Biomass(wetness,nutrient)); // die and drop biomass
+			return;
+		}
 
 		if (T - lastActivity < activityInterval)
 		{
@@ -95,23 +95,19 @@ public class Fly : Element, ILife, ISolid, IFlammable
 				{
 					if (oldGrid[nx, ny] is Fruit fruit)
 					{
-						if (!fruit.pollinated)
-						{	
-							fruit.pollinate();
-							//TakeNutrientRequest request = new TakeNutrientRequest(x, y, nx, ny, BASE_NUTRIENT_COST);
-							//NutrientManager.Instance.AddTakeNutrientRequest(request, maxX, maxY); // Transfer nutrient to the fruit
-							reproduce(oldGrid, x, y, maxX, maxY);
-						}
+						fruit.pollinate();
+						TakeNutrientRequest request = new TakeNutrientRequest(x, y, nx, ny, BASE_NUTRIENT_COST);
+						NutrientManager.Instance.AddTakeNutrientRequest(request, maxX, maxY); // Transfer nutrient to the fruit
 					}
 				}
 			}
 		}
 
-		// if (nutrient == maxNutrient)
-		// {
-		// 	reproduce(oldGrid, x, y, maxX, maxY);
-		// 	nutrient = 1.0f; // Reset nutrient after reproduction
-		// }
+		if (nutrient >= BASE_NUTRIENT_COST * 2.0f) // if nutrient is enough to reproduce
+		{
+			reproduce(oldGrid, x, y, maxX, maxY);
+			nutrient = 1.0f; // Reset nutrient after reproduction
+		}
 
 
 
@@ -173,13 +169,9 @@ public class Fly : Element, ILife, ISolid, IFlammable
 		{
 			int nx = x + dir.Item1;
 			int ny = y + dir.Item2;
-			if (nx > 0 && nx < maxX && ny > 0 && ny < maxY)
-			{
-				if (oldGrid[nx, ny] == null)
-				{
-					oldGrid[nx, ny] = new Fly();
-					return; // Only try to reproduce in one direction
-				}
+			if (oldGrid[nx, ny] != null) continue; // Only spawn in empty cells
+			if(GridManager.Instance.RequestSpawn(nx, ny, new Fly(), maxX, maxY)){
+				return; // Spawned successfully, exit the method
 			}
 		}
 	}

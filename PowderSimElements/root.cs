@@ -29,7 +29,7 @@ public class Root : Element, ILife, ISolid
 
 	public Root() {} // DO NOT USE EXCEPT IF YOU'RE GONNA SET A STATE RIGHT AFTER
 
-	public Root((int, int) parent, int distance, bool isFirst)
+	public Root((int, int) parent, int distance, bool isFirst, float startingAdditionalNutrients = 0.0f, float startingAdditionalWetness = 0.0f)
 	{
 		this.parent = parent;
 		this.distance = distance;

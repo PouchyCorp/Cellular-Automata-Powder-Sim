@@ -228,6 +228,17 @@ public partial class CellularAutomataEngine : Node2D
 	//Those inputs are always called
 	public override void _Input(InputEvent @event)
 	{
+		if (Input.IsActionPressed("increaseBrushSize"))
+		{
+			brushSize = Math.Min(brushSize + 1, 100);
+			brushSizeSlider.Value = brushSize;
+		}
+		else if (Input.IsActionPressed("decreaseBrushSize"))
+		{
+			brushSize = Math.Max(brushSize - 1, 1);
+			brushSizeSlider.Value = brushSize;
+		}
+
 		if (@event is InputEventKey eventKey && eventKey.Pressed && !eventKey.Echo)
 		{
 			if (eventKey.Keycode == Key.Space)
@@ -681,6 +692,15 @@ public partial class CellularAutomataEngine : Node2D
 				if (elementArray[x, y] is ILife nutrient)
 				{
 					totalNutrient += nutrient.nutrient;
+
+					if (elementArray[x, y] is Worm worm)
+					{
+						totalNutrient += worm.inSoil?.nutrient ?? 0.0f;
+					}
+					if (elementArray[x, y] is WormBody body)
+					{
+						totalNutrient += body.inSoil?.nutrient ?? 0.0f;
+					}
 				}
 			}
 		}

@@ -15,7 +15,7 @@ public class Seed : Element, ILife, ISolid
 	public int floweringLifetime = 120 * 60; // ticks
 	private int floweringTime;
 
-	public int growthDuration = 60 * 60 * 2 ; // ticks
+	public int growthDuration = 60 * 60 ; // ticks
 	private int growingTime;
 
 	public Color plantColor = Colors.Green;
@@ -48,9 +48,9 @@ public class Seed : Element, ILife, ISolid
 	private bool growStartingRoot(Element[,] currentGrid, int x, int y, int maxX, int maxY)
 	{
 		// Try to grow root downwards if there's space
-		if (y + 1 < maxY && currentGrid[x, y + 1] is Soil)
+		if (y + 1 < maxY && currentGrid[x, y + 1] is Soil soil)
 		{
-			if (GridManager.Instance.RequestDeletion(x, y + 1, maxX, maxY, new Root((x, y), 10, true))) // la distance décroit jusqu'a 0 en bout de racine (oui c'est pas logique)
+			if (GridManager.Instance.RequestDeletion(x, y + 1, maxX, maxY, new Root((x, y), 7, true, soil.nutrient, soil.wetness))) // la distance décroit jusqu'a 0 en bout de racine (oui c'est pas logique)
 			{
 				nutrient -= Root.BASE_ROOT_NUTRIENT_COST;
 				wetness -= Root.BASE_ROOT_WETNESS_COST;
@@ -105,7 +105,7 @@ public class Seed : Element, ILife, ISolid
 		return;
 	}
 
-	private void transferNutrientsUpwards(Element[,] oldGrid, int x, int y, int maxX, int maxY)
+	private void transferNutrientsUpwards(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		if (oldGrid[startingLeaf.Item1, startingLeaf.Item2] is Leaf)
 		{
@@ -115,21 +115,38 @@ public class Seed : Element, ILife, ISolid
 		else
 		{
 			GD.Print("Seed: First leaf no longer exists, plant is dying. Above: " + oldGrid[x, y - 1]);
-			plantState = PlantState.Dying; // first leaf no longer exists, die
+			changePlantState(PlantState.Dying, T); // first leaf no longer exists, die
 
 		}
 	}
+
+	public void changePlantState(PlantState newState, int T)
+	{
+		switch (newState)
+		{
+			case PlantState.Falling:
+				// No special action needed for falling state
+				break;
+			case PlantState.Seed:
+				// No special action needed for seed state
+				break;
+			case PlantState.Growing:
+				growingTime = T; 
+				break;
+			case PlantState.Flowering:
+				floweringTime = T;
+				break;
+			case PlantState.Dying:
+				// No special action needed for dying state
+				break;
+		}
+
+		plantState = newState;
+	}
+
 	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the seed every frame
-
-		if (y == maxY - 1 || y == 0)
-		{
-			plantState = PlantState.Dying;
-			GD.Print("Seed: Out of bounds, plant is dying.");
-		}
-
-		lifetime--;
 
 		switch (plantState)
 		{
@@ -137,30 +154,40 @@ public class Seed : Element, ILife, ISolid
 			case PlantState.Falling:
 				{
 					if (y + 1 >= maxY) break;
-					if (!MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, 1, maxX, maxY)) // if cannot fall further
+					MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, 1, maxX, maxY);
+					if (oldGrid[x, y + 1] is ISolid or IPowder) // if cannot fall further
 					{
-						plantState = PlantState.Seed; // become a seed
+						changePlantState(PlantState.Seed, T); // become a seed
 					}
 
+					if (y == maxY - 1 || y == 0)
+					{
+						changePlantState(PlantState.Dying, T);
+						GD.Print("Seed: Out of bounds, plant is dying.");
+					}
 					break;
 				}
 
 			// -- Seed state --
 			case PlantState.Seed:
 				{
-					if (T - lastGrowthTick < growthInterval) break; // not enough time has passed since last growth
-					lastGrowthTick = T;
-					// Try to grow roots first
 
+					// Try to grow roots first
 					growStartingRoot(oldGrid, x, y, maxX, maxY);
 					// try to grow leaves
 					growStartingLeaf(oldGrid, x, y, maxX, maxY);
 
 					if (startingLeaf != (-1, -1) && startingRoot != (-1, -1)) // if we have a leaf and a root, we can start growing
 					{
-						growingTime = T;
-						plantState = PlantState.Growing;
+						changePlantState(PlantState.Growing, T);
+					}
 
+					lifetime--;
+
+					if (lifetime <= 0)
+					{
+						changePlantState(PlantState.Dying, T);
+						return;
 					}
 
 					break;
@@ -169,20 +196,24 @@ public class Seed : Element, ILife, ISolid
 			// -- Growing state --
 			case PlantState.Growing: // only transfer nutrients if we are in growing phase
 				{
-					transferNutrientsUpwards(oldGrid, x, y, maxX, maxY);
-
 					if (T - growingTime >= growthDuration)
 					{
-						plantState = PlantState.Flowering;
-						floweringTime = T;
+						changePlantState(PlantState.Flowering, T);
 					}
-
+					
+					transferNutrientsUpwards(oldGrid, x, y, maxX, maxY, T);
 					break;
 				}
 
 			// -- Mature state --
 			case PlantState.Flowering:
 				{
+					if (T - floweringTime >= floweringLifetime)
+					{
+						changePlantState(PlantState.Dying, T);
+						GD.Print("Seed: Flowering time expired, plant is dying.");
+					}
+
 					if (oldGrid[x, y - 1] is Leaf firstLeaf)
 					{
 						if (firstLeaf.leafState < Leaf.LeafState.Flowering)
@@ -192,16 +223,11 @@ public class Seed : Element, ILife, ISolid
 					} else
 					{
 						GD.Print("Seed: First leaf no longer exists, plant is dying.");
-						plantState = PlantState.Dying;
+						changePlantState(PlantState.Dying, T);
 						break;
 					}
-					transferNutrientsUpwards(oldGrid, x, y, maxX, maxY); // continue transferring nutrients while for the flower
-
-					if (T - floweringTime >= floweringLifetime)
-					{
-						plantState = PlantState.Dying;
-						GD.Print("Seed: Flowering time expired, plant is dying.");
-					}
+					
+					transferNutrientsUpwards(oldGrid, x, y, maxX, maxY, T); // continue transferring nutrients while for the flower
 					break;
 				}
 

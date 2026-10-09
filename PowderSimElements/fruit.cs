@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.Diagnostics;
 
 public class Fruit : Element, ILife, ISolid, IFlammable
 {
@@ -17,20 +18,25 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 	public bool burning { get; set; } = false;
 	public int burningLifetime { get; set; }
 	public int flammability { get; set; } = 2;
-	public bool pollinated = false;
 	private int lifetimeOnSoil = 300 * 60; // ticks
 
-	public bool sterile = false; // if true, the fruit will not grow a seed when pollinated and on soil
+	private FruitState state = FruitState.Unfertilized;
+	enum FruitState
+	{
+		Unfertilized = 0,
+		Fertilized = 1,
+		Sterile = 2
+	}
 	public Fruit()
 	{
 		density = 40;
-		color = Colors.LightPink;
+		color = Colors.HotPink;
 		modulateColor();
 	}
 	
     public override void updateColor(int T, int x, int y)
     {
-		if (pollinated)
+		if (state == FruitState.Fertilized)
 		{
 			color = Colors.DarkRed;
 		}
@@ -39,9 +45,9 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 
 	public bool pollinate()
 	{
-		if (!pollinated && !sterile)
+		if (state == FruitState.Unfertilized)
 		{
-			pollinated = true;
+			state = FruitState.Fertilized;
 			return true;
 		}
 		return false;
@@ -92,7 +98,7 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 		}
 
 		// if polliated and on soil, try to grow a seed
-		if (pollinated && !sterile && oldGrid[x, y + 1] is Soil)
+		if (state == FruitState.Fertilized && oldGrid[x, y + 1] is Soil)
 		{
 			// 2% chance each tick to grow a seed
 			if (Random.Shared.NextSingle() < 0.02f)
@@ -103,7 +109,7 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 			}
 		}
 
-		if (pollinated && y + 1 < maxY && oldGrid[x, y + 1] is Leaf leaf) // if pollinated and on a leaf, change the leaf's state (it will propagate to the entire plant)
+		if (state == FruitState.Fertilized && y + 1 < maxY && oldGrid[x, y + 1] is Leaf leaf) // if pollinated and on a leaf, change the leaf's state (it will propagate to the entire plant)
 		{
 			leaf.leafState = Leaf.LeafState.ProducedFruit;
 		}
@@ -114,19 +120,19 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 
 	public override string inspectInfo()
 	{
-		return base.inspectInfo() + $"Pollinated: {pollinated}\n Sterile: {sterile}\n Lifetime on soil: {lifetimeOnSoil / 60} seconds\n";
+		return base.inspectInfo() + $"State: {state}\n Lifetime on soil: {lifetimeOnSoil / 60} seconds\n";
 	}
 
 	override public string getState()
 	{
-		return base.getState() + ";" + pollinated + ";" + lifetimeOnSoil;
+		return base.getState() + ";" + state + ";" + lifetimeOnSoil;
 	}
 
 	override public int setState(string state)
 	{
 		int i = base.setState(state);
 		string[] stateArgs = state.Split(";", false);
-		pollinated = stateArgs[i++] == "True";
+		this.state = (FruitState)stateArgs[i++].ToInt();
 		lifetimeOnSoil = stateArgs[i++].ToInt();
 		return i;
 	}

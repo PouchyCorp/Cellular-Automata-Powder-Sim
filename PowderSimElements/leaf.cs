@@ -17,6 +17,10 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 	public float minNutrient => BASE_LEAF_NUTRIENT_COST;
 	public float maxNutrient => 5.0f;
 
+
+	public float transferedToFruit = 0.0f;
+	public float maxTransferToFruit => 5.0f;
+
 	public int flammability { get; set; } = 10;
 	public bool burning { get; set; } = false;
 	public int burningLifetime { get; set; }
@@ -223,7 +227,18 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 			}
 		}
 
-		transferNutrientsToChildLeafs(oldGrid, x, y, maxX, maxY);
+		if (leafState == LeafState.ProducedFruit)
+		{
+			// if the leaf has produced fruit, it will not grow anymore, but it will transfer nutrients to the fruit
+			if (transferedToFruit < maxTransferToFruit && oldGrid[x, y - 1] is Fruit fruit)
+			{
+				float transferAmount = Math.Min(0.2f, maxTransferToFruit - transferedToFruit); // transfer 0.2 nutrient per tick, but not more than the maxTransferToFruit
+				NutrientManager.Instance.AddGiveNutrientRequest(new GiveNutrientRequest(x, y, x, y - 1, transferAmount), maxX, maxY);
+				transferedToFruit += transferAmount;
+			}
+		}
+
+		
 
 		FlammableBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 		updateColor(T, x, y);

@@ -49,7 +49,7 @@ public class Worm : Element, ILife, ISolid
 
 	private float wetnessBuffer = 0.0f; // to store excess wetness before transferring to soil
 
-	Soil inSoil = null;
+	public Soil inSoil = null;
 
 	enum WormState
 	{
