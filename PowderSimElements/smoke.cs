@@ -4,6 +4,7 @@ using System;
 public class Smoke : Element, IGas
 {
 	public bool sleeping { get; set; } = false;
+	public int lifetime { get; set; } = 60 * 20; // ticks
 
 	public Smoke()
 	{
@@ -29,6 +30,12 @@ public class Smoke : Element, IGas
 	{
 
 		GasBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
+
+		lifetime--;
+		if (lifetime <= 0){
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY);
+			return;
+		}
 
 		updateColor(T, x, y);
 	}

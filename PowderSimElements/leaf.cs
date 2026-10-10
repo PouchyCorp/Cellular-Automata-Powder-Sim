@@ -153,14 +153,14 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 	{
 		if (childLeafs.Count == 0) return;
 
-		const float maxTransferPerChild = 0.2f; // limit the transfer to 0.2 nutrient per child leaf
+		float maxTransferPerChild = 0.1f * leafCount; // limit the transfer to 0.2 nutrient per child leaf
 		float availableNutrientsToTransfer = Math.Max(0, nutrient - BASE_LEAF_NUTRIENT_COST);
 		float availableWetnessToTransfer = Math.Max(0, wetness - BASE_LEAF_WETNESS_COST);
 
 		float transferAmountPerChildNutrient = Math.Min(maxTransferPerChild, availableNutrientsToTransfer / childLeafs.Count);
 
 		float transferAmountPerChildWetness = Math.Min(maxTransferPerChild, availableWetnessToTransfer / childLeafs.Count);
-
+		
 		foreach ((int childX, int childY) in childLeafs)
 		{
 			if (currentGrid[childX, childY] is not Leaf childLeaf)
@@ -180,12 +180,13 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 
 			NutrientManager.Instance.AddGiveNutrientRequest(new GiveNutrientRequest(x, y, childX, childY, transferAmountPerChildNutrient), maxX, maxY);
 
-			NutrientManager.Instance.AddGiveWetnessRequest(new GiveWetnessRequest(x, y, childX, childY, transferAmountPerChildWetness), maxX, maxY); // transfer half the amount of wetness compared to nutrient
+			NutrientManager.Instance.AddGiveWetnessRequest(new GiveWetnessRequest(x, y, childX, childY, transferAmountPerChildWetness), maxX, maxY);
 		}
 	}
 	override public void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 		UpdateManager.Instance.RequestUpdateNextFrame(x, y); // request an update for the snail every frame
+		transferNutrientsToChildLeafs(oldGrid, x, y, maxX, maxY);
 
 		if (parentLeaf != (-1, -1) && oldGrid[parentLeaf.Item1, parentLeaf.Item2] is not Leaf parentLeafElement)
 		{
@@ -204,7 +205,6 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 		{
 			lastGrowthTick = T;
 			growLeaf(oldGrid, x, y, maxX, maxY);
-
 		}
 		
 		if (leafState == LeafState.Flowering
@@ -237,8 +237,6 @@ public class Leaf : Element, ILife, ISolid, IFlammable
 				transferedToFruit += transferAmount;
 			}
 		}
-
-		
 
 		FlammableBehavior.update(this, oldGrid, x, y, maxX, maxY, T);
 		updateColor(T, x, y);

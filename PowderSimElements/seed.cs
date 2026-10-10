@@ -8,11 +8,9 @@ public class Seed : Element, ILife, ISolid
 	public float nutrient { get; set; }
 	public float maxNutrient => 5.0f;
 
-	public float lifetime = 600 * 60; // ticks
-	private int lastGrowthTick = 0;
-	private int growthInterval = 1 * 60; // ticks
-
-	public int floweringLifetime = 120 * 60; // ticks
+	public float seedLifetime = 60; // ticks
+	
+	public int floweringLifetime = 60 * 60; // ticks
 	private int floweringTime;
 
 	public int growthDuration = 60 * 60 ; // ticks
@@ -182,9 +180,9 @@ public class Seed : Element, ILife, ISolid
 						changePlantState(PlantState.Growing, T);
 					}
 
-					lifetime--;
+					seedLifetime--;
 
-					if (lifetime <= 0)
+					if (seedLifetime <= 0)
 					{
 						changePlantState(PlantState.Dying, T);
 						return;
@@ -254,7 +252,6 @@ public class Seed : Element, ILife, ISolid
 		return base.getState() + ";"
 			+ ";" + wetness
 			+ ";" + nutrient
-			+ ";" + lastGrowthTick
 			+ ";" + floweringTime
 			+ ";" + growingTime
 			+ ";" + startingLeaf.Item1
@@ -268,7 +265,6 @@ public class Seed : Element, ILife, ISolid
 		string[] stateArgs = state.Split(";", false);
 		wetness = stateArgs[i++].ToFloat();
 		nutrient = stateArgs[i++].ToFloat();
-		lastGrowthTick = stateArgs[i++].ToInt();
 		floweringTime = stateArgs[i++].ToInt();
 		startingLeaf.Item1 = stateArgs[i++].ToInt();
 		startingLeaf.Item2 = stateArgs[i++].ToInt();

@@ -25,7 +25,6 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 	{
 		Unfertilized = 0,
 		Fertilized = 1,
-		Sterile = 2
 	}
 	public Fruit()
 	{

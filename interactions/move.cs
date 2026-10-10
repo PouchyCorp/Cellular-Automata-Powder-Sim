@@ -66,6 +66,15 @@ public class MoveRequest
 				return true;
 			}
 		}
+
+		if (target is FireParticle){
+			return true;
+		}
+
+		if (target is Fly){
+			return true; // fly position is not important
+		}
+
 		return false;
 	}
 	public static bool CanMove(Element[,] oldGrid, int x, int y, int movementX, int movementY, int maxX, int maxY)
@@ -89,9 +98,6 @@ public sealed class MoveManager
     private List<MoveRequest> requests = new();
     private HashSet<(int, int)> sources = new();
     private HashSet<(int, int)> destinations = new();
-
-	private HashSet<(int, int)> blacklist = new(); // this blacklist is the initial position of moved elements (to prevent another element from moving into the same position in the same update cycle)
-
     private MoveManager() { }
 
     public bool AttemptMove(

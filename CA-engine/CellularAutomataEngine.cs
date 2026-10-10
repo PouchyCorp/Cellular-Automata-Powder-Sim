@@ -230,7 +230,7 @@ public partial class CellularAutomataEngine : Node2D
 	{
 		if (Input.IsActionPressed("increaseBrushSize"))
 		{
-			brushSize = Math.Min(brushSize + 1, 100);
+			brushSize = Math.Min(brushSize + 1, 50);
 			brushSizeSlider.Value = brushSize;
 		}
 		else if (Input.IsActionPressed("decreaseBrushSize"))
@@ -342,6 +342,10 @@ public partial class CellularAutomataEngine : Node2D
 							{
 								FireManager.Instance.RequestIgnition(x, y, gridWidth, gridHeight);
 							}
+							if (elementArray[x, y] is null){
+								createElement(x, y, "FireParticle");
+							}
+							
 							break;
 
 						default:
@@ -367,6 +371,14 @@ public partial class CellularAutomataEngine : Node2D
 		// Handle special cases for single-click elements
 		switch (selectedElement)
 		{
+			case "Worm":
+				if (elementArray[x, y] is Soil or null)
+				{
+					createElement(x, y, "Worm");
+					MarkCellTextureDirty(x, y);
+				}
+				break;
+
 			default:
 				// Only place if the cell is empty or we're explicitly replacing
 				if (elementArray[x, y] == null)
@@ -710,7 +722,7 @@ public partial class CellularAutomataEngine : Node2D
 
 	public void _on_skip_time_button_pressed()
 	{
-		for (int i = 0; i < 1000; i++)
+		for (int i = 0; i < 10000; i++)
 		{
 			AdvanceSimulationStep();
 		}
