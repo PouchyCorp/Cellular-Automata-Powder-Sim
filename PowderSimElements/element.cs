@@ -5,7 +5,24 @@ public abstract class Element
 	public Color color { get; set; }
 	public Color baseColor { get; protected set; }
 	public double density { get; protected set; }
-	
+
+	public float randomPhaseOffset
+	{
+		get
+		{
+			if (_randomPhaseOffset == -1)
+			{
+				_randomPhaseOffset = Random.Shared.NextSingle() * MathF.PI * 2; // random phase offset between 0 and 2π
+			}
+			return _randomPhaseOffset;
+		}
+		set
+		{
+
+		}
+	}
+	private float _randomPhaseOffset = -1;
+
 	public virtual void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 	}
@@ -24,7 +41,7 @@ public abstract class Element
 
 		if (this is IFlammable && (this as IFlammable).burning)
 		{
-			float lerpIntensity = Math.Max(0, (float)Math.Sin((T + (x * y + x) % Math.Max(x/(y+1), 1)) / 10));
+			float lerpIntensity = Math.Max(0, (float)Math.Sin((T + randomPhaseOffset) / 10));
 			Color fireHue = Colors.Red.Lerp(Colors.Orange, lerpIntensity);
 			//fireHue = fireHue.Lerp(Colors.DarkOrange, Math.Max(1, 200 / (float)burningLifetime)); // longer burning -> darker fire color
 			color = baseColor.Lerp(fireHue, 0.4f); // blend both effects
@@ -41,7 +58,8 @@ public abstract class Element
 		return null;
 	}
 
-	virtual public void modulateColor(float intensity = 0.05f){
+	virtual public void modulateColor(float intensity = 0.05f)
+	{
 		float z = Random.Shared.NextSingle() * intensity;
 		color = color.Darkened(z);
 	}
@@ -60,12 +78,12 @@ public abstract class Element
 		{
 			output += $"  Flammability: {burningElement.flammability}\n  Burning: {burningElement.burning}\n  Burning Lifetime: {burningElement.burningLifetime}\n";
 		}
-		
+
 		if (this is ILife lifeElement)
 		{
 			output += $"  Nutrient: {lifeElement.nutrient}\n  Wetness: {lifeElement.wetness}\n";
 		}
-		
+
 		return output;
 	}
 

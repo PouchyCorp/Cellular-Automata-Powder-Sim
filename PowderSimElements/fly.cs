@@ -3,12 +3,12 @@ using System;
 using System.Collections.Generic;
 
 // TODO : Make the fly split into two flies when it's nutrient reach two. and make it die (dropping biomass) when nutrient reach 0. Also make it eat fruit to gain nutrient.
-public class Fly : Element, ILife, ISolid, IFlammable
+public class Fly : Element, ILife, IFlammable
 {
 
 	const float BASE_NUTRIENT_COST = 1.0f;
 	int lastActivity = 0;
-	public int flammability { get; set; } = 3;
+	public int flammability { get; set; } = 3000;
 	public bool burning { get; set; } = false;
 	public int burningLifetime { get; set; }
 
@@ -18,7 +18,7 @@ public class Fly : Element, ILife, ISolid, IFlammable
 	public float wetness { get; set; } = 0.0f;
 
 
-	int lifetime = 300 * 60 * 2; // ticks
+	int lifetime = 300 * 60; // ticks
 	int activityInterval = 5;
 
 	// Direction and movement properties
@@ -42,7 +42,7 @@ public class Fly : Element, ILife, ISolid, IFlammable
 		lifetime--;
 		if (lifetime <= 0)
 		{
-			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, new Biomass(wetness,nutrient)); // die and drop biomass
+			GridManager.Instance.RequestDeletion(x, y, maxX, maxY, new SurfBiomass(wetness,nutrient)); // die and drop biomass
 			return;
 		}
 

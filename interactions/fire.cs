@@ -33,6 +33,11 @@ public static class FlammableBehavior
                     {
                         ignite(nx, ny, maxX, maxY);
                     }
+                } else if (neighbor is Water waterNeighbor)
+                {
+                    // If the neighbor is water, extinguish the fire
+                    self.burning = false;
+                    GridManager.Instance.RequestDeletion(nx, ny, maxX, maxY, new Steam(waterNeighbor.wetness)); // evaporate the water into steam
                 }
 			}
 		}

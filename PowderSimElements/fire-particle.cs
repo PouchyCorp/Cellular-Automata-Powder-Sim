@@ -35,9 +35,13 @@ class FireParticle : Element
 
         // move upwards, if blocked, delete the fire particle
         MoveManager.Instance.AttemptMove(oldGrid, x, y, 0, -1, maxX, maxY);
-        if (y - 1 >= 0 && oldGrid[x, y-1] is not (IGas or FireParticle))
+        if (y - 1 >= 0)
         {
-            lifetime = 0; // set lifetime to 0 to trigger deletion
+            if (oldGrid[x, y-1] is not (IGas or FireParticle)){
+                lifetime = 0; // set lifetime to 0 to trigger deletion
+            }
+        } else {
+            lifetime = 0; // on the top edge, set lifetime to 0 to trigger deletion
         }
 
         updateColor(T, x, y);
