@@ -14,16 +14,17 @@ public static class PowderBehavior
 			return;
 		}
 
-		if (T + x * y % 2 == 0) // Alternate the order of diagonal movement to avoid bias (not using RNG to avoid performance issues)
+		if (Random.Shared.NextSingle() < 0.5f) 
 		{
 			if (MoveManager.Instance.AttemptMove(oldGrid, x, y, 1, 1, maxX, maxY))
 			{
 				return;
-			}
-			if (MoveManager.Instance.AttemptMove(oldGrid, x, y, -1, 1, maxX, maxY))
+			} 
+			else 
 			{
-				return;
+				MoveManager.Instance.AttemptMove(oldGrid, x, y, -1, 1, maxX, maxY);
 			}
+
 		}
 		else
 		{
@@ -31,9 +32,9 @@ public static class PowderBehavior
 			{
 				return;
 			}
-			if (MoveManager.Instance.AttemptMove(oldGrid, x, y, 1, 1, maxX, maxY))
+			else
 			{
-				return;
+				MoveManager.Instance.AttemptMove(oldGrid, x, y, 1, 1, maxX, maxY);
 			}
 		}
 	}

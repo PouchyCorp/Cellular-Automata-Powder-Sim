@@ -237,7 +237,7 @@ public class Spider : Element, ILife, ISolid
 
 			if (validCells.Count > 0)
 			{
-				int randomIndex = Random.Shared.Next(0, validCells.Count - 1);
+				int randomIndex = Random.Shared.Next(0, validCells.Count);
 				(int, int) targetCell = validCells[randomIndex];
 				specialMove(oldGrid, x, y, maxX, maxY, targetCell.Item1 - x, targetCell.Item2 - y);
 			}
@@ -323,7 +323,7 @@ public class Spider : Element, ILife, ISolid
 		}
 		
 		// Choose completely randomly from valid cells
-		int randomIndex = Random.Shared.Next(0, validCells.Count - 1);
+		int randomIndex = Random.Shared.Next(0, validCells.Count);
 		(int, int) bestCell = validCells[randomIndex];
 
 		specialMove(oldGrid, currentGrid, x, y, maxX, maxY, bestCell.Item1 - x, bestCell.Item2 - y);
