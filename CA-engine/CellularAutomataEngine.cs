@@ -39,8 +39,6 @@ public partial class CellularAutomataEngine : Node2D
 	private int pendingSingleSteps = 0;
 
 	private readonly HashSet<(int, int)> textureDirtyCells = new();
-	private HashSet<(int, int)> activeNeedUpdateCells = new();
-
 	private ColorRect gridRenderer;
 	private ShaderMaterial gridShaderMaterial;
 	private Image gridColorImage;
@@ -426,9 +424,19 @@ public partial class CellularAutomataEngine : Node2D
 		
 		Element[,] oldGrid = (Element[,])elementArray.Clone();
 		(int, int)[] cellsToUpdate = UpdateManager.Instance.GetUpdateRequests();
-		HashSet<(int, int)> previousNeedUpdateCells = activeNeedUpdateCells;
 		UpdateManager.Instance.ClearUpdateRequests();
 		MarkTextureDirty(cellsToUpdate);
+
+
+		// randomize update order to avoid bias
+		Random rng = new Random();
+		for (int i = cellsToUpdate.Length - 1; i > 0; i--)
+		{
+			int j = rng.Next(0, i + 1);
+			(int, int) temp = cellsToUpdate[i];
+			cellsToUpdate[i] = cellsToUpdate[j];
+			cellsToUpdate[j] = temp;
+		}
 
 		// Process elements in random order
 		foreach ((int x, int y) in cellsToUpdate)
@@ -444,7 +452,6 @@ public partial class CellularAutomataEngine : Node2D
 		FireManager.Instance.ProcessIgnitionRequests(elementArray, gridWidth, gridHeight);
 		MoveManager.Instance.ProcessMoveRequests(oldGrid, elementArray, gridWidth, gridHeight);
 		HashSet<(int, int)> nextNeedUpdateCells = UpdateManager.Instance.getHashSet();
-		activeNeedUpdateCells = nextNeedUpdateCells;
 	}
 
 	private void SetupGridRenderer()
@@ -581,7 +588,6 @@ public partial class CellularAutomataEngine : Node2D
 			elementArray = new Element[gridWidth, gridHeight];
 			SetupGridRenderer();
 			textureDirtyCells.Clear();
-			activeNeedUpdateCells.Clear();
 			UpdateManager.Instance.ClearUpdateRequests();
 
 			// Read rest of file

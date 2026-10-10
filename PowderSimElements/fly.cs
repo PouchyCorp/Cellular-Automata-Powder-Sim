@@ -74,7 +74,7 @@ public class Fly : Element, ILife, ISolid, IFlammable
 		directionChangeTimer++;
 		if (directionChangeTimer >= directionChangeInterval)
 		{
-			directionChangeTimer = Random.Shared.Next(0, directionChangeInterval - 1); // reset timer with some randomness
+			directionChangeTimer = Random.Shared.Next(0, directionChangeInterval); // reset timer with some randomness
 			changeDirection();
 		}
 		if (!tryMoveInDirection(oldGrid, x, y, maxX, maxY, currentDirection.Item1, currentDirection.Item2, T))

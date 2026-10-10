@@ -23,21 +23,12 @@ public class Snail : Element, ILife
 		Eating
 	}
 
-	enum SnailDirection
-	{
-		UpLeft,
-		UpRight,
-		DownLeft,
-		DownRight
-	}
-
-	SnailDirection currentDirection;
+	private List<(int, int)> lastPositions = new List<(int, int)>(); // to avoid backtracking too much
 	private SnailState snailState = SnailState.Falling;
 	public Snail()
 	{
 		density = 60;
 		color = Colors.Beige;
-		currentDirection = (SnailDirection)Random.Shared.Next(0, 4);
 	}
 	public override void update(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
@@ -164,16 +155,6 @@ public class Snail : Element, ILife
 		}
 	}
 
-	private SnailDirection getDirectionFromDelta(int dx, int dy)
-	{
-		if (dx <= 0 && dy <= 0) return SnailDirection.UpLeft;
-		if (dx >= 0 && dy <= 0) return SnailDirection.UpRight;
-		if (dx <= 0 && dy >= 1) return SnailDirection.DownLeft;
-		if (dx >= 0 && dy >= 1) return SnailDirection.DownRight;
-
-		return currentDirection; // default to current direction if no match
-	}
-
 	private void handleMovingState(Element[,] oldGrid, int x, int y, int maxX, int maxY, int T)
 	{
 
@@ -186,7 +167,7 @@ public class Snail : Element, ILife
 
 		if (Random.Shared.NextSingle() < 0.005f)
 		{
-			currentDirection = (SnailDirection)Random.Shared.Next(0, 4);
+			lastPositions.Clear(); // reset history occasionally to allow backtracking
 		}
 
 		// Get all available cells where snail can move (empty or webs only)
@@ -204,7 +185,7 @@ public class Snail : Element, ILife
 				if (target == null || target is Web || target is ILiquid || target is IGas)
 				{
 					// Must have at least one solid neighbor to climb on
-					if (hasAdjacentSolidSurface(nx, ny, oldGrid, maxX, maxY) && currentDirection == getDirectionFromDelta(nx - x, ny - y))
+					if (hasAdjacentSolidSurface(nx, ny, oldGrid, maxX, maxY) && !lastPositions.Contains((nx, ny)))
 					{
 						availableCells.Add((nx, ny));
 					}
@@ -214,12 +195,16 @@ public class Snail : Element, ILife
 
 		if (availableCells.Count == 0)
 		{
-			currentDirection = (SnailDirection)Random.Shared.Next(0, 4); // change direction randomly
+			// No valid moves available
+			lastPositions.Clear(); // reset history when stuck
+
+
+			snailState = SnailState.Idle; // couldn't move but still on solid su
 			return;
 		}
 
 		// Choose a random valid cell to move to
-		int randomIndex = Random.Shared.Next(0, availableCells.Count - 1);
+		int randomIndex = Random.Shared.Next(0, availableCells.Count);
 		(int, int) targetCell = availableCells[randomIndex];
 
 		// Move to the target cell
@@ -234,7 +219,13 @@ public class Snail : Element, ILife
 
 
 		MoveManager.Instance.AttemptMove(oldGrid, x, y, newX - x, newY - y, maxX, maxY);
+		lastPositions.Add((x, y));
 
+		// Keep position history manageable
+		if (lastPositions.Count > 5)
+		{
+			lastPositions.RemoveAt(0);
+		}
 		snailState = SnailState.Idle;
 	}
 

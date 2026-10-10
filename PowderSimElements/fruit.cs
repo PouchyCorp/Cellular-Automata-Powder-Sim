@@ -72,7 +72,7 @@ public class Fruit : Element, ILife, ISolid, IFlammable
 		if (oldGrid[x, y + 1] is not ISolid)
 		{
 			
-			int strafeChance = Random.Shared.Next(1, 4);
+			int strafeChance = Random.Shared.Next(1, 5);
 			// chance to strafe left or right while falling
 
 				// strafe left (25% chance)

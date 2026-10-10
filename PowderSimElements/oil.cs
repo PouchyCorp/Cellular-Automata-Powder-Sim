@@ -16,7 +16,7 @@ public class Oil : Element, ILiquid, IFlammable
 	public Oil()
 	{
 		lifetime = maxLifetime;
-		directionX = 2 * Random.Shared.Next(0, 1) - 1;
+		directionX = 2 * Random.Shared.Next(0, 2) - 1;
 		random_offset = Random.Shared.NextSingle() * 3.0f;
 		density = 4;
 		color = Colors.LightYellow;
